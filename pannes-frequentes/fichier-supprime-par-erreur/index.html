@@ -148,8 +148,9 @@
     <div class="form-card">
       <h3 class="mt-0">Décrire mon problème</h3>
       <p style="font-size:.95rem">Réponse sous 24h ouvrées · Sans engagement · Interlocuteur unique</p>
-      <form data-demo-form novalidate>
+      <form data-demo-form data-type="devis" data-service="sauvegarde-restauration" novalidate>
         <div class="form-ok">✅ Merci ! Votre demande a bien été prise en compte. Nous vous recontactons sous 24h ouvrées. Pour une urgence, appelez le <a href="tel:+33123456789">01 23 45 67 89</a>.</div>
+        
         <div class="form-grid">
           <div class="form-row"><label for="f-nom">Nom et prénom</label><input id="f-nom" name="nom" type="text" required></div>
           <div class="form-row"><label for="f-ent">Entreprise</label><input id="f-ent" name="entreprise" type="text"></div>
@@ -235,6 +236,7 @@
   </div>
 </div>
 
+<script src="../../assets/js/supabase-config.js"></script>
 <script src="../../assets/js/main.js" defer></script>
 </body>
 </html>

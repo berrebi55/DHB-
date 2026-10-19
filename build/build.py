@@ -67,7 +67,8 @@ def main():
     robots = (
         "User-agent: *\n"
         "Allow: /\n"
-        "Disallow: /404.html\n\n"
+        "Disallow: /404.html\n"
+        "Disallow: /admin/\n\n"
         f"Sitemap: {base.DOMAIN}/sitemap.xml\n"
     )
     write("robots.txt", robots)

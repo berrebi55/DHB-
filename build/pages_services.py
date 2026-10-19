@@ -306,7 +306,7 @@ def build():
           <li>Aucun engagement</li>
         </ul>
       </div>
-      <div class="reveal">{contact_form(depth, title="Demander un devis gratuit")}</div>
+      <div class="reveal">{contact_form(depth, title="Demander un devis gratuit", service=slug)}</div>
     </div>
   </div>
 </section>

@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Administration — DHB</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
+<link rel="stylesheet" href="../assets/css/style.css">
+<link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
+<style>
+  body { background: var(--blanc-casse); }
+  .adm-top { background: var(--nuit); color:#fff; padding:14px 0; position:sticky; top:0; z-index:30; }
+  .adm-top .wrap { display:flex; align-items:center; justify-content:space-between; gap:16px; }
+  .adm-top .logo__mark { color:#fff; font-size:1.3rem; } .adm-top .logo__mark b{color:var(--cyan);}
+  .adm-badge { font-size:.72rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; background:rgba(46,196,255,.2); color:var(--cyan); padding:4px 10px; border-radius:999px; margin-left:10px; }
+  .adm-user { display:flex; align-items:center; gap:14px; font-size:.9rem; color:#c3d4e6; }
+  .adm-user button { background:rgba(255,255,255,.12); color:#fff; border:none; padding:8px 14px; border-radius:8px; font-weight:600; cursor:pointer; font-family:inherit; }
+  .adm-user button:hover { background:rgba(255,255,255,.22); }
+
+  /* Login */
+  .login-wrap { max-width:420px; margin:8vh auto; padding:0 20px; }
+  .login-card { background:#fff; border:1px solid var(--gris-100); border-radius:var(--rayon); padding:34px; box-shadow:var(--ombre); }
+  .login-card .logo__mark { font-size:1.8rem; color:var(--nuit); } .login-card .logo__mark b{color:var(--cyan-600);}
+
+  /* Stats */
+  .kpis { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin:26px 0; }
+  .kpi { background:#fff; border:1px solid var(--gris-100); border-radius:var(--rayon); padding:18px 20px; box-shadow:var(--ombre-douce); }
+  .kpi .k-val { font-size:2rem; font-weight:900; color:var(--nuit); line-height:1; }
+  .kpi .k-lab { font-size:.82rem; color:var(--gris-600); font-weight:600; margin-top:6px; }
+  .kpi.accent .k-val { color:var(--cyan-700); }
+  .kpi.win .k-val { color:var(--succes); }
+
+  .panel { background:#fff; border:1px solid var(--gris-100); border-radius:var(--rayon); box-shadow:var(--ombre-douce); overflow:hidden; }
+  .toolbar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; padding:16px; border-bottom:1px solid var(--gris-100); }
+  .toolbar input[type=search]{ max-width:280px; }
+  .tabs { display:flex; gap:6px; }
+  .tab { border:1.5px solid var(--gris-200); background:#fff; color:var(--nuit); padding:7px 14px; border-radius:999px; font-weight:600; font-size:.86rem; cursor:pointer; font-family:inherit; }
+  .tab.active { background:var(--nuit); color:#fff; border-color:var(--nuit); }
+
+  table { width:100%; border-collapse:collapse; font-size:.9rem; }
+  th { text-align:left; padding:12px 14px; background:var(--gris-50); color:var(--gris-600); font-size:.74rem; text-transform:uppercase; letter-spacing:.04em; border-bottom:1px solid var(--gris-100); }
+  td { padding:12px 14px; border-bottom:1px solid var(--gris-100); vertical-align:top; }
+  tr.unread td { background:#f0f9ff; }
+  tr:hover td { background:#fafcff; }
+  .lead-name { font-weight:700; color:var(--nuit); }
+  .lead-sub { color:var(--gris-600); font-size:.82rem; }
+  .lead-msg { max-width:340px; color:var(--texte-doux); font-size:.86rem; }
+  .pill { display:inline-block; font-size:.72rem; font-weight:800; padding:3px 9px; border-radius:999px; text-transform:uppercase; letter-spacing:.03em; }
+  .pill.devis{background:#e0f2fe;color:#075985;} .pill.question{background:#fef3c7;color:#92400e;}
+  select.status { padding:7px 10px; border-radius:8px; border:1.5px solid var(--gris-200); font-family:inherit; font-weight:600; font-size:.82rem; }
+  .st-nouveau{color:#0369a1;} .st-contacte{color:#7c3aed;} .st-devis_envoye{color:#b45309;}
+  .st-gagne{color:#15803d;} .st-perdu{color:#b91c1c;} .st-archive{color:#64748b;}
+  .notes { width:100%; min-height:38px; border:1px dashed var(--gris-200); border-radius:8px; padding:7px 9px; font-family:inherit; font-size:.82rem; resize:vertical; }
+  .row-actions { display:flex; gap:8px; white-space:nowrap; }
+  .row-actions a { color:var(--cyan-700); font-weight:600; }
+  .btn-mini { border:none; background:none; color:var(--danger); font-weight:600; cursor:pointer; font-family:inherit; font-size:.82rem; padding:0; }
+  .empty-state { padding:50px; text-align:center; color:var(--gris-600); }
+
+  .toast { position:fixed; bottom:22px; right:22px; background:var(--nuit); color:#fff; padding:14px 20px; border-radius:12px; box-shadow:var(--ombre-forte); z-index:60; transform:translateY(140%); transition:transform .4s; font-weight:600; }
+  .toast.show { transform:translateY(0); }
+  .muted { color:var(--gris-600); font-size:.82rem; }
+  .hidden { display:none !important; }
+  @media(max-width:860px){ .kpis{grid-template-columns:repeat(2,1fr);} .lead-msg{max-width:none;} table,thead,tbody,th,td,tr{display:block;} th{display:none;} td{border:none;padding:6px 14px;} tr{border-bottom:1px solid var(--gris-100);padding:10px 0;} }
+</style>
+</head>
+<body>
+
+<!-- ÉCRAN DE CONNEXION -->
+<div id="login" class="login-wrap">
+  <div class="login-card">
+    <div class="logo__mark" style="font-weight:900">D<b>H</b>B <span class="adm-badge" style="color:var(--cyan-700);background:var(--gris-50)">Admin</span></div>
+    <h2 style="margin:16px 0 4px">Connexion</h2>
+    <p class="muted" style="margin-bottom:20px">Espace réservé à l'administration DHB.</p>
+    <form id="login-form">
+      <div class="form-row"><label for="email">Email</label><input id="email" type="email" required autocomplete="username"></div>
+      <div class="form-row"><label for="password">Mot de passe</label><input id="password" type="password" required autocomplete="current-password"></div>
+      <div id="login-err" class="form-err"></div>
+      <button class="btn btn--primary btn--block btn--lg" type="submit" id="login-btn">Se connecter</button>
+    </form>
+    <p class="muted" style="margin-top:16px">Compte à créer dans Supabase → Authentication → Users.</p>
+  </div>
+</div>
+
+<!-- TABLEAU DE BORD -->
+<div id="app" class="hidden">
+  <div class="adm-top">
+    <div class="wrap">
+      <span class="logo__mark" style="font-weight:900">D<b>H</b>B <span class="adm-badge">Administration</span></span>
+      <div class="adm-user"><span id="who"></span><button id="logout">Déconnexion</button></div>
+    </div>
+  </div>
+
+  <div class="wrap" style="padding-top:22px;padding-bottom:60px">
+    <h1 style="font-size:1.6rem;margin:6px 0 0">Demandes & messages</h1>
+    <p class="muted">Les nouvelles demandes apparaissent ici en direct.</p>
+
+    <div class="kpis" id="kpis"></div>
+
+    <div class="panel">
+      <div class="toolbar">
+        <div class="tabs" id="type-tabs">
+          <button class="tab active" data-type="all">Tout</button>
+          <button class="tab" data-type="devis">Devis / audits</button>
+          <button class="tab" data-type="question">Questions</button>
+        </div>
+        <select class="status" id="status-filter">
+          <option value="all">Tous les statuts</option>
+          <option value="nouveau">Nouveau</option>
+          <option value="contacte">Contacté</option>
+          <option value="devis_envoye">Devis envoyé</option>
+          <option value="gagne">Gagné</option>
+          <option value="perdu">Perdu</option>
+          <option value="archive">Archivé</option>
+        </select>
+        <input type="search" id="search" placeholder="Rechercher (nom, email, message…)">
+        <span class="muted" id="count" style="margin-left:auto"></span>
+      </div>
+      <div id="table-wrap"><div class="empty-state">Chargement…</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="../assets/js/supabase-config.js"></script>
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm';
+
+const cfg = window.DHB_SUPABASE || {};
+const sb = createClient(cfg.url, cfg.anonKey);
+
+const $ = (s) => document.querySelector(s);
+const login = $('#login'), app = $('#app');
+let LEADS = [];
+let filterType = 'all', filterStatus = 'all', q = '';
+
+const STATUS = {
+  nouveau:'Nouveau', contacte:'Contacté', devis_envoye:'Devis envoyé',
+  gagne:'Gagné', perdu:'Perdu', archive:'Archivé'
+};
+
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3500); }
+function esc(s){ return (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function fmtDate(d){ const x=new Date(d); return x.toLocaleDateString('fr-FR')+' '+x.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}); }
+
+// ---------- Auth ----------
+async function refreshSession(){
+  const { data } = await sb.auth.getSession();
+  if (data.session){ showApp(data.session.user); } else { showLogin(); }
+}
+function showLogin(){ login.classList.remove('hidden'); app.classList.add('hidden'); }
+function showApp(user){
+  login.classList.add('hidden'); app.classList.remove('hidden');
+  $('#who').textContent = user.email;
+  loadLeads(); subscribe();
+}
+
+$('#login-form').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const btn=$('#login-btn'); const err=$('#login-err');
+  err.style.display='none'; btn.disabled=true; btn.textContent='Connexion…';
+  const { error } = await sb.auth.signInWithPassword({ email:$('#email').value.trim(), password:$('#password').value });
+  btn.disabled=false; btn.textContent='Se connecter';
+  if (error){ err.textContent="Identifiants incorrects. Vérifiez votre email et mot de passe."; err.style.display='block'; return; }
+  refreshSession();
+});
+$('#logout').addEventListener('click', async ()=>{ await sb.auth.signOut(); showLogin(); });
+
+// ---------- Données ----------
+async function loadLeads(){
+  const { data, error } = await sb.from('leads').select('*').order('created_at',{ascending:false});
+  if (error){ $('#table-wrap').innerHTML='<div class="empty-state">Erreur de chargement : '+esc(error.message)+'<br><span class="muted">Avez-vous exécuté le script SQL et créé la table <code>leads</code> ?</span></div>'; return; }
+  LEADS = data || []; render();
+}
+
+function subscribe(){
+  sb.channel('leads-rt')
+    .on('postgres_changes', { event:'INSERT', schema:'public', table:'leads' }, (payload)=>{
+      LEADS.unshift(payload.new); render();
+      toast('📥 Nouvelle demande : '+(payload.new.nom||payload.new.email||'sans nom'));
+    })
+    .subscribe();
+}
+
+// ---------- Rendu ----------
+function renderKpis(){
+  const total=LEADS.length;
+  const nouveaux=LEADS.filter(l=>l.status==='nouveau').length;
+  const weekAgo=Date.now()-7*864e5;
+  const semaine=LEADS.filter(l=>new Date(l.created_at).getTime()>weekAgo).length;
+  const gagne=LEADS.filter(l=>l.status==='gagne').length;
+  const perdu=LEADS.filter(l=>l.status==='perdu').length;
+  const conv = (gagne+perdu)>0 ? Math.round(gagne/(gagne+perdu)*100)+'%' : '—';
+  $('#kpis').innerHTML = [
+    ['accent', nouveaux, 'Nouvelles à traiter'],
+    ['', semaine, 'Reçues cette semaine'],
+    ['', total, 'Total demandes'],
+    ['win', conv, 'Taux de conversion'],
+  ].map(([c,v,l])=>`<div class="kpi ${c}"><div class="k-val">${v}</div><div class="k-lab">${l}</div></div>`).join('');
+}
+
+function visible(){
+  return LEADS.filter(l=>{
+    if (filterType!=='all' && l.type!==filterType) return false;
+    if (filterStatus!=='all' && l.status!==filterStatus) return false;
+    if (q){
+      const hay=((l.nom||'')+' '+(l.entreprise||'')+' '+(l.email||'')+' '+(l.telephone||'')+' '+(l.message||'')+' '+(l.service||'')).toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function render(){
+  renderKpis();
+  const rows = visible();
+  $('#count').textContent = rows.length+' demande'+(rows.length>1?'s':'');
+  if (!rows.length){ $('#table-wrap').innerHTML='<div class="empty-state">Aucune demande pour ce filtre.</div>'; return; }
+  let html='<table><thead><tr><th>Date</th><th>Contact</th><th>Type</th><th>Message</th><th>Statut</th><th>Notes</th><th></th></tr></thead><tbody>';
+  for (const l of rows){
+    const opts=Object.entries(STATUS).map(([k,v])=>`<option value="${k}" ${l.status===k?'selected':''}>${v}</option>`).join('');
+    html+=`<tr class="${l.is_read?'':'unread'}" data-id="${l.id}">
+      <td class="lead-sub">${fmtDate(l.created_at)}</td>
+      <td>
+        <div class="lead-name">${esc(l.nom)||'—'}</div>
+        <div class="lead-sub">${esc(l.entreprise)||''}</div>
+        <div class="lead-sub">${l.email?`<a href="mailto:${esc(l.email)}">${esc(l.email)}</a>`:''}</div>
+        <div class="lead-sub">${l.telephone?`<a href="tel:${esc(l.telephone)}">${esc(l.telephone)}</a>`:''}</div>
+      </td>
+      <td><span class="pill ${l.type}">${l.type==='question'?'Question':'Devis'}</span>${l.service?`<div class="lead-sub" style="margin-top:6px">${esc(l.service)}</div>`:''}</td>
+      <td class="lead-msg">${esc(l.message)||'<span class="muted">—</span>'}${l.source_url?`<div class="lead-sub" style="margin-top:6px">📍 ${esc(l.source_url)}</div>`:''}</td>
+      <td><select class="status st-${l.status}" data-act="status">${opts}</select></td>
+      <td><textarea class="notes" data-act="notes" placeholder="Note interne…">${esc(l.notes)}</textarea></td>
+      <td class="row-actions">
+        <button class="btn-mini" data-act="read" style="color:var(--cyan-700)">${l.is_read?'Non lu':'Lu'}</button>
+        <button class="btn-mini" data-act="del">Suppr.</button>
+      </td>
+    </tr>`;
+  }
+  html+='</tbody></table>';
+  $('#table-wrap').innerHTML=html;
+}
+
+// ---------- Actions (délégation) ----------
+$('#table-wrap').addEventListener('change', async (e)=>{
+  const tr=e.target.closest('tr'); if(!tr) return; const id=tr.dataset.id;
+  if (e.target.dataset.act==='status'){
+    const v=e.target.value; e.target.className='status st-'+v;
+    await update(id,{status:v}); toast('Statut mis à jour');
+  }
+});
+$('#table-wrap').addEventListener('blur', async (e)=>{
+  if (e.target.dataset && e.target.dataset.act==='notes'){
+    const tr=e.target.closest('tr'); await update(tr.dataset.id,{notes:e.target.value}); toast('Note enregistrée');
+  }
+}, true);
+$('#table-wrap').addEventListener('click', async (e)=>{
+  const act=e.target.dataset && e.target.dataset.act; if(!act) return;
+  const tr=e.target.closest('tr'); const id=tr.dataset.id;
+  const lead=LEADS.find(l=>l.id===id);
+  if (act==='read'){ await update(id,{is_read:!lead.is_read}); lead.is_read=!lead.is_read; render(); }
+  if (act==='del'){ if(confirm('Supprimer définitivement cette demande ?')){ await sb.from('leads').delete().eq('id',id); LEADS=LEADS.filter(l=>l.id!==id); render(); toast('Demande supprimée'); } }
+});
+async function update(id, patch){
+  const { error } = await sb.from('leads').update(patch).eq('id',id);
+  const l=LEADS.find(x=>x.id===id); if(l) Object.assign(l,patch);
+  if (error) toast('Erreur : '+error.message);
+}
+
+// Marquer "lu" à l'ouverture d'une ligne non lue : au clic sur la ligne
+$('#table-wrap').addEventListener('click', async (e)=>{
+  const tr=e.target.closest('tr'); if(!tr||e.target.dataset.act) return;
+  const id=tr.dataset.id; const l=LEADS.find(x=>x.id===id);
+  if (l && !l.is_read){ await update(id,{is_read:true}); l.is_read=true; tr.classList.remove('unread'); }
+});
+
+// ---------- Filtres ----------
+$('#type-tabs').addEventListener('click',(e)=>{
+  if(!e.target.dataset.type) return;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  e.target.classList.add('active'); filterType=e.target.dataset.type; render();
+});
+$('#status-filter').addEventListener('change',(e)=>{ filterStatus=e.target.value; render(); });
+$('#search').addEventListener('input',(e)=>{ q=e.target.value.trim().toLowerCase(); render(); });
+
+// Démarrage
+if (!cfg.url){ $('#table-wrap').innerHTML='<div class="empty-state">Configuration Supabase manquante.</div>'; }
+refreshSession();
+sb.auth.onAuthStateChange((_e,s)=>{ if(!s) showLogin(); });
+</script>
+</body>
+</html>

@@ -135,15 +135,27 @@ def breadcrumb(depth, trail):
     return f'<div class="breadcrumb wrap">{"".join(parts)}</div>'
 
 
-def contact_form(depth, compact=False, title="Demander un audit gratuit"):
+def contact_form(depth, compact=False, title="Demander un audit gratuit", with_type=False, service=None):
     r = root(depth)
     msg = "Décrivez votre besoin ou votre problème…"
+    svc_attr = f' data-service="{service}"' if service else ""
+    type_field = ""
+    if with_type:
+        type_field = """
+        <div class="form-row">
+          <label for="f-type">Objet de votre demande</label>
+          <select id="f-type" name="type">
+            <option value="devis">Demande de devis / audit gratuit</option>
+            <option value="question">Question / renseignement</option>
+          </select>
+        </div>"""
     return f"""
     <div class="form-card">
       <h3 class="mt-0">{title}</h3>
       <p style="font-size:.95rem">Réponse sous 24h ouvrées · Sans engagement · Interlocuteur unique</p>
-      <form data-demo-form novalidate>
+      <form data-demo-form data-type="devis"{svc_attr} novalidate>
         <div class="form-ok">✅ Merci ! Votre demande a bien été prise en compte. Nous vous recontactons sous 24h ouvrées. Pour une urgence, appelez le <a href="tel:{PHONE_LINK}">{PHONE_DISPLAY}</a>.</div>
+        {type_field}
         <div class="form-grid">
           <div class="form-row"><label for="f-nom">Nom et prénom</label><input id="f-nom" name="nom" type="text" required></div>
           <div class="form-row"><label for="f-ent">Entreprise</label><input id="f-ent" name="entreprise" type="text"></div>
@@ -347,6 +359,7 @@ def page(depth, slug_path, title, description, body, extra_head="", og_type="web
   </div>
 </div>
 
+<script src="{r}assets/js/supabase-config.js"></script>
 <script src="{r}assets/js/main.js" defer></script>
 </body>
 </html>"""

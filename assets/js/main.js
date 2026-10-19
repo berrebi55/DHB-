@@ -43,18 +43,78 @@
     reveals.forEach(function (el) { el.classList.add('visible'); });
   }
 
-  // Formulaires : confirmation après envoi (aucune donnée envoyée côté démo)
+  // Formulaires : enregistrement dans Supabase si configuré, sinon démo.
+  var _sbClientPromise = null;
+  function getSupabase() {
+    if (!window.DHB_SUPABASE || !window.DHB_SUPABASE.url) return null;
+    if (!_sbClientPromise) {
+      _sbClientPromise = import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm')
+        .then(function (mod) {
+          return mod.createClient(window.DHB_SUPABASE.url, window.DHB_SUPABASE.anonKey);
+        });
+    }
+    return _sbClientPromise;
+  }
+
+  function showConfirmation(form) {
+    var ok = form.querySelector('.form-ok');
+    if (ok) {
+      ok.classList.add('show');
+      ok.setAttribute('role', 'status');
+      ok.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    form.querySelectorAll('input, textarea, select').forEach(function (f) {
+      if (f.type !== 'checkbox') f.value = '';
+    });
+  }
+
+  function showError(form, msg) {
+    var box = form.querySelector('.form-err');
+    if (!box) {
+      box = document.createElement('div');
+      box.className = 'form-err';
+      box.setAttribute('role', 'alert');
+      form.insertBefore(box, form.firstChild);
+    }
+    box.textContent = msg;
+    box.style.display = 'block';
+  }
+
   document.querySelectorAll('form[data-demo-form]').forEach(function (form) {
     form.addEventListener('submit', function (ev) {
       ev.preventDefault();
-      var ok = form.querySelector('.form-ok');
-      if (ok) {
-        ok.classList.add('show');
-        ok.setAttribute('role', 'status');
-        ok.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-      form.querySelectorAll('input, textarea, select').forEach(function (f) {
-        if (f.type !== 'checkbox') f.value = '';
+      var btn = form.querySelector('button[type="submit"]');
+      var get = function (name) {
+        var el = form.querySelector('[name="' + name + '"]');
+        return el ? el.value.trim() : '';
+      };
+      var payload = {
+        type: get('type') || form.getAttribute('data-type') || 'devis',
+        nom: get('nom'),
+        entreprise: get('entreprise'),
+        email: get('email'),
+        telephone: get('telephone'),
+        message: get('message'),
+        service: form.getAttribute('data-service') || null,
+        source_url: location.pathname
+      };
+
+      var sb = getSupabase();
+      if (!sb) { showConfirmation(form); return; }  // pas de config → démo
+
+      if (btn) { btn.disabled = true; btn.dataset.label = btn.textContent; btn.textContent = 'Envoi…'; }
+      sb.then(function (client) {
+        return client.from('leads').insert(payload);
+      }).then(function (res) {
+        if (btn) { btn.disabled = false; btn.textContent = btn.dataset.label || 'Envoyer'; }
+        if (res && res.error) {
+          showError(form, "Une erreur est survenue. Appelez-nous ou réessayez dans un instant.");
+          return;
+        }
+        showConfirmation(form);
+      }).catch(function () {
+        if (btn) { btn.disabled = false; btn.textContent = btn.dataset.label || 'Envoyer'; }
+        showError(form, "Impossible d'envoyer pour le moment. Merci de nous appeler directement.");
       });
     });
   });

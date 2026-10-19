@@ -103,7 +103,7 @@ def build():
         <p class="mb-0">Appelez directement le <a href="tel:{PHONE_LINK}"><strong>{PHONE_DISPLAY}</strong></a>. Les urgences bloquantes sont traitées en priorité.</p>
       </div>
     </div>
-    <div class="reveal">{contact_form(1, title="Demander un audit gratuit")}</div>
+    <div class="reveal">{contact_form(1, title="Demander un audit gratuit", with_type=True)}</div>
   </div>
 </div></section>
 

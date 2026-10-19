@@ -208,7 +208,7 @@ def build():
       <p class="lead">Décrivez-nous la situation. On vous répond sous 24h ouvrées — souvent, on résout à distance dans la foulée.</p>
       <ul class="check-list" style="margin-top:16px"><li>Réponse sous 24h ouvrées</li><li>Dépannage à distance ou sur site</li><li>Sans engagement</li></ul>
     </div>
-    <div class="reveal">{contact_form(depth, title="Décrire mon problème")}</div>
+    <div class="reveal">{contact_form(depth, title="Décrire mon problème", service=svc)}</div>
   </div>
 </div></section>
 

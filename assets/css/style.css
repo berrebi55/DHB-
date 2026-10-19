@@ -281,6 +281,7 @@ textarea { resize: vertical; min-height: 120px; }
 .consent input { width: auto; margin-top: 3px; }
 .form-ok { display: none; background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; padding: 16px 18px; border-radius: var(--rayon-sm); font-weight: 600; margin-bottom: 16px; }
 .form-ok.show { display: block; }
+.form-err { display: none; background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 14px 16px; border-radius: var(--rayon-sm); font-weight: 600; margin-bottom: 16px; }
 
 /* Bandeau CTA */
 .cta-band { background: linear-gradient(135deg, var(--nuit) 0%, var(--nuit-600) 100%); border-radius: var(--rayon-lg); padding: 48px; color: #fff; text-align: center; position: relative; overflow: hidden; }
