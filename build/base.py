@@ -60,6 +60,7 @@ def nav_html(depth):
         <a class="nav-link" href="{r}zones/">Zones ▾</a>
         <div class="dropdown">{ville_items}</div>
       </div>
+      <a class="nav-link" href="{r}pannes-frequentes/">Pannes fréquentes</a>
       <a class="nav-link" href="{r}blog/">Blog</a>
       <a class="nav-link" href="{r}a-propos/">À propos</a>
       <a class="nav-link" href="{r}contact/">Contact</a>
@@ -78,6 +79,7 @@ def mobile_nav_html(depth):
     <div class="mobile-nav" id="mobile-nav">
       <details><summary>Services</summary>{serv_items}</details>
       <details><summary>Zones d'intervention</summary>{ville_items}</details>
+      <a href="{r}pannes-frequentes/">Pannes fréquentes</a>
       <a href="{r}blog/">Blog</a>
       <a href="{r}a-propos/">À propos</a>
       <a href="{r}contact/">Contact</a>
@@ -311,6 +313,7 @@ def page(depth, slug_path, title, description, body, extra_head="", og_type="web
       <div>
         <h4>Entreprise</h4>
         <a href="{r}a-propos/">À propos</a>
+        <a href="{r}pannes-frequentes/">Pannes fréquentes</a>
         <a href="{r}blog/">Blog</a>
         <a href="{r}contact/">Contact</a>
         <a href="{r}mentions-legales/">Mentions légales</a>

@@ -3,6 +3,7 @@ from base import (page, breadcrumb, breadcrumb_jsonld, cta_band, contact_form,
                   localbusiness_jsonld, IC, DOMAIN, SERVICES, VILLES,
                   PHONE_DISPLAY, PHONE_LINK, EMAIL, SIGNATURE, SITE_NAME, root)
 import blog_data
+import problems_data as pd
 
 
 def build():
@@ -179,6 +180,7 @@ def build():
     serv_links = "".join(f'<li><a href="{root(1)}services/{s}/">{n}</a></li>' for s, n, _ in SERVICES)
     ville_links = "".join(f'<li><a href="{root(1)}zones/{s}/">{n}</a></li>' for s, n in VILLES)
     blog_links = "".join(f'<li><a href="{root(1)}blog/{a["slug"]}/">{a["title"]}</a></li>' for a in blog_data.ARTICLES)
+    pb_links = "".join(f'<li><a href="{root(1)}pannes-frequentes/{p["slug"]}/">{p["q"]}</a></li>' for p in pd.P)
     body = f"""
 <section class="page-hero">
   {breadcrumb(1, [(None, "Plan du site")])}
@@ -189,12 +191,14 @@ def build():
     <li><a href="{root(1)}">Accueil</a></li>
     <li><a href="{root(1)}services/">Services</a></li>
     <li><a href="{root(1)}zones/">Zones d'intervention</a></li>
+    <li><a href="{root(1)}pannes-frequentes/">Pannes fréquentes</a></li>
     <li><a href="{root(1)}blog/">Blog</a></li>
     <li><a href="{root(1)}a-propos/">À propos</a></li>
     <li><a href="{root(1)}contact/">Contact</a></li>
   </ul></div>
   <div class="card"><h3>Services</h3><ul class="check-list">{serv_links}</ul></div>
   <div class="card"><h3>Zones d'intervention</h3><ul class="check-list">{ville_links}</ul></div>
+  <div class="card"><h3>Pannes fréquentes</h3><ul class="check-list">{pb_links}</ul></div>
   <div class="card"><h3>Articles du blog</h3><ul class="check-list">{blog_links}</ul></div>
   <div class="card"><h3>Pages légales</h3><ul class="check-list">
     <li><a href="{root(1)}mentions-legales/">Mentions légales</a></li>

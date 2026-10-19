@@ -1,0 +1,515 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pannes informatiques fréquentes : causes et solutions | DHB</title>
+<meta name="description" content="Base de pannes informatiques fréquentes en entreprise : ordinateur lent, écran bleu, plus d'internet, imprimante hors ligne, messagerie en panne… Causes, vérifications et solutions. DHB, IdF & à distance.">
+<link rel="canonical" href="https://www.dhb-informatique.fr/pannes-frequentes/">
+<meta name="robots" content="index, follow">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Pannes informatiques fréquentes : causes et solutions | DHB">
+<meta property="og:description" content="Base de pannes informatiques fréquentes en entreprise : ordinateur lent, écran bleu, plus d'internet, imprimante hors ligne, messagerie en panne… Causes, vérifications et solutions. DHB, IdF & à distance.">
+<meta property="og:url" content="https://www.dhb-informatique.fr/pannes-frequentes/">
+<meta property="og:image" content="https://www.dhb-informatique.fr/assets/img/og.svg">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:site_name" content="DHB — Maintenance & sécurité informatique pour les entreprises">
+<meta name="theme-color" content="#0B2A4A">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
+<link rel="stylesheet" href="../assets/css/style.css">
+<link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
+
+<style>
+.pb-toolbar{position:sticky;top:76px;z-index:20;background:var(--blanc);padding:18px 0;border-bottom:1px solid var(--gris-100)}
+.pb-search{max-width:560px;margin:0 auto 14px;position:relative}
+.pb-search input{padding-left:44px}
+.pb-search svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--gris-400)}
+.pb-filters{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.pb-filter{border:1.5px solid var(--gris-200);background:#fff;color:var(--nuit);padding:8px 15px;border-radius:999px;font-weight:600;font-size:.88rem;cursor:pointer;transition:all .2s;font-family:inherit}
+.pb-filter:hover{border-color:var(--cyan)}
+.pb-filter.active{background:var(--nuit);color:#fff;border-color:var(--nuit)}
+.pb-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:34px}
+.pb-card{display:flex;flex-direction:column;background:#fff;border:1px solid var(--gris-100);border-radius:var(--rayon);padding:22px;box-shadow:var(--ombre-douce);transition:transform .2s,box-shadow .2s;color:inherit}
+.pb-card:hover{transform:translateY(-4px);box-shadow:var(--ombre);color:inherit}
+.pb-cat{display:inline-block;align-self:flex-start;font-size:.72rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--cyan-700);background:var(--gris-50);border:1px solid var(--gris-100);padding:3px 10px;border-radius:999px;margin-bottom:12px}
+.pb-card h3{font-size:1.08rem;margin-bottom:8px}
+.pb-card p{font-size:.93rem;margin-bottom:14px;flex:1}
+.pb-link{font-weight:700;color:var(--cyan-700);font-size:.92rem}
+.pb-empty{display:none;text-align:center;color:var(--gris-600);padding:40px}
+.pb-empty.show{display:block}
+@media(max-width:960px){.pb-grid{grid-template-columns:repeat(2,1fr)}.pb-toolbar{top:0}}
+@media(max-width:680px){.pb-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<a class="skip-link" href="#contenu">Aller au contenu</a>
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="logo" href="../" aria-label="DHB — accueil">
+      <span class="logo__mark">D<b>H</b>B</span>
+      <span class="logo__tag">Maintenance & sécurité informatique pour les entreprises</span>
+    </a>
+    
+    <nav class="nav" aria-label="Navigation principale">
+      <div class="nav-item">
+        <a class="nav-link" href="../services/">Services ▾</a>
+        <div class="dropdown"><a href="../services/depannage-assistance-informatique/">Dépannage & assistance<span>Une panne ? On intervient vite, sur site ou à distance.</span></a>
+<a href="../services/maintenance-parc-informatique/">Maintenance du parc<span>Postes, serveurs et réseau entretenus en continu.</span></a>
+<a href="../services/supervision-monitoring/">Supervision & monitoring<span>Vos équipements surveillés 24/7, les pannes évitées.</span></a>
+<a href="../services/cybersecurite/">Cybersécurité<span>Antivirus, pare-feu, protection et sensibilisation.</span></a>
+<a href="../services/sauvegarde-restauration/">Sauvegarde & restauration<span>Vos données protégées et récupérables à tout moment.</span></a>
+<a href="../services/messagerie-cloud/">Messagerie & cloud pro<span>Microsoft 365 et Google Workspace sans prise de tête.</span></a>
+<a href="../services/infogerance-globale/">Infogérance globale<span>Tout votre informatique géré, un interlocuteur unique.</span></a></div>
+      </div>
+      <div class="nav-item">
+        <a class="nav-link" href="../zones/">Zones ▾</a>
+        <div class="dropdown"><a href="../zones/depannage-informatique-paris/">Paris</a>
+<a href="../zones/depannage-informatique-boulogne-billancourt/">Boulogne-Billancourt</a>
+<a href="../zones/depannage-informatique-saint-denis/">Saint-Denis</a>
+<a href="../zones/depannage-informatique-nanterre/">Nanterre</a>
+<a href="../zones/depannage-informatique-creteil/">Créteil</a>
+<a href="../zones/depannage-informatique-versailles/">Versailles</a>
+<a href="../zones/depannage-informatique-montreuil/">Montreuil</a>
+<a href="../zones/depannage-informatique-argenteuil/">Argenteuil</a>
+<a href="../zones/support-informatique-a-distance-france/">Support à distance (France)</a></div>
+      </div>
+      <a class="nav-link" href="../pannes-frequentes/">Pannes fréquentes</a>
+      <a class="nav-link" href="../blog/">Blog</a>
+      <a class="nav-link" href="../a-propos/">À propos</a>
+      <a class="nav-link" href="../contact/">Contact</a>
+    </nav>
+    <div class="header-cta">
+      <a class="btn btn--primary" href="../contact/">Audit gratuit</a>
+    </div>
+    <button class="burger" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="mobile-nav"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+    <div class="mobile-nav" id="mobile-nav">
+      <details><summary>Services</summary><a href="../services/depannage-assistance-informatique/">Dépannage & assistance</a>
+<a href="../services/maintenance-parc-informatique/">Maintenance du parc</a>
+<a href="../services/supervision-monitoring/">Supervision & monitoring</a>
+<a href="../services/cybersecurite/">Cybersécurité</a>
+<a href="../services/sauvegarde-restauration/">Sauvegarde & restauration</a>
+<a href="../services/messagerie-cloud/">Messagerie & cloud pro</a>
+<a href="../services/infogerance-globale/">Infogérance globale</a></details>
+      <details><summary>Zones d'intervention</summary><a href="../zones/depannage-informatique-paris/">Paris</a>
+<a href="../zones/depannage-informatique-boulogne-billancourt/">Boulogne-Billancourt</a>
+<a href="../zones/depannage-informatique-saint-denis/">Saint-Denis</a>
+<a href="../zones/depannage-informatique-nanterre/">Nanterre</a>
+<a href="../zones/depannage-informatique-creteil/">Créteil</a>
+<a href="../zones/depannage-informatique-versailles/">Versailles</a>
+<a href="../zones/depannage-informatique-montreuil/">Montreuil</a>
+<a href="../zones/depannage-informatique-argenteuil/">Argenteuil</a>
+<a href="../zones/support-informatique-a-distance-france/">Support à distance (France)</a></details>
+      <a href="../pannes-frequentes/">Pannes fréquentes</a>
+      <a href="../blog/">Blog</a>
+      <a href="../a-propos/">À propos</a>
+      <a href="../contact/">Contact</a>
+      <a class="btn btn--primary btn--block" href="../contact/">Demander un audit gratuit</a>
+      <a class="btn btn--outline btn--block" href="tel:+33123456789">Appeler le 01 23 45 67 89</a>
+    </div>
+<main id="contenu">
+
+<section class="page-hero">
+  <div class="breadcrumb wrap"><a href="../">Accueil</a><span>/</span>Pannes fréquentes</div>
+  <div class="wrap">
+    <span class="eyebrow">Base de pannes informatiques</span>
+    <h1>Pannes informatiques fréquentes : causes et solutions</h1>
+    <p>Un problème précis ? Cherchez-le dans notre base de <strong id="pb-count">45</strong> pannes courantes en entreprise, formulées comme vous les tapez dans Google. Pour chacune : les causes, ce que vous pouvez vérifier vous-même, et quand faire appel à nous.</p>
+  </div>
+</section>
+
+<div class="pb-toolbar">
+  <div class="wrap">
+    <div class="pb-search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="26" height="26"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+      <input id="pb-search" type="search" placeholder="Rechercher une panne (ex : imprimante, écran bleu, plus d'internet…)" aria-label="Rechercher une panne">
+    </div>
+    <div class="pb-filters"><button class="pb-filter active" data-cat="all">Toutes</button><button class="pb-filter" data-cat="demarrage">Démarrage & allumage</button><button class="pb-filter" data-cat="performance">Lenteur & performance</button><button class="pb-filter" data-cat="plantage">Plantages & blocages</button><button class="pb-filter" data-cat="reseau">Internet, réseau & Wi-Fi</button><button class="pb-filter" data-cat="impression">Imprimante & scanner</button><button class="pb-filter" data-cat="messagerie">Messagerie & emails</button><button class="pb-filter" data-cat="donnees">Fichiers & données</button><button class="pb-filter" data-cat="securite">Virus & sécurité</button><button class="pb-filter" data-cat="materiel">Matériel (écran, son, batterie)</button><button class="pb-filter" data-cat="logiciels">Logiciels & mises à jour</button><button class="pb-filter" data-cat="cloud">Cloud & partage de fichiers</button></div>
+  </div>
+</div>
+
+<section class="section section--tight">
+  <div class="wrap">
+    <div class="pb-grid">
+            <a class="pb-card" href="ordinateur-ne-sallume-plus/" data-cat="demarrage" data-kw="mon ordinateur ne s'allume plus (aucun voyant, aucun signe de vie) vous appuyez sur le bouton et rien ne se passe : pas de voyant, pas de ventilateur, écran éteint.">
+              <span class="pb-cat">Démarrage & allumage</span>
+              <h3>Mon ordinateur ne s'allume plus (aucun voyant, aucun signe de vie)</h3>
+              <p>Vous appuyez sur le bouton et rien ne se passe : pas de voyant, pas de ventilateur, écran éteint.</p>
+              <span class="pb-link">Voir les causes et solutions →</span>
+            </a>
+            <a class="pb-card" href="windows-ne-demarre-pas-ecran-noir/" data-cat="demarrage" data-kw="l'ordinateur s'allume mais windows ne démarre pas (écran noir, logo figé) la machine s'allume (ventilateur, voyants) mais reste sur un écran noir ou le logo du fabricant, sans jamais arriver au bureau.">
+              <span class="pb-cat">Démarrage & allumage</span>
+              <h3>L'ordinateur s'allume mais Windows ne démarre pas (écran noir, logo figé)</h3>
+              <p>La machine s'allume (ventilateur, voyants) mais reste sur un écran noir ou le logo du fabricant, sans jamais arriver au bureau.</p>
+              <span class="pb-link">Voir les causes et solutions →</span>
+            </a>
+            <a class="pb-card" href="ordinateur-tres-long-a-demarrer/" data-cat="demarrage" data-kw="mon ordinateur met plusieurs minutes à démarrer le matin entre l'allumage et le moment où le poste est réellement utilisable, il s'écoule plusieurs minutes chaque matin.">
+              <span class="pb-cat">Démarrage & allumage</span>
+              <h3>Mon ordinateur met plusieurs minutes à démarrer le matin</h3>
+              <p>Entre l'allumage et le moment où le poste est réellement utilisable, il s'écoule plusieurs minutes chaque matin.</p>
+              <span class="pb-link">Voir les causes et solutions →</span>
+            </a>
+            <a class="pb-card" href="ordinateur-de-bureau-trop-lent/" data-cat="performance" data-kw="l'ordinateur du bureau est devenu très lent, il rame tout le temps chaque action prend plusieurs secondes, les logiciels mettent du temps à s'ouvrir, le travail quotidien devient pénible.">
+              <span class="pb-cat">Lenteur & performance</span>
+              <h3>L'ordinateur du bureau est devenu très lent, il rame tout le temps</h3>
+              <p>Chaque action prend plusieurs secondes, les logiciels mettent du temps à s'ouvrir, le travail quotidien devient pénible.</p>
+              <span class="pb-link">Voir les causes et solutions →</span>
+            </a>
+            <a class="pb-card" href="navigateur-internet-tres-lent/" data-cat="performance" data-kw="internet / mon navigateur est très lent alors que la connexion fonctionne les pages mettent longtemps à s'afficher, des onglets se figent, alors que d'autres appareils naviguent normalement.">
+              <span class="pb-cat">Lenteur & performance</span>
+              <h3>Internet / mon navigateur est très lent alors que la connexion fonctionne</h3>
+              <p>Les pages mettent longtemps à s'afficher, des onglets se figent, alors que d'autres appareils naviguent normalement.</p>
+              <span class="pb-link">Voir les causes et solutions →</span>
+            </a>
+            <a class="pb-card" href="ecran-bleu-windows/" data-cat="plantage" data-kw="écran bleu à répétition sur windows (bsod) l'ordinateur s'arrête brutalement, affiche un écran bleu avec un code d'erreur, puis redémarre.">
+              <span class="pb-cat">Plantages & blocages</span>
+              <h3>Écran bleu à répétition sur Windows (BSOD)</h3>
+              <p>L'ordinateur s'arrête brutalement, affiche un écran bleu avec un code d'erreur, puis redémarre.</p>
+              <span class="pb-link">Voir les causes et solutions →</span>
+            </a>
+            <a class="pb-card" href="pc-qui-seteint-tout-seul/" data-cat="plantage" data-kw="mon pc s'éteint tout seul sans prévenir l'ordinateur se coupe brutalement en pleine utilisation, parfois après quelques minutes de fonctionnement.">
+              <span class="pb-cat">Plantages & blocages</span>
+              <h3>Mon PC s'éteint tout seul sans prévenir</h3>
+              <p>L'ordinateur se coupe brutalement en pleine utilisation, parfois après quelques minutes de fonctionnement.</p>
+              <span class="pb-link">Voir les causes et solutions →</span>
+            </a>
+            <a class="pb-card" href="logiciel-se-fige-ne-repond-plus/" data-cat="plantage" data-kw="un logiciel se fige ou « ne répond plus » régulièrement une application se bloque, l'écran devient blanc, windows affiche « (ne répond pas) ».">
+              <span class="pb-cat">Plantages & blocages</span>
+              <h3>Un logiciel se fige ou « ne répond plus » régulièrement</h3>
+              <p>Une application se bloque, l'écran devient blanc, Windows affiche « (ne répond pas) ».</p>
+              <span class="pb-link">Voir les causes et solutions →</span>
+            </a>
+            <a class="pb-card" href="profil-temporaire-windows/" data-cat="plantage" data-kw="windows a ouvert ma session avec un « profil temporaire », mes fichiers ont disparu à l'ouverture de session, un message signale un profil temporaire : bureau vide, documents et réglages absents.">
+              <span class="pb-cat">Plantages & blocages</span>
+              <h3>Windows a ouvert ma session avec un « profil temporaire », mes fichiers ont disparu</h3>
+              <p>À l'ouverture de session, un message signale un profil temporaire : bureau vide, documents et réglages absents.</p>
+              <span class="pb-link">Voir les causes et solutions →</span>
+            </a>
+            <a class="pb-card" href="plus-dinternet-au-bureau/" data-cat="reseau" data-kw="plus d'accès à internet au bureau, tout le monde est bloqué plus aucune connexion : messagerie, sites, outils en ligne inaccessibles pour toute l'équipe.">
+              <span class="pb-cat">Internet, réseau & Wi-Fi</span>
+              <h3>Plus d'accès à Internet au bureau, tout le monde est bloqué</h3>
+              <p>Plus aucune connexion : messagerie, sites, outils en ligne inaccessibles pour toute l'équipe.</p>
+              <span class="pb-link">Voir les causes et solutions →</span>
+            </a>
+            <a class="pb-card" href="wifi-se-deconnecte-sans-arret/" data-cat="reseau" data-kw="le wi-fi se déconnecte sans arrêt ou ne capte pas dans tout le bureau la connexion saute, certaines pièces n'ont pas de réseau, les visios coupent.">
+              <span class="pb-cat">Internet, réseau & Wi-Fi</span>
+              <h3>Le Wi-Fi se déconnecte sans arrêt ou ne capte pas dans tout le bureau</h3>
+              <p>La connexion saute, certaines pièces n'ont pas de réseau, les visios coupent.</p>
+              <span class="pb-link">Voir les causes et solutions →</span>
+            </a>
+            <a class="pb-card" href="un-seul-poste-sans-reseau/" data-cat="reseau" data-kw="un seul ordinateur n'a plus de réseau alors que les autres fonctionnent un poste est hors ligne alors que le reste du bureau accède normalement à internet et au serveur.">
+              <span class="pb-cat">Internet, réseau & Wi-Fi</span>
+              <h3>Un seul ordinateur n'a plus de réseau alors que les autres fonctionnent</h3>
+              <p>Un poste est hors ligne alors que le reste du bureau accède normalement à Internet et au serveur.</p>
+              <span class="pb-link">Voir les causes et solutions →</span>
+            </a>
+            <a class="pb-card" href="vpn-connecte-mais-pas-dacces-serveur/" data-cat="reseau" data-kw="le vpn se connecte mais je n'accède pas au serveur de fichiers de l'entreprise le vpn affiche « connecté », mais le serveur ou le nas reste injoignable à distance.">
+              <span class="pb-cat">Internet, réseau & Wi-Fi</span>
+              <h3>Le VPN se connecte mais je n'accède pas au serveur de fichiers de l'entreprise</h3>
+              <p>Le VPN affiche « connecté », mais le serveur ou le NAS reste injoignable à distance.</p>
+              <span class="pb-link">Voir les causes et solutions →</span>
+            </a>
+            <a class="pb-card" href="imprimante-hors-ligne/" data-cat="impression" data-kw="mon imprimante est « hors ligne » et refuse d'imprimer windows affiche l'imprimante « hors ligne » alors qu'elle est allumée.">
+              <span class="pb-cat">Imprimante & scanner</span>
+              <h3>Mon imprimante est « hors ligne » et refuse d'imprimer</h3>
+              <p>Windows affiche l'imprimante « hors ligne » alors qu'elle est allumée.</p>
+              <span class="pb-link">Voir les causes et solutions →</span>
+            </a>
+            <a class="pb-card" href="documents-bloques-file-impression/" data-cat="impression" data-kw="mes documents restent bloqués dans la file d'impression un document « coince » dans la file et bloque tous les suivants ; rien ne sort.">
+              <span class="pb-cat">Imprimante & scanner</span>
+              <h3>Mes documents restent bloqués dans la file d'impression</h3>
+              <p>Un document « coince » dans la file et bloque tous les suivants ; rien ne sort.</p>
+              <span class="pb-link">Voir les causes et solutions →</span>
+            </a>
+            <a class="pb-card" href="scanner-ne-fonctionne-plus/" data-cat="impression" data-kw="le scanner de l'imprimante multifonction ne fonctionne plus l'impression marche, mais la numérisation vers l'ordinateur ou le dossier partagé échoue.">
+              <span class="pb-cat">Imprimante & scanner</span>
+              <h3>Le scanner de l'imprimante multifonction ne fonctionne plus</h3>
+              <p>L'impression marche, mais la numérisation vers l'ordinateur ou le dossier partagé échoue.</p>
+              <span class="pb-link">Voir les causes et solutions →</span>
+            </a>
+            <a class="pb-card" href="messagerie-pro-nenvoie-plus/" data-cat="messagerie" data-kw="ma messagerie professionnelle n'envoie plus / ne reçoit plus les emails les messages restent dans la boîte d'envoi, ou plus rien n'arrive en réception.">
+              <span class="pb-cat">Messagerie & emails</span>
+              <h3>Ma messagerie professionnelle n'envoie plus / ne reçoit plus les emails</h3>
+              <p>Les messages restent dans la boîte d'envoi, ou plus rien n'arrive en réception.</p>
+              <span class="pb-link">Voir les causes et solutions →</span>
+            </a>
+            <a class="pb-card" href="mes-emails-arrivent-dans-les-spams/" data-cat="messagerie" data-kw="mes emails professionnels arrivent dans les spams de mes clients vos devis et messages finissent dans le courrier indésirable de vos destinataires, voire n'arrivent jamais.">
+              <span class="pb-cat">Messagerie & emails</span>
+              <h3>Mes emails professionnels arrivent dans les spams de mes clients</h3>
+              <p>Vos devis et messages finissent dans le courrier indésirable de vos destinataires, voire n'arrivent jamais.</p>
+              <span class="pb-link">Voir les causes et solutions →</span>
+            </a>
+            <a class="pb-card" href="outlook-demande-sans-arret-mot-de-passe/" data-cat="messagerie" data-kw="outlook me redemande sans arrêt mon mot de passe la fenêtre de mot de passe réapparaît en boucle, même après l'avoir saisi correctement.">
+              <span class="pb-cat">Messagerie & emails</span>
+              <h3>Outlook me redemande sans arrêt mon mot de passe</h3>
+              <p>La fenêtre de mot de passe réapparaît en boucle, même après l'avoir saisi correctement.</p>
+              <span class="pb-link">Voir les causes et solutions →</span>
+            </a>
+            <a class="pb-card" href="boite-mail-pleine/" data-cat="messagerie" data-kw="ma boîte mail est pleine, je ne reçois plus rien un message signale que la boîte est pleine ; les emails entrants sont renvoyés à l'expéditeur.">
+              <span class="pb-cat">Messagerie & emails</span>
+              <h3>Ma boîte mail est pleine, je ne reçois plus rien</h3>
+              <p>Un message signale que la boîte est pleine ; les emails entrants sont renvoyés à l'expéditeur.</p>
+              <span class="pb-link">Voir les causes et solutions →</span>
+            </a>
+            <a class="pb-card" href="fichier-supprime-par-erreur/" data-cat="donnees" data-kw="j'ai supprimé un fichier important par erreur, est-il récupérable ? un document ou un dossier essentiel a disparu, parfois après avoir vidé la corbeille.">
+              <span class="pb-cat">Fichiers & données</span>
+              <h3>J'ai supprimé un fichier important par erreur, est-il récupérable ?</h3>
+              <p>Un document ou un dossier essentiel a disparu, parfois après avoir vidé la corbeille.</p>
+              <span class="pb-link">Voir les causes et solutions →</span>
+            </a>
+            <a class="pb-card" href="cle-usb-disque-externe-non-reconnu/" data-cat="donnees" data-kw="ma clé usb ou mon disque externe n'est plus reconnu vous branchez le support mais il n'apparaît pas, ou windows propose de le « formater ».">
+              <span class="pb-cat">Fichiers & données</span>
+              <h3>Ma clé USB ou mon disque externe n'est plus reconnu</h3>
+              <p>Vous branchez le support mais il n'apparaît pas, ou Windows propose de le « formater ».</p>
+              <span class="pb-link">Voir les causes et solutions →</span>
+            </a>
+            <a class="pb-card" href="disque-presque-plein/" data-cat="donnees" data-kw="message « espace disque faible » : le disque est presque plein windows alerte sur l'espace disque, le poste ralentit et refuse d'enregistrer de nouveaux fichiers.">
+              <span class="pb-cat">Fichiers & données</span>
+              <h3>Message « espace disque faible » : le disque est presque plein</h3>
+              <p>Windows alerte sur l'espace disque, le poste ralentit et refuse d'enregistrer de nouveaux fichiers.</p>
+              <span class="pb-link">Voir les causes et solutions →</span>
+            </a>
+            <a class="pb-card" href="fichier-corrompu-illisible/" data-cat="donnees" data-kw="un fichier est « corrompu » ou illisible, impossible à ouvrir un document refuse de s'ouvrir, affiche une erreur ou du contenu illisible.">
+              <span class="pb-cat">Fichiers & données</span>
+              <h3>Un fichier est « corrompu » ou illisible, impossible à ouvrir</h3>
+              <p>Un document refuse de s'ouvrir, affiche une erreur ou du contenu illisible.</p>
+              <span class="pb-link">Voir les causes et solutions →</span>
+            </a>
+            <a class="pb-card" href="fichiers-chiffres-rancon-ransomware/" data-cat="securite" data-kw="tous mes fichiers sont chiffrés et on me réclame une rançon les fichiers sont devenus illisibles, renommés, et un message exige un paiement pour les débloquer : c'est un ransomware.">
+              <span class="pb-cat">Virus & sécurité</span>
+              <h3>Tous mes fichiers sont chiffrés et on me réclame une rançon</h3>
+              <p>Les fichiers sont devenus illisibles, renommés, et un message exige un paiement pour les débloquer : c'est un ransomware.</p>
+              <span class="pb-link">Voir les causes et solutions →</span>
+            </a>
+            <a class="pb-card" href="virus-pubs-intempestives/" data-cat="securite" data-kw="mon pc affiche des pubs intempestives et une page d'accueil modifiée fenêtres publicitaires, redirections, moteur de recherche ou page d'accueil changés sans votre accord.">
+              <span class="pb-cat">Virus & sécurité</span>
+              <h3>Mon PC affiche des pubs intempestives et une page d'accueil modifiée</h3>
+              <p>Fenêtres publicitaires, redirections, moteur de recherche ou page d'accueil changés sans votre accord.</p>
+              <span class="pb-link">Voir les causes et solutions →</span>
+            </a>
+            <a class="pb-card" href="email-de-phishing-recu/" data-cat="securite" data-kw="j'ai reçu (ou cliqué sur) un email de phishing, que faire ? un email imitant une banque, un fournisseur ou un collègue vous a poussé à cliquer ou à communiquer des informations.">
+              <span class="pb-cat">Virus & sécurité</span>
+              <h3>J'ai reçu (ou cliqué sur) un email de phishing, que faire ?</h3>
+              <p>Un email imitant une banque, un fournisseur ou un collègue vous a poussé à cliquer ou à communiquer des informations.</p>
+              <span class="pb-link">Voir les causes et solutions →</span>
+            </a>
+            <a class="pb-card" href="compte-messagerie-pirate/" data-cat="securite" data-kw="mon compte de messagerie semble piraté (envois étranges, règles inconnues) des emails partent en votre nom, des règles de transfert inconnues apparaissent, ou vous êtes déconnecté.">
+              <span class="pb-cat">Virus & sécurité</span>
+              <h3>Mon compte de messagerie semble piraté (envois étranges, règles inconnues)</h3>
+              <p>Des emails partent en votre nom, des règles de transfert inconnues apparaissent, ou vous êtes déconnecté.</p>
+              <span class="pb-link">Voir les causes et solutions →</span>
+            </a>
+            <a class="pb-card" href="faux-support-microsoft-ecran-bloque/" data-cat="securite" data-kw="un message « alerte microsoft » bloque mon écran et demande d'appeler un numéro une page plein écran affiche une fausse alerte de sécurité, une voix ou un signal sonore, et un numéro à appeler « d'urgence ».">
+              <span class="pb-cat">Virus & sécurité</span>
+              <h3>Un message « alerte Microsoft » bloque mon écran et demande d'appeler un numéro</h3>
+              <p>Une page plein écran affiche une fausse alerte de sécurité, une voix ou un signal sonore, et un numéro à appeler « d'urgence ».</p>
+              <span class="pb-link">Voir les causes et solutions →</span>
+            </a>
+            <a class="pb-card" href="mot-de-passe-windows-oublie/" data-cat="securite" data-kw="un collaborateur a oublié son mot de passe windows / de session impossible d'ouvrir la session : le mot de passe est refusé ou a été oublié, parfois après le départ d'un salarié.">
+              <span class="pb-cat">Virus & sécurité</span>
+              <h3>Un collaborateur a oublié son mot de passe Windows / de session</h3>
+              <p>Impossible d'ouvrir la session : le mot de passe est refusé ou a été oublié, parfois après le départ d'un salarié.</p>
+              <span class="pb-link">Voir les causes et solutions →</span>
+            </a>
+            <a class="pb-card" href="ecran-noir-ventilateur-tourne/" data-cat="materiel" data-kw="écran noir mais le ventilateur tourne à fond (portable) le portable semble allumé (ventilateur bruyant, voyants) mais l'écran reste noir.">
+              <span class="pb-cat">Matériel (écran, son, batterie)</span>
+              <h3>Écran noir mais le ventilateur tourne à fond (portable)</h3>
+              <p>Le portable semble allumé (ventilateur bruyant, voyants) mais l'écran reste noir.</p>
+              <span class="pb-link">Voir les causes et solutions →</span>
+            </a>
+            <a class="pb-card" href="plus-de-son-sur-lordinateur/" data-cat="materiel" data-kw="il n'y a plus de son sur l'ordinateur aucun son ne sort, en visio comme en lecture, alors que tout semble normal.">
+              <span class="pb-cat">Matériel (écran, son, batterie)</span>
+              <h3>Il n'y a plus de son sur l'ordinateur</h3>
+              <p>Aucun son ne sort, en visio comme en lecture, alors que tout semble normal.</p>
+              <span class="pb-link">Voir les causes et solutions →</span>
+            </a>
+            <a class="pb-card" href="batterie-portable-ne-charge-plus/" data-cat="materiel" data-kw="la batterie de mon portable ne charge plus (ou se vide très vite) branché, le portable n'indique pas de charge, ou la batterie se vide en quelques minutes.">
+              <span class="pb-cat">Matériel (écran, son, batterie)</span>
+              <h3>La batterie de mon portable ne charge plus (ou se vide très vite)</h3>
+              <p>Branché, le portable n'indique pas de charge, ou la batterie se vide en quelques minutes.</p>
+              <span class="pb-link">Voir les causes et solutions →</span>
+            </a>
+            <a class="pb-card" href="clavier-souris-ne-repondent-plus/" data-cat="materiel" data-kw="mon clavier ou ma souris ne répond plus le clavier ou la souris cesse de fonctionner, parfois par intermittence.">
+              <span class="pb-cat">Matériel (écran, son, batterie)</span>
+              <h3>Mon clavier ou ma souris ne répond plus</h3>
+              <p>Le clavier ou la souris cesse de fonctionner, parfois par intermittence.</p>
+              <span class="pb-link">Voir les causes et solutions →</span>
+            </a>
+            <a class="pb-card" href="camera-micro-ne-marchent-pas-visio/" data-cat="materiel" data-kw="ma caméra ou mon micro ne fonctionne pas en visio (teams, zoom) en réunion en ligne, on ne vous voit pas ou on ne vous entend pas, alors que le matériel semble branché.">
+              <span class="pb-cat">Matériel (écran, son, batterie)</span>
+              <h3>Ma caméra ou mon micro ne fonctionne pas en visio (Teams, Zoom)</h3>
+              <p>En réunion en ligne, on ne vous voit pas ou on ne vous entend pas, alors que le matériel semble branché.</p>
+              <span class="pb-link">Voir les causes et solutions →</span>
+            </a>
+            <a class="pb-card" href="deuxieme-ecran-non-detecte/" data-cat="materiel" data-kw="mon deuxième écran n'est pas détecté vous branchez un écran externe et rien ne s'affiche, ou windows ne le voit pas.">
+              <span class="pb-cat">Matériel (écran, son, batterie)</span>
+              <h3>Mon deuxième écran n'est pas détecté</h3>
+              <p>Vous branchez un écran externe et rien ne s'affiche, ou Windows ne le voit pas.</p>
+              <span class="pb-link">Voir les causes et solutions →</span>
+            </a>
+            <a class="pb-card" href="ecran-qui-scintille-clignote/" data-cat="materiel" data-kw="mon écran scintille ou clignote l'affichage tremble, clignote ou affiche des artefacts par moments.">
+              <span class="pb-cat">Matériel (écran, son, batterie)</span>
+              <h3>Mon écran scintille ou clignote</h3>
+              <p>L'affichage tremble, clignote ou affiche des artefacts par moments.</p>
+              <span class="pb-link">Voir les causes et solutions →</span>
+            </a>
+            <a class="pb-card" href="bluetooth-ne-se-connecte-pas/" data-cat="materiel" data-kw="mon périphérique bluetooth (casque, souris) ne se connecte pas le casque ou la souris bluetooth refuse de s'appairer ou se déconnecte sans cesse.">
+              <span class="pb-cat">Matériel (écran, son, batterie)</span>
+              <h3>Mon périphérique Bluetooth (casque, souris) ne se connecte pas</h3>
+              <p>Le casque ou la souris Bluetooth refuse de s'appairer ou se déconnecte sans cesse.</p>
+              <span class="pb-link">Voir les causes et solutions →</span>
+            </a>
+            <a class="pb-card" href="mise-a-jour-windows-bloquee/" data-cat="logiciels" data-kw="une mise à jour windows est bloquée (ou tourne depuis des heures) la mise à jour reste figée à un pourcentage, ou affiche « n'éteignez pas votre ordinateur » depuis très longtemps.">
+              <span class="pb-cat">Logiciels & mises à jour</span>
+              <h3>Une mise à jour Windows est bloquée (ou tourne depuis des heures)</h3>
+              <p>La mise à jour reste figée à un pourcentage, ou affiche « N'éteignez pas votre ordinateur » depuis très longtemps.</p>
+              <span class="pb-link">Voir les causes et solutions →</span>
+            </a>
+            <a class="pb-card" href="office-microsoft-365-licence-expiree/" data-cat="logiciels" data-kw="word/excel affiche « produit sans licence » ou une licence expirée office passe en lecture seule, affiche un bandeau rouge « licence expirée » ou « produit sans licence ».">
+              <span class="pb-cat">Logiciels & mises à jour</span>
+              <h3>Word/Excel affiche « produit sans licence » ou une licence expirée</h3>
+              <p>Office passe en lecture seule, affiche un bandeau rouge « licence expirée » ou « produit sans licence ».</p>
+              <span class="pb-link">Voir les causes et solutions →</span>
+            </a>
+            <a class="pb-card" href="logiciel-metier-lent-sur-le-reseau/" data-cat="logiciels" data-kw="notre logiciel métier est très lent (base de données en réseau) le logiciel de gestion, de compta ou métier rame pour tout le monde, surtout aux heures de pointe.">
+              <span class="pb-cat">Logiciels & mises à jour</span>
+              <h3>Notre logiciel métier est très lent (base de données en réseau)</h3>
+              <p>Le logiciel de gestion, de compta ou métier rame pour tout le monde, surtout aux heures de pointe.</p>
+              <span class="pb-link">Voir les causes et solutions →</span>
+            </a>
+            <a class="pb-card" href="antivirus-expire-ou-desactive/" data-cat="logiciels" data-kw="mon antivirus est expiré ou affiche « protection désactivée » une alerte signale que la protection est désactivée, expirée ou non à jour.">
+              <span class="pb-cat">Logiciels & mises à jour</span>
+              <h3>Mon antivirus est expiré ou affiche « protection désactivée »</h3>
+              <p>Une alerte signale que la protection est désactivée, expirée ou non à jour.</p>
+              <span class="pb-link">Voir les causes et solutions →</span>
+            </a>
+            <a class="pb-card" href="onedrive-ne-synchronise-plus/" data-cat="cloud" data-kw="onedrive (ou google drive) ne synchronise plus mes fichiers la synchronisation reste bloquée, des fichiers sont figés ou absents sur les autres postes.">
+              <span class="pb-cat">Cloud & partage de fichiers</span>
+              <h3>OneDrive (ou Google Drive) ne synchronise plus mes fichiers</h3>
+              <p>La synchronisation reste bloquée, des fichiers sont figés ou absents sur les autres postes.</p>
+              <span class="pb-link">Voir les causes et solutions →</span>
+            </a>
+            <a class="pb-card" href="acces-refuse-dossier-partage/" data-cat="cloud" data-kw="« accès refusé » à un dossier partagé ou au serveur de fichiers vous ne pouvez plus ouvrir un dossier commun : windows affiche « accès refusé » ou demande des identifiants.">
+              <span class="pb-cat">Cloud & partage de fichiers</span>
+              <h3>« Accès refusé » à un dossier partagé ou au serveur de fichiers</h3>
+              <p>Vous ne pouvez plus ouvrir un dossier commun : Windows affiche « accès refusé » ou demande des identifiants.</p>
+              <span class="pb-link">Voir les causes et solutions →</span>
+            </a>
+            <a class="pb-card" href="fichier-verrouille-autre-utilisateur/" data-cat="cloud" data-kw="« fichier verrouillé par un autre utilisateur », impossible de modifier un document partagé s'ouvre en lecture seule car il est « utilisé par quelqu'un d'autre ».">
+              <span class="pb-cat">Cloud & partage de fichiers</span>
+              <h3>« Fichier verrouillé par un autre utilisateur », impossible de modifier</h3>
+              <p>Un document partagé s'ouvre en lecture seule car il est « utilisé par quelqu'un d'autre ».</p>
+              <span class="pb-link">Voir les causes et solutions →</span>
+            </a></div>
+    <div class="pb-empty" id="pb-empty"><p>Aucune panne ne correspond à votre recherche. <a href="../contact/">Décrivez-nous votre problème</a>, on vous répond sous 24h.</p></div>
+  </div>
+</section>
+
+
+    <section class="section"><div class="wrap"><div class="cta-band reveal">
+      <h2>Un problème informatique dans votre entreprise ?</h2>
+      <p>Confiez-nous un premier regard. L'audit est gratuit, sans engagement, et vous repartez avec un plan clair — même si vous ne travaillez pas avec nous.</p>
+      <div class="hero-cta">
+        <a class="btn btn--primary btn--lg" href="../contact/">Demander un audit gratuit</a>
+        <a class="btn btn--ghost btn--lg" href="tel:+33123456789"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.6a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.5-1.1a2 2 0 0 1 2.1-.5c.8.3 1.7.5 2.6.6a2 2 0 0 1 1.7 2z"/></svg> 01 23 45 67 89</a>
+      </div>
+    </div></div></section>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Accueil", "item": "https://www.dhb-informatique.fr/"}, {"@type": "ListItem", "position": 2, "name": "Pannes fréquentes", "item": "https://www.dhb-informatique.fr/pannes-frequentes/"}]}</script>
+
+<script>
+(function(){
+  var search=document.getElementById('pb-search');
+  var cards=[].slice.call(document.querySelectorAll('.pb-card'));
+  var filters=[].slice.call(document.querySelectorAll('.pb-filter'));
+  var empty=document.getElementById('pb-empty');
+  var count=document.getElementById('pb-count');
+  var cat='all';
+  function norm(s){return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
+  function apply(){
+    var q=norm(search.value.trim());var n=0;
+    cards.forEach(function(c){
+      var okc=(cat==='all'||c.getAttribute('data-cat')===cat);
+      var okq=(!q||norm(c.getAttribute('data-kw')).indexOf(q)>-1);
+      var show=okc&&okq;c.style.display=show?'':'none';if(show)n++;
+    });
+    if(empty)empty.classList.toggle('show',n===0);
+    if(count)count.textContent=n;
+  }
+  search.addEventListener('input',apply);
+  filters.forEach(function(f){f.addEventListener('click',function(){
+    filters.forEach(function(x){x.classList.remove('active')});f.classList.add('active');
+    cat=f.getAttribute('data-cat');apply();
+  });});
+})();
+</script>
+
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div class="footer-contact">
+        <a class="logo" href="../" style="margin-bottom:14px"><span class="logo__mark">D<b>H</b>B</span><span class="logo__tag">Maintenance & sécurité informatique pour les entreprises</span></a>
+        <p>Maintenance, dépannage et sécurité informatique pour les entreprises, indépendants, cabinets, commerces et associations.</p>
+        <p>📍 Sur site en <strong style="color:#cfe0f0">Île-de-France</strong> · 💻 à distance partout en <strong style="color:#cfe0f0">France</strong></p>
+        <p>☎ <a href="tel:+33123456789">01 23 45 67 89</a><br>✉ <a href="mailto:contact@dhb-informatique.fr">contact@dhb-informatique.fr</a></p>
+      </div>
+      <div>
+        <h4>Nos services</h4>
+        <a href="../services/depannage-assistance-informatique/">Dépannage & assistance</a>
+        <a href="../services/maintenance-parc-informatique/">Maintenance du parc</a>
+        <a href="../services/cybersecurite/">Cybersécurité</a>
+        <a href="../services/sauvegarde-restauration/">Sauvegarde & restauration</a>
+        <a href="../services/infogerance-globale/">Infogérance globale</a>
+      </div>
+      <div>
+        <h4>Zones</h4>
+        <a href="../zones/depannage-informatique-paris/">Paris</a>
+        <a href="../zones/depannage-informatique-boulogne-billancourt/">Boulogne-Billancourt</a>
+        <a href="../zones/depannage-informatique-nanterre/">Nanterre</a>
+        <a href="../zones/support-informatique-a-distance-france/">À distance (France)</a>
+        <a href="../zones/">Toutes les zones</a>
+      </div>
+      <div>
+        <h4>Entreprise</h4>
+        <a href="../a-propos/">À propos</a>
+        <a href="../pannes-frequentes/">Pannes fréquentes</a>
+        <a href="../blog/">Blog</a>
+        <a href="../contact/">Contact</a>
+        <a href="../mentions-legales/">Mentions légales</a>
+        <a href="../politique-confidentialite/">Confidentialité (RGPD)</a>
+        <a href="../plan-du-site/">Plan du site</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 DHB. Tous droits réservés. <span class="a-completer">[SIRET, forme juridique : À COMPLÉTER]</span></span>
+      <nav aria-label="Liens légaux">
+        <a href="../mentions-legales/">Mentions légales</a>
+        <a href="../politique-confidentialite/">Confidentialité</a>
+        <a href="../plan-du-site/">Plan du site</a>
+      </nav>
+    </div>
+  </div>
+</footer>
+
+<div class="float-cta">
+  <a class="float-btn wa" href="https://wa.me/33123456789" target="_blank" rel="noopener" aria-label="Nous écrire sur WhatsApp"><svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M.5 23.5 2.1 18A11.3 11.3 0 0 1 .6 12.3C.6 6 5.8.9 12.1.9c3 0 5.9 1.2 8 3.3a11.2 11.2 0 0 1-7.9 19.2c-1.9 0-3.8-.5-5.4-1.4zM6.7 20l.3.2c1.5.9 3.2 1.4 5 1.4a9.3 9.3 0 0 0 0-18.6 9.3 9.3 0 0 0-7.9 14.2l.2.4-1 3.5zM17.5 14.3c-.1-.2-.4-.3-.8-.5s-2-1-2.3-1.1c-.3-.1-.5-.2-.8.1s-.9 1.1-1.1 1.3c-.2.2-.4.3-.7.1a7.6 7.6 0 0 1-3.8-3.3c-.3-.5.3-.5.8-1.5.1-.2 0-.4 0-.5l-1-2.5c-.3-.7-.6-.6-.8-.6h-.7c-.2 0-.6.1-.9.4a3.6 3.6 0 0 0-1.1 2.7c0 1.6 1.2 3.1 1.3 3.3.2.2 2.3 3.6 5.6 5 2.1.9 2.9 1 3.9.8.6-.1 2-.8 2.2-1.6.3-.8.3-1.5.2-1.6z"/></svg><span>WhatsApp</span></a>
+  <a class="float-btn" href="tel:+33123456789" aria-label="Être rappelé(e)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.6a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.5-1.1a2 2 0 0 1 2.1-.5c.8.3 1.7.5 2.6.6a2 2 0 0 1 1.7 2z"/></svg><span>Être rappelé(e)</span></a>
+</div>
+
+<div class="cookie-banner" role="dialog" aria-live="polite" aria-label="Gestion des cookies">
+  <div class="cookie-inner">
+    <p><strong>🍪 Respect de votre vie privée.</strong> Nous utilisons uniquement des cookies nécessaires au fonctionnement du site et, avec votre accord, des cookies de mesure d'audience. Vous pouvez refuser aussi simplement qu'accepter.</p>
+    <div class="cookie-actions">
+      <button class="btn btn--outline" data-cookie="refuse">Refuser</button>
+      <button class="btn btn--primary" data-cookie="accept">Tout accepter</button>
+    </div>
+  </div>
+</div>
+
+<script src="../assets/js/main.js" defer></script>
+</body>
+</html>

@@ -2,6 +2,7 @@
 from base import (page, SERVICES, SERVICE_ICON, IC, contact_form, cta_band,
                   localbusiness_jsonld, PHONE_DISPLAY, PHONE_LINK, root)
 import blog_data
+import problems_data as pd
 
 
 def build():
@@ -61,6 +62,20 @@ def build():
     steps_html = ""
     for i, (t, d) in enumerate(steps, 1):
         steps_html += f'<div class="step reveal"><div class="num">{i}</div><h3>{t}</h3><p>{d}</p></div>'
+
+    popular_slugs = ["ordinateur-de-bureau-trop-lent", "plus-dinternet-au-bureau",
+                     "imprimante-hors-ligne", "ecran-bleu-windows",
+                     "fichiers-chiffres-rancon-ransomware", "messagerie-pro-nenvoie-plus"]
+    pb_popular = ""
+    for s in popular_slugs:
+        pr = pd.get(s)
+        if pr:
+            pb_popular += f"""
+        <a class="card reveal" href="pannes-frequentes/{pr['slug']}/" style="color:inherit">
+          <span class="article-tag" style="margin-bottom:10px">{pd.CATEGORIES[pr['cat']]}</span>
+          <h3 style="font-size:1.08rem">{pr['q']}</h3>
+          <span class="card-link">Causes et solutions</span>
+        </a>"""
 
     posts = blog_data.ARTICLES[:3]
     post_cards = ""
@@ -183,6 +198,18 @@ def build():
 
 <section class="section">
   <div class="wrap">
+    <div class="center" style="max-width:720px;margin:0 auto 40px">
+      <span class="eyebrow">Base de pannes</span>
+      <h2>Un problème précis ? Trouvez-le ici</h2>
+      <p class="lead">Plus de {len(pd.P)} pannes informatiques courantes, avec leurs causes et des solutions concrètes. Cherchez la vôtre.</p>
+    </div>
+    <div class="grid grid-3">{pb_popular}</div>
+    <div class="center" style="margin-top:30px"><a class="btn btn--dark btn--lg" href="pannes-frequentes/">Voir toutes les pannes fréquentes</a></div>
+  </div>
+</section>
+
+<section class="section section--gris">
+  <div class="wrap">
     <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px;margin-bottom:40px">
       <div><span class="eyebrow">Le blog</span><h2 class="mb-0">Comprendre et résoudre vos soucis informatiques</h2></div>
       <a class="btn btn--dark" href="blog/">Voir tous les articles</a>
@@ -191,7 +218,7 @@ def build():
   </div>
 </section>
 
-<section class="section section--gris">
+<section class="section">
   <div class="wrap">
     <div class="grid grid-2" style="align-items:center;gap:48px">
       <div class="reveal">

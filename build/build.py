@@ -9,7 +9,7 @@ ROOT = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 
 import base  # noqa: E402
-import pages_home, pages_services, pages_zones, pages_blog, pages_misc  # noqa: E402
+import pages_home, pages_services, pages_zones, pages_blog, pages_misc, pages_problems  # noqa: E402
 
 
 def write(rel, content):
@@ -21,7 +21,7 @@ def write(rel, content):
 
 def main():
     files = {}
-    for mod in (pages_home, pages_services, pages_zones, pages_blog, pages_misc):
+    for mod in (pages_home, pages_services, pages_zones, pages_blog, pages_misc, pages_problems):
         files.update(mod.build())
 
     for rel, html in files.items():
@@ -41,11 +41,12 @@ def main():
         # priorités simples
         if url_path == "":
             prio = "1.0"
-        elif url_path in ("services/", "zones/", "blog/", "contact/"):
+        elif url_path in ("services/", "zones/", "blog/", "contact/", "pannes-frequentes/"):
             prio = "0.9"
         elif url_path.startswith("services/") or url_path.startswith("zones/"):
             prio = "0.8"
-        elif url_path.startswith("blog/") and url_path != "blog/":
+        elif (url_path.startswith("blog/") and url_path != "blog/") or \
+             (url_path.startswith("pannes-frequentes/") and url_path != "pannes-frequentes/"):
             prio = "0.6"
         elif url_path in ("mentions-legales/", "politique-confidentialite/", "plan-du-site/"):
             prio = "0.3"
