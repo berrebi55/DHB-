@@ -20,8 +20,8 @@ PHONE_L = "+33123456789"                    # [EXEMPLE]
 WHATSAPP = "33123456789"                    # [EXEMPLE]
 EMAIL = "bonjour@dhb-assistance.fr"         # [EXEMPLE]
 YEAR = 2026
-PRIX_ABO = "19,90"   # [EXEMPLE — à ajuster]
-PRIX_INT = "59"      # [EXEMPLE — à ajuster]
+PRIX_ABO = "14,90"   # recommandé d'après l'étude de marché (modifiable dans l'admin)
+PRIX_INT = "59"      # recommandé d'après l'étude de marché (modifiable dans l'admin)
 
 ACCENT_CSS = """<style>
 :root{--cyan:#22c55e;--cyan-600:#16a34a;--cyan-700:#15803d;}

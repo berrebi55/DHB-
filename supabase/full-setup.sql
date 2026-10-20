@@ -35,7 +35,7 @@ create table if not exists public.settings (
   primary key (entity, skey)
 );
 insert into public.settings (entity, skey, value) values
-  ('particuliers','abonnement_prix','19,90'),
+  ('particuliers','abonnement_prix','14,90'),
   ('particuliers','intervention_prix','59')
 on conflict (entity, skey) do nothing;
 
