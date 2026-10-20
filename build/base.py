@@ -4,7 +4,7 @@
 # --- Valeurs d'EXEMPLE à remplacer par le propriétaire -----------------------
 SITE_NAME = "DHB"
 SIGNATURE = "Maintenance & sécurité informatique pour les entreprises"
-DOMAIN = "https://www.dhb-informatique.fr"          # [EXEMPLE À REMPLACER]
+DOMAIN = "https://pro.dhb-groupe.fr"                 # [EXEMPLE À REMPLACER] — filiale Infogérance (entreprises)
 PHONE_DISPLAY = "01 23 45 67 89"                      # [EXEMPLE À REMPLACER]
 PHONE_LINK = "+33123456789"                           # [EXEMPLE À REMPLACER]
 WHATSAPP = "33123456789"                              # [EXEMPLE À REMPLACER]

@@ -7,8 +7,8 @@
 <title>Administration — DHB</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
-<link rel="stylesheet" href="../assets/css/style.css">
-<link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
 <style>
   body { background: var(--blanc-casse); }
   .adm-top { background: var(--nuit); color:#fff; padding:14px 0; position:sticky; top:0; z-index:30; }
@@ -100,6 +100,12 @@
 
     <div class="panel">
       <div class="toolbar">
+        <select class="status" id="entity-filter" title="Filiale">
+          <option value="all">Toutes les filiales</option>
+          <option value="groupe">DHB Groupe</option>
+          <option value="infogerance">Infogérance (pro)</option>
+          <option value="particuliers">Particuliers</option>
+        </select>
         <div class="tabs" id="type-tabs">
           <button class="tab active" data-type="all">Tout</button>
           <button class="tab" data-type="devis">Devis / audits</button>
@@ -124,7 +130,7 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="../assets/js/supabase-config.js"></script>
+<script src="assets/js/supabase-config.js"></script>
 <script type="module">
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm';
 
@@ -134,7 +140,9 @@ const sb = createClient(cfg.url, cfg.anonKey);
 const $ = (s) => document.querySelector(s);
 const login = $('#login'), app = $('#app');
 let LEADS = [];
-let filterType = 'all', filterStatus = 'all', q = '';
+let filterType = 'all', filterStatus = 'all', filterEntity = 'all', q = '';
+
+const ENTITY = { groupe:'Groupe', infogerance:'Infogérance', particuliers:'Particuliers' };
 
 const STATUS = {
   nouveau:'Nouveau', contacte:'Contacté', devis_envoye:'Devis envoyé',
@@ -205,6 +213,7 @@ function visible(){
   return LEADS.filter(l=>{
     if (filterType!=='all' && l.type!==filterType) return false;
     if (filterStatus!=='all' && l.status!==filterStatus) return false;
+    if (filterEntity!=='all' && (l.entity||'infogerance')!==filterEntity) return false;
     if (q){
       const hay=((l.nom||'')+' '+(l.entreprise||'')+' '+(l.email||'')+' '+(l.telephone||'')+' '+(l.message||'')+' '+(l.service||'')).toLowerCase();
       if (!hay.includes(q)) return false;
@@ -218,11 +227,12 @@ function render(){
   const rows = visible();
   $('#count').textContent = rows.length+' demande'+(rows.length>1?'s':'');
   if (!rows.length){ $('#table-wrap').innerHTML='<div class="empty-state">Aucune demande pour ce filtre.</div>'; return; }
-  let html='<table><thead><tr><th>Date</th><th>Contact</th><th>Type</th><th>Message</th><th>Statut</th><th>Notes</th><th></th></tr></thead><tbody>';
+  let html='<table><thead><tr><th>Date</th><th>Filiale</th><th>Contact</th><th>Type</th><th>Message</th><th>Statut</th><th>Notes</th><th></th></tr></thead><tbody>';
   for (const l of rows){
     const opts=Object.entries(STATUS).map(([k,v])=>`<option value="${k}" ${l.status===k?'selected':''}>${v}</option>`).join('');
     html+=`<tr class="${l.is_read?'':'unread'}" data-id="${l.id}">
       <td class="lead-sub">${fmtDate(l.created_at)}</td>
+      <td><span class="pill" style="background:var(--gris-50);color:var(--nuit);border:1px solid var(--gris-200)">${ENTITY[l.entity]||esc(l.entity)||'Infogérance'}</span></td>
       <td>
         <div class="lead-name">${esc(l.nom)||'—'}</div>
         <div class="lead-sub">${esc(l.entreprise)||''}</div>
@@ -283,6 +293,7 @@ $('#type-tabs').addEventListener('click',(e)=>{
   e.target.classList.add('active'); filterType=e.target.dataset.type; render();
 });
 $('#status-filter').addEventListener('change',(e)=>{ filterStatus=e.target.value; render(); });
+$('#entity-filter').addEventListener('change',(e)=>{ filterEntity=e.target.value; render(); });
 $('#search').addEventListener('input',(e)=>{ q=e.target.value.trim().toLowerCase(); render(); });
 
 // Démarrage

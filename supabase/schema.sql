@@ -9,6 +9,7 @@
 create table if not exists public.leads (
   id            uuid primary key default gen_random_uuid(),
   created_at    timestamptz not null default now(),
+  entity        text not null default 'infogerance',   -- filiale : groupe | infogerance | particuliers | ...
   type          text not null default 'devis'
                   check (type in ('devis', 'question')),
   nom           text,
@@ -28,6 +29,10 @@ create table if not exists public.leads (
 create index if not exists leads_created_at_idx on public.leads (created_at desc);
 create index if not exists leads_status_idx     on public.leads (status);
 create index if not exists leads_type_idx        on public.leads (type);
+create index if not exists leads_entity_idx      on public.leads (entity);
+
+-- Si la table existe déjà (créée avant l'ajout du multi-filiales), ajoutez la colonne :
+alter table public.leads add column if not exists entity text not null default 'infogerance';
 
 -- 2) Mise à jour automatique de updated_at
 create or replace function public.set_updated_at()

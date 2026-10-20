@@ -1,75 +1,73 @@
-# Site web DHB — Maintenance & sécurité informatique pour les entreprises
+# DHB — Groupe multi-sites + admin centralisé
 
-Site vitrine statique, responsive et optimisé SEO pour **DHB**, prestataire de
-maintenance, dépannage et sécurité informatique (infogérance) pour les entreprises.
-Interventions sur site en Île-de-France, support à distance partout en France.
+Monorepo du **groupe DHB** : plusieurs sites (filiales) qui partagent **un seul
+back-office d'administration** et **une seule base de données Supabase**
+(demandes de devis / messages centralisés, filtrables par filiale).
 
-## Contenu du site (46 pages)
+## 🗂️ Structure
 
-- **Accueil** orienté conversion (hero, problème/solution, services, engagements, process, confiance, blog, formulaire).
-- **7 pages services** : dépannage & assistance, maintenance du parc, supervision & monitoring (via NinjaOne), cybersécurité, sauvegarde & restauration, messagerie & cloud pro, infogérance globale.
-- **9 pages locales (SEO local)** : Paris, Boulogne-Billancourt, Saint-Denis, Nanterre, Créteil, Versailles, Montreuil, Argenteuil + support à distance (France). Contenu unique par ville, modèle à dupliquer.
-- **20 articles de blog** réellement rédigés (800–1300 mots), organisés en cocon sémantique (5 thèmes → pages services piliers).
-- **À propos, Contact, Mentions légales, Politique de confidentialité (RGPD), Plan du site, 404.**
-- `sitemap.xml`, `robots.txt`, données structurées JSON-LD (entreprise locale, FAQ, articles, fil d'Ariane).
+```
+DHB-/
+├─ index.html                 ← Portail de DEV local (liens vers tous les sites)
+├─ start.sh                   ← Lance le serveur de dev local
+├─ sites/
+│   ├─ groupe/                ← Site DHB GROUPE (vitrine chapeau)
+│   └─ infogerance/           ← Filiale « DHB Infogérance » (entreprises) — site complet
+│       (ensuite : particuliers/ …)
+├─ admin/                     ← ESPACE ADMIN CENTRALISÉ (toutes filiales)
+├─ supabase/                  ← Base de données partagée (schéma, fonction email, guide)
+└─ build/                     ← Générateurs de sites (Python, sans dépendance)
+    ├─ *.py                   ← générateur du site Infogérance → sites/infogerance/
+    └─ groupe/build_groupe.py ← générateur du site Groupe → sites/groupe/
+```
 
-## Principes respectés
+Chaque site est **autonome** (ses propres `assets/`), donc déployable seul sur son
+(sous-)domaine. Tous pointent vers le **même Supabase** → admin centralisé.
 
-- **Zéro invention** : aucun faux avis, aucun chiffre ni ancienneté inventés. Les preuves chiffrées sont remplacées par des engagements. La structure d'avis reste vide (« Vos premiers retours clients apparaîtront ici »).
-- **Aucun prix** nulle part — uniquement des boutons « devis / audit gratuit ».
-- Tout élément non vérifiable est marqué **`[À COMPLÉTER PAR LE PROPRIÉTAIRE]`**.
-- RGPD : bandeau cookies (refus aussi simple que l'acceptation), consentement sur le formulaire, pages légales.
-- Accessibilité (contrastes, navigation clavier, lien d'évitement, textes alternatifs), responsive mobile-first, chargement rapide.
-
-## ⚠️ Valeurs d'EXEMPLE à remplacer avant mise en ligne
-
-Elles sont centralisées en haut de **`build/base.py`** (puis régénérer, voir ci-dessous) :
-
-| Variable | Valeur d'exemple actuelle |
-|---|---|
-| `DOMAIN` | `https://www.dhb-informatique.fr` |
-| `PHONE_DISPLAY` / `PHONE_LINK` | `01 23 45 67 89` / `+33123456789` |
-| `WHATSAPP` | `33123456789` |
-| `EMAIL` | `contact@dhb-informatique.fr` |
-| `ADDRESS_CITY` | `Paris` |
-
-À compléter aussi dans le contenu (balises `[À COMPLÉTER PAR LE PROPRIÉTAIRE]`) :
-certifications/partenaires réels, SIRET et forme juridique, hébergeur (mentions légales),
-présentation du/des fondateur(s), lien vers la plateforme de supervision NinjaOne, horaires exacts.
-
-> Le formulaire de contact est fonctionnel côté affichage (confirmation après envoi) mais
-> **n'envoie aucune donnée** : il faut le brancher à un service d'envoi d'emails / backend
-> avant la mise en production.
-
-## Régénérer le site
-
-Le HTML est généré par un script Python (sans dépendance) à partir de gabarits partagés,
-pour garantir la cohérence de toutes les pages.
+## ▶️ Lancer en local
 
 ```bash
-python3 build/build.py
+./start.sh            # (ou : python3 -m http.server 8000)
+```
+Puis ouvrez **http://localhost:8000/** (portail), ou directement :
+
+| | URL locale |
+|---|---|
+| Portail de dev | http://localhost:8000/ |
+| DHB Groupe | http://localhost:8000/sites/groupe/ |
+| DHB Infogérance | http://localhost:8000/sites/infogerance/ |
+| **Admin centralisé** | http://localhost:8000/admin/ |
+
+> Windows : `py -m http.server 8000`. Il faut Python 3 installé.
+
+## 🔧 Régénérer les sites après modification du contenu
+
+```bash
+python3 build/build.py              # régénère le site Infogérance
+python3 build/groupe/build_groupe.py # régénère le site Groupe
 ```
 
-Les fichiers HTML, `sitemap.xml` et `robots.txt` sont (re)créés à la racine.
+## 🗄️ Base de données & admin (Supabase)
 
-### Organisation
+Voir **`supabase/README-SETUP.md`**. En résumé :
+1. Exécuter `supabase/schema.sql` dans le SQL Editor (crée `leads` + colonne `entity` + RLS + temps réel).
+2. Créer votre compte admin (Authentication → Users).
+3. Chaque demande est étiquetée par **filiale** (`entity` : `groupe` / `infogerance` / `particuliers`),
+   et l'admin les filtre par filiale, statut, type, recherche — **en direct**.
 
-```
-assets/css/style.css      # design system complet
-assets/js/main.js         # menu mobile, cookies RGPD, animations, formulaire
-assets/img/               # favicon + image de partage (OG)
-build/base.py             # gabarit, en-tête/pied, composants, SEO, valeurs d'exemple
-build/pages_home.py       # accueil
-build/pages_services.py   # pages services + index
-build/pages_zones.py      # pages locales + index
-build/blog_data.py        # contenu éditorial des articles
-build/pages_blog.py       # rendu du blog
-build/pages_misc.py       # à propos, contact, légal, plan du site, 404
-build/build.py            # orchestrateur + sitemap + robots
-```
+Chaque site fixe sa filiale dans `sites/<site>/assets/js/supabase-config.js` (`entity`).
 
-### Ajouter une ville (SEO local)
+## 🔐 Sécurité des clés
+- Seule la **clé publique** Supabase est dans le code (normal, protégé par RLS).
+- La **clé secrète** n'est jamais dans le dépôt (uniquement variables d'env Supabase).
+- Pensez à **régénérer** la clé secrète (elle a transité en clair lors de l'échange).
 
-Ajouter une entrée dans `VILLES` (`build/base.py`) et le contenu local correspondant
-dans `VILLE_CONTENT` (`build/pages_zones.py`), puis régénérer. Écrire un contenu local
-réel (contexte, tissu économique, délais) pour éviter toute duplication.
+## 🌐 Mise en ligne (plus tard)
+En local pour l'instant. En production, chaque dossier `sites/<nom>/` + `admin/`
+se publie sur son propre (sous-)domaine (Netlify, Cloudflare Pages, OVH…), tous
+reliés au même projet Supabase. Le portail `index.html` racine n'est qu'un outil de dev.
+
+## 🚧 Feuille de route
+- **Fait** : site Groupe, filiale Infogérance (complète), admin centralisé, base devis/messages, notif email.
+- **Phase 2** : site Particuliers complet + **paiement en ligne** (abonnement + intervention, Stripe),
+  gestion de contenu depuis l'admin, notifications WhatsApp/SMS.

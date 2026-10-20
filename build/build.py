@@ -5,7 +5,8 @@ import sys
 import datetime
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.dirname(HERE)
+REPO = os.path.dirname(HERE)
+ROOT = os.path.join(REPO, "sites", "infogerance")  # sortie de la filiale Infogérance
 sys.path.insert(0, HERE)
 
 import base  # noqa: E402
