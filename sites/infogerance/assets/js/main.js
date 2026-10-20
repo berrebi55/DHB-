@@ -138,4 +138,25 @@
     if (acc) acc.addEventListener('click', function () { decide('accepted'); });
     if (ref) ref.addEventListener('click', function () { decide('refused'); });
   }
+
+  // Paramètres éditables (prix…) : lus depuis Supabase, injectés dans [data-setting].
+  // La valeur statique dans le HTML reste le repli (robuste + SEO).
+  var setEls = document.querySelectorAll('[data-setting]');
+  if (setEls.length) {
+    var sb2 = getSupabase();
+    var ent = (window.DHB_SUPABASE && window.DHB_SUPABASE.entity) || '';
+    if (sb2 && ent) {
+      sb2.then(function (client) {
+        return client.from('settings').select('skey,value').eq('entity', ent);
+      }).then(function (res) {
+        if (!res || res.error || !res.data) return;
+        var map = {};
+        res.data.forEach(function (r) { map[r.skey] = r.value; });
+        setEls.forEach(function (el) {
+          var k = el.getAttribute('data-setting');
+          if (map[k] != null && map[k] !== '') el.textContent = map[k];
+        });
+      }).catch(function () {});
+    }
+  }
 })();

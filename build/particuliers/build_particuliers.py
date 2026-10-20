@@ -172,8 +172,7 @@ def offres_cards(depth):
           <li>Conseils, mises à jour et sécurité</li>
           <li>Un interlocuteur patient, sans jargon</li>
         </ul>
-        <div class="price-tag">À partir de {PRIX_ABO} €<small>/mois</small></div>
-        <p style="margin:-4px 0 8px"><span class="a-completer">[EXEMPLE — à ajuster]</span></p>
+        <div class="price-tag">À partir de <span data-setting="abonnement_prix">{PRIX_ABO}</span> €<small>/mois</small></div>
         <a class="btn btn--primary btn--block" href="{R}contact/">Je m'abonne</a>
       </div>
       <div class="card reveal" style="border-top:4px solid var(--cyan-600)">
@@ -185,8 +184,7 @@ def offres_cards(depth):
           <li>Tarif annoncé avant toute intervention</li>
           <li>Paiement simple</li>
         </ul>
-        <div class="price-tag">À partir de {PRIX_INT} €</div>
-        <p style="margin:-4px 0 8px"><span class="a-completer">[EXEMPLE — à ajuster]</span></p>
+        <div class="price-tag">À partir de <span data-setting="intervention_prix">{PRIX_INT}</span> €</div>
         <a class="btn btn--dark btn--block" href="{R}contact/">Être aidé(e) maintenant</a>
       </div>
     </div>"""

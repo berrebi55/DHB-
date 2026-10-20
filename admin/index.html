@@ -93,6 +93,12 @@
   </div>
 
   <div class="wrap" style="padding-top:22px;padding-bottom:60px">
+    <div class="tabs" style="margin-bottom:18px">
+      <button class="tab active" data-view="leads">📥 Demandes</button>
+      <button class="tab" data-view="settings">⚙️ Prix & paramètres</button>
+    </div>
+
+    <div id="panel-leads">
     <h1 style="font-size:1.6rem;margin:6px 0 0">Demandes & messages</h1>
     <p class="muted">Les nouvelles demandes apparaissent ici en direct.</p>
 
@@ -124,6 +130,22 @@
         <span class="muted" id="count" style="margin-left:auto"></span>
       </div>
       <div id="table-wrap"><div class="empty-state">Chargement…</div></div>
+    </div>
+    </div><!-- /panel-leads -->
+
+    <div id="panel-settings" class="hidden">
+      <h1 style="font-size:1.6rem;margin:6px 0 0">Prix & paramètres</h1>
+      <p class="muted">Modifiez les prix affichés sur les sites. La mise à jour est immédiate pour les visiteurs.</p>
+      <div class="panel" style="padding:24px;max-width:640px">
+        <div class="form-row"><label for="set-entity">Site concerné</label>
+          <select class="status" id="set-entity"><option value="particuliers">DHB Particuliers</option></select>
+        </div>
+        <div id="set-fields"></div>
+        <div id="set-err" class="form-err"></div>
+        <button class="btn btn--primary" id="set-save">Enregistrer</button>
+        <span class="muted" id="set-msg" style="margin-left:12px"></span>
+        <p class="muted" style="margin-top:16px">La table <code>settings</code> doit exister (voir <code>supabase/settings.sql</code>).</p>
+      </div>
     </div>
   </div>
 </div>
@@ -295,6 +317,52 @@ $('#type-tabs').addEventListener('click',(e)=>{
 $('#status-filter').addEventListener('change',(e)=>{ filterStatus=e.target.value; render(); });
 $('#entity-filter').addEventListener('change',(e)=>{ filterEntity=e.target.value; render(); });
 $('#search').addEventListener('input',(e)=>{ q=e.target.value.trim().toLowerCase(); render(); });
+
+// ---------- Onglets (Demandes / Paramètres) ----------
+document.querySelectorAll('.tab[data-view]').forEach((b)=>{
+  b.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab[data-view]').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    const v=b.getAttribute('data-view');
+    $('#panel-leads').classList.toggle('hidden', v!=='leads');
+    $('#panel-settings').classList.toggle('hidden', v!=='settings');
+    if (v==='settings') loadSettings();
+  });
+});
+
+// ---------- Prix & paramètres éditables ----------
+const SETTINGS_FIELDS = {
+  particuliers: [
+    { key:'abonnement_prix', label:'Abonnement — « à partir de » (€/mois)', def:'19,90' },
+    { key:'intervention_prix', label:'Intervention ponctuelle — « à partir de » (€)', def:'59' },
+  ],
+};
+async function loadSettings(){
+  const ent=$('#set-entity').value;
+  const fields=SETTINGS_FIELDS[ent]||[];
+  const { data, error } = await sb.from('settings').select('skey,value').eq('entity',ent);
+  const map={}; if(!error && data) data.forEach(r=>map[r.skey]=r.value);
+  $('#set-fields').innerHTML = fields.map(f=>`
+    <div class="form-row"><label for="st-${f.key}">${f.label}</label>
+    <input id="st-${f.key}" data-key="${f.key}" value="${esc(map[f.key]!=null?map[f.key]:f.def)}"></div>`).join('');
+  const err=$('#set-err');
+  if (error){ err.textContent="La table 'settings' est introuvable. Exécutez supabase/settings.sql."; err.style.display='block'; }
+  else { err.style.display='none'; }
+}
+$('#set-entity').addEventListener('change', loadSettings);
+$('#set-save').addEventListener('click', async ()=>{
+  const ent=$('#set-entity').value;
+  const rows=[].slice.call(document.querySelectorAll('#set-fields input')).map(i=>({
+    entity:ent, skey:i.getAttribute('data-key'), value:i.value.trim()
+  }));
+  const btn=$('#set-save'); btn.disabled=true; btn.textContent='Enregistrement…';
+  const { error } = await sb.from('settings').upsert(rows, { onConflict:'entity,skey' });
+  btn.disabled=false; btn.textContent='Enregistrer';
+  const msg=$('#set-msg');
+  if (error){ msg.textContent='Erreur : '+error.message; msg.style.color='var(--danger)'; }
+  else { msg.textContent='✅ Enregistré. Les sites afficheront le nouveau prix immédiatement.'; msg.style.color='var(--succes)'; toast('Prix mis à jour'); }
+  setTimeout(()=>{ msg.textContent=''; }, 5000);
+});
 
 // Démarrage
 if (!cfg.url){ $('#table-wrap').innerHTML='<div class="empty-state">Configuration Supabase manquante.</div>'; }
