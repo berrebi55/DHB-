@@ -313,6 +313,7 @@ def page(depth, slug_path, title, description, body, extra_head="", og_type="web
   </div>
 </header>
 {mobile_nav_html(depth)}
+<div class="dhb-annonce" data-setting="annonce" hidden></div>
 <main id="contenu">
 {body}
 </main>

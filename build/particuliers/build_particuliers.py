@@ -45,6 +45,21 @@ ACCENT_CSS = """<style>
 @media(max-width:680px){.pb-grid{grid-template-columns:1fr}}
 </style>"""
 
+STRIPE_SCRIPT = """<script>
+(function(){
+  if(!(window.DHB_STRIPE&&window.DHB_STRIPE.enabled))return;
+  var cfg=window.DHB_SUPABASE||{}, url=cfg.url||'', key=cfg.anonKey||'';
+  document.querySelectorAll('[data-checkout]').forEach(function(b){
+    b.addEventListener('click',function(e){
+      e.preventDefault(); var plan=b.getAttribute('data-checkout'), back=b.getAttribute('href'), lbl=b.textContent; b.textContent='Redirection…';
+      fetch(url+'/functions/v1/create-checkout',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key,'apikey':key},body:JSON.stringify({plan:plan})})
+      .then(function(r){return r.json();}).then(function(d){ if(d&&d.url){location.href=d.url;} else {b.textContent=lbl;location.href=back;} })
+      .catch(function(){b.textContent=lbl;location.href=back;});
+    });
+  });
+})();
+</script>"""
+
 IC_PHONE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.6a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.5-1.1a2 2 0 0 1 2.1-.5c.8.3 1.7.5 2.6.6a2 2 0 0 1 1.7 2z"/></svg>'
 CHECK = '<svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>'
 
@@ -106,6 +121,7 @@ def page(depth, slug_path, title, desc, body, extra=""):
   <a href="{R}contact/">Contact</a>
   <a class="btn btn--primary btn--block" href="{R}contact/">Être aidé(e)</a>
 </div>
+<div class="dhb-annonce" data-setting="annonce" hidden></div>
 <main id="contenu">
 {body}
 </main>
@@ -135,6 +151,7 @@ def page(depth, slug_path, title, desc, body, extra=""):
 </div>
 <script src="{R}assets/js/supabase-config.js"></script>
 <script src="{R}assets/js/main.js" defer></script>
+{STRIPE_SCRIPT}
 </body>
 </html>"""
 
@@ -159,6 +176,22 @@ def contact_form(depth, title="Être aidé(e) rapidement"):
     </div>"""
 
 
+def lead_magnet(depth):
+    pdf = "../" * depth + "assets/guides/guide-anti-arnaques.pdf"
+    return f"""
+    <div class="lead-magnet reveal"><div class="lm-ic">🛡️</div><div class="lm-body">
+      <h3>Guide gratuit : éviter les arnaques informatiques</h3>
+      <p><strong>Les 5 pièges les plus courants</strong> (faux SMS, faux support, phishing…) et comment réagir. Laissez votre email pour le recevoir, ou téléchargez-le directement.</p>
+      <form data-demo-form data-type="question" novalidate>
+        <div class="form-ok">✅ Merci ! <a href="{pdf}" target="_blank" rel="noopener"><strong>Télécharger le guide (PDF)</strong></a>.</div>
+        <input type="hidden" name="message" value="Demande du guide anti-arnaques">
+        <input name="email" type="email" placeholder="Votre email" required aria-label="Votre email">
+        <button class="btn btn--primary" type="submit">Recevoir le guide</button>
+      </form>
+      <p style="margin:10px 0 0;font-size:.85rem"><a href="{pdf}" target="_blank" rel="noopener">📥 Télécharger directement (PDF)</a></p>
+    </div></div>"""
+
+
 def offres_cards(depth):
     R = "../" * depth
     return f"""
@@ -173,7 +206,7 @@ def offres_cards(depth):
           <li>Un interlocuteur patient, sans jargon</li>
         </ul>
         <div class="price-tag">À partir de <span data-setting="abonnement_prix">{PRIX_ABO}</span> €<small>/mois</small></div>
-        <a class="btn btn--primary btn--block" href="{R}contact/">Je m'abonne</a>
+        <a class="btn btn--primary btn--block" href="{R}contact/" data-checkout="abonnement">Je m'abonne</a>
       </div>
       <div class="card reveal" style="border-top:4px solid var(--cyan-600)">
         <h3>Intervention ponctuelle</h3>
@@ -185,7 +218,7 @@ def offres_cards(depth):
           <li>Paiement simple</li>
         </ul>
         <div class="price-tag">À partir de <span data-setting="intervention_prix">{PRIX_INT}</span> €</div>
-        <a class="btn btn--dark btn--block" href="{R}contact/">Être aidé(e) maintenant</a>
+        <a class="btn btn--dark btn--block" href="{R}contact/" data-checkout="intervention">Être aidé(e) maintenant</a>
       </div>
     </div>"""
 
@@ -247,6 +280,7 @@ def home():
     <a class="btn btn--dark" href="aide/">Tout le centre d'aide</a>
   </div>
   <div class="pb-grid">{cards}</div>
+  <div style="max-width:820px;margin:34px auto 0">{lead_magnet(0)}</div>
 </div></section>
 
 <section class="section section--gris"><div class="wrap">
@@ -356,6 +390,7 @@ def aide_page(a):
   </div>
   <div class="article-body" style="max-width:820px;margin-top:40px">
     <div class="callout" style="background:#f0fdf4;border-color:#bbf7d0"><strong>On peut s'en occuper pour vous</strong><br>{a['call']}</div>
+    {lead_magnet(2)}
   </div>
 </div></section>
 <section class="section section--gris"><div class="wrap">
@@ -438,6 +473,16 @@ def build():
             '<p>DHB Particuliers collecte via le formulaire uniquement les informations nécessaires pour vous recontacter et vous aider (nom, email, téléphone, message). Elles ne sont jamais revendues.</p>'
             f'<h2>Vos droits</h2><p>Conformément au RGPD : accès, rectification, suppression. Contact : <a href="mailto:{EMAIL}">{EMAIL}</a>.</p><p class="a-completer">[À COMPLÉTER : durées de conservation, mesure d\'audience.]</p>'),
     }
+    # Pages de retour paiement (Stripe)
+    pages["paiement-reussi/index.html"] = page(1, "paiement-reussi/", f"Merci — {NAME}",
+        "Votre paiement a bien été pris en compte. Merci !",
+        f"""<section class="page-hero"><div class="wrap"><h1>Merci ! 🎉</h1><p>Votre paiement a bien été pris en compte. On revient vers vous très vite.</p>
+        <div class="hero-cta"><a class="btn btn--primary btn--lg" href="../">Retour à l'accueil</a></div></div></section>""")
+    pages["paiement-annule/index.html"] = page(1, "paiement-annule/", f"Paiement annulé — {NAME}",
+        "Le paiement a été annulé.",
+        f"""<section class="page-hero"><div class="wrap"><h1>Paiement annulé</h1><p>Aucun montant n'a été débité. Vous pouvez réessayer, ou nous contacter si vous avez une question.</p>
+        <div class="hero-cta"><a class="btn btn--primary btn--lg" href="../abonnement/">Voir les formules</a><a class="btn btn--ghost btn--lg" href="../contact/">Nous contacter</a></div></div></section>""")
+
     for a in ad.A:
         pages[f"aide/{a['slug']}/index.html"] = aide_page(a)
 

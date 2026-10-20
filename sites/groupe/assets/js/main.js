@@ -154,7 +154,7 @@
         res.data.forEach(function (r) { map[r.skey] = r.value; });
         setEls.forEach(function (el) {
           var k = el.getAttribute('data-setting');
-          if (map[k] != null && map[k] !== '') el.textContent = map[k];
+          if (map[k] != null && map[k] !== '') { el.textContent = map[k]; el.hidden = false; }
         });
       }).catch(function () {});
     }

@@ -151,7 +151,7 @@
       <p class="muted">Modifiez les prix affichés sur les sites. La mise à jour est immédiate pour les visiteurs.</p>
       <div class="panel" style="padding:24px;max-width:640px">
         <div class="form-row"><label for="set-entity">Site concerné</label>
-          <select class="status" id="set-entity"><option value="particuliers">DHB Particuliers</option></select>
+          <select class="status" id="set-entity"><option value="particuliers">DHB Particuliers</option><option value="infogerance">DHB Infogérance</option><option value="groupe">DHB Groupe</option></select>
         </div>
         <div id="set-fields"></div>
         <div id="set-err" class="form-err"></div>
@@ -531,6 +531,13 @@ const SETTINGS_FIELDS = {
   particuliers: [
     { key:'abonnement_prix', label:'Abonnement — « à partir de » (€/mois)', def:'19,90' },
     { key:'intervention_prix', label:'Intervention ponctuelle — « à partir de » (€)', def:'59' },
+    { key:'annonce', label:'Bandeau d\'annonce (laisser vide = masqué)', def:'' },
+  ],
+  infogerance: [
+    { key:'annonce', label:'Bandeau d\'annonce (laisser vide = masqué)', def:'' },
+  ],
+  groupe: [
+    { key:'annonce', label:'Bandeau d\'annonce (laisser vide = masqué)', def:'' },
   ],
 };
 async function loadSettings(){

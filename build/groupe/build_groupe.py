@@ -101,6 +101,7 @@ def page(depth, slug_path, title, desc, body, extra=""):
   <a href="{R}contact/">Contact</a>
   <a class="btn btn--primary btn--block" href="{R}contact/">Nous contacter</a>
 </div>
+<div class="dhb-annonce" data-setting="annonce" hidden></div>
 <main id="contenu">
 {body}
 </main>

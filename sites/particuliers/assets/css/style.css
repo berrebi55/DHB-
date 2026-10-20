@@ -283,6 +283,10 @@ textarea { resize: vertical; min-height: 120px; }
 .form-ok.show { display: block; }
 .form-err { display: none; background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 14px 16px; border-radius: var(--rayon-sm); font-weight: 600; margin-bottom: 16px; }
 
+/* Bandeau d'annonce éditable (CMS) */
+.dhb-annonce { background: var(--cyan); color: var(--nuit); text-align: center; padding: 9px 16px; font-weight: 700; font-size: 0.92rem; }
+.dhb-annonce a { color: var(--nuit); text-decoration: underline; }
+
 /* Prix (côté particuliers) */
 .price-tag { font-size: 1.7rem; font-weight: 900; color: var(--nuit); margin: 10px 0; }
 .price-tag small { font-size: 0.95rem; font-weight: 600; color: var(--gris-600); }

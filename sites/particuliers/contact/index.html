@@ -63,6 +63,7 @@
   <a href="../contact/">Contact</a>
   <a class="btn btn--primary btn--block" href="../contact/">Être aidé(e)</a>
 </div>
+<div class="dhb-annonce" data-setting="annonce" hidden></div>
 <main id="contenu">
 
 <section class="page-hero"><div class="wrap">
@@ -123,5 +124,19 @@
 </div>
 <script src="../assets/js/supabase-config.js"></script>
 <script src="../assets/js/main.js" defer></script>
+<script>
+(function(){
+  if(!(window.DHB_STRIPE&&window.DHB_STRIPE.enabled))return;
+  var cfg=window.DHB_SUPABASE||{}, url=cfg.url||'', key=cfg.anonKey||'';
+  document.querySelectorAll('[data-checkout]').forEach(function(b){
+    b.addEventListener('click',function(e){
+      e.preventDefault(); var plan=b.getAttribute('data-checkout'), back=b.getAttribute('href'), lbl=b.textContent; b.textContent='Redirection…';
+      fetch(url+'/functions/v1/create-checkout',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key,'apikey':key},body:JSON.stringify({plan:plan})})
+      .then(function(r){return r.json();}).then(function(d){ if(d&&d.url){location.href=d.url;} else {b.textContent=lbl;location.href=back;} })
+      .catch(function(){b.textContent=lbl;location.href=back;});
+    });
+  });
+})();
+</script>
 </body>
 </html>

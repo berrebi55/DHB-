@@ -63,6 +63,7 @@
   <a href="../contact/">Contact</a>
   <a class="btn btn--primary btn--block" href="../contact/">Être aidé(e)</a>
 </div>
+<div class="dhb-annonce" data-setting="annonce" hidden></div>
 <main id="contenu">
 
 <section class="page-hero"><div class="wrap">
@@ -83,7 +84,7 @@
           <li>Un interlocuteur patient, sans jargon</li>
         </ul>
         <div class="price-tag">À partir de <span data-setting="abonnement_prix">19,90</span> €<small>/mois</small></div>
-        <a class="btn btn--primary btn--block" href="../contact/">Je m'abonne</a>
+        <a class="btn btn--primary btn--block" href="../contact/" data-checkout="abonnement">Je m'abonne</a>
       </div>
       <div class="card reveal" style="border-top:4px solid var(--cyan-600)">
         <h3>Intervention ponctuelle</h3>
@@ -95,7 +96,7 @@
           <li>Paiement simple</li>
         </ul>
         <div class="price-tag">À partir de <span data-setting="intervention_prix">59</span> €</div>
-        <a class="btn btn--dark btn--block" href="../contact/">Être aidé(e) maintenant</a>
+        <a class="btn btn--dark btn--block" href="../contact/" data-checkout="intervention">Être aidé(e) maintenant</a>
       </div>
     </div>
   <p class="center muted" style="max-width:720px;margin:24px auto 0;color:var(--gris-600)">Les montants affichés sont des exemples de départ. <span class="a-completer">[À COMPLÉTER : grille détaillée + mise en place du paiement en ligne (abonnement + intervention).]</span></p>
@@ -141,5 +142,19 @@
 </div>
 <script src="../assets/js/supabase-config.js"></script>
 <script src="../assets/js/main.js" defer></script>
+<script>
+(function(){
+  if(!(window.DHB_STRIPE&&window.DHB_STRIPE.enabled))return;
+  var cfg=window.DHB_SUPABASE||{}, url=cfg.url||'', key=cfg.anonKey||'';
+  document.querySelectorAll('[data-checkout]').forEach(function(b){
+    b.addEventListener('click',function(e){
+      e.preventDefault(); var plan=b.getAttribute('data-checkout'), back=b.getAttribute('href'), lbl=b.textContent; b.textContent='Redirection…';
+      fetch(url+'/functions/v1/create-checkout',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key,'apikey':key},body:JSON.stringify({plan:plan})})
+      .then(function(r){return r.json();}).then(function(d){ if(d&&d.url){location.href=d.url;} else {b.textContent=lbl;location.href=back;} })
+      .catch(function(){b.textContent=lbl;location.href=back;});
+    });
+  });
+})();
+</script>
 </body>
 </html>

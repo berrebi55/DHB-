@@ -63,6 +63,7 @@
   <a href="../../contact/">Contact</a>
   <a class="btn btn--primary btn--block" href="../../contact/">Être aidé(e)</a>
 </div>
+<div class="dhb-annonce" data-setting="annonce" hidden></div>
 <main id="contenu">
 
 <section class="page-hero"><div class="wrap">
@@ -79,6 +80,18 @@
   </div>
   <div class="article-body" style="max-width:820px;margin-top:40px">
     <div class="callout" style="background:#f0fdf4;border-color:#bbf7d0"><strong>On peut s'en occuper pour vous</strong><br>On optimise votre réseau pour que le streaming soit fluide dans toute la maison, sans coupure.</div>
+    
+    <div class="lead-magnet reveal"><div class="lm-ic">🛡️</div><div class="lm-body">
+      <h3>Guide gratuit : éviter les arnaques informatiques</h3>
+      <p><strong>Les 5 pièges les plus courants</strong> (faux SMS, faux support, phishing…) et comment réagir. Laissez votre email pour le recevoir, ou téléchargez-le directement.</p>
+      <form data-demo-form data-type="question" novalidate>
+        <div class="form-ok">✅ Merci ! <a href="../../assets/guides/guide-anti-arnaques.pdf" target="_blank" rel="noopener"><strong>Télécharger le guide (PDF)</strong></a>.</div>
+        <input type="hidden" name="message" value="Demande du guide anti-arnaques">
+        <input name="email" type="email" placeholder="Votre email" required aria-label="Votre email">
+        <button class="btn btn--primary" type="submit">Recevoir le guide</button>
+      </form>
+      <p style="margin:10px 0 0;font-size:.85rem"><a href="../../assets/guides/guide-anti-arnaques.pdf" target="_blank" rel="noopener">📥 Télécharger directement (PDF)</a></p>
+    </div></div>
   </div>
 </div></section>
 <section class="section section--gris"><div class="wrap">
@@ -134,5 +147,19 @@
 </div>
 <script src="../../assets/js/supabase-config.js"></script>
 <script src="../../assets/js/main.js" defer></script>
+<script>
+(function(){
+  if(!(window.DHB_STRIPE&&window.DHB_STRIPE.enabled))return;
+  var cfg=window.DHB_SUPABASE||{}, url=cfg.url||'', key=cfg.anonKey||'';
+  document.querySelectorAll('[data-checkout]').forEach(function(b){
+    b.addEventListener('click',function(e){
+      e.preventDefault(); var plan=b.getAttribute('data-checkout'), back=b.getAttribute('href'), lbl=b.textContent; b.textContent='Redirection…';
+      fetch(url+'/functions/v1/create-checkout',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key,'apikey':key},body:JSON.stringify({plan:plan})})
+      .then(function(r){return r.json();}).then(function(d){ if(d&&d.url){location.href=d.url;} else {b.textContent=lbl;location.href=back;} })
+      .catch(function(){b.textContent=lbl;location.href=back;});
+    });
+  });
+})();
+</script>
 </body>
 </html>
