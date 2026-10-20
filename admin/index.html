@@ -478,7 +478,7 @@ function renderFactures(){
       <td>${ENTITY[f.entity]||esc(f.entity)}</td><td>${esc(f.client_nom)||'—'}</td>
       <td><strong>${eur(f.total_ttc)}</strong></td>
       <td><select class="status" data-act="f-status">${opts}</select></td>
-      <td class="row-actions"><button class="btn-mini" data-act="f-print" style="color:var(--cyan-700)">Imprimer</button><button class="btn-mini" data-act="f-del">Suppr.</button></td></tr>`;
+      <td class="row-actions"><button class="btn-mini" data-act="f-print" style="color:var(--cyan-700)">Imprimer</button><button class="btn-mini" data-act="f-mail" style="color:var(--succes)">Envoyer</button><button class="btn-mini" data-act="f-del">Suppr.</button></td></tr>`;
   }
   h+='</tbody></table>'; $('#factures-wrap').innerHTML=h;
   if($('#factures-wrap').dataset.bound) return; $('#factures-wrap').dataset.bound='1';
@@ -491,7 +491,21 @@ function renderFactures(){
     const f=FACTURES.find(x=>x.id===id);
     if(act==='f-del'){ if(confirm('Supprimer cette facture ?')){ await sb.from('factures').delete().eq('id',id); FACTURES=FACTURES.filter(x=>x.id!==id); renderFactures(); } }
     if(act==='f-print'){ printFacture(f); }
+    if(act==='f-mail'){ sendInvoice(f); }
   });
+}
+async function sendInvoice(f){
+  if(!f.client_email){ toast("Pas d'email client sur cette facture"); return; }
+  if(!confirm('Envoyer la facture '+(f.numero||'')+' à '+f.client_email+' ?')) return;
+  try{
+    const r=await fetch(cfg.url+'/functions/v1/send-invoice',{method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+cfg.anonKey,'apikey':cfg.anonKey},
+      body:JSON.stringify({to:f.client_email,nom:f.client_nom,numero:f.numero,total:eur(f.total_ttc),date:f.date_facture,libelle:f.libelle,entity:f.entity})});
+    const d=await r.json();
+    if(d&&d.ok){ toast('Facture envoyée ✉️'); await sb.from('factures').update({status:'envoyee'}).eq('id',f.id); loadFactures(); }
+    else if(d&&d.error==='resend_not_configured'){ toast('Configurez Resend pour envoyer les emails'); }
+    else { toast('Erreur : '+((d&&d.error)||'inconnue')); }
+  }catch(err){ toast('Erreur : '+err.message); }
 }
 $('#facture-form').addEventListener('submit', async (e)=>{
   e.preventDefault(); const f=e.target; const g=n=>f.querySelector(`[name="${n}"]`).value;
