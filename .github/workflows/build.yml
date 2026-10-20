@@ -1,0 +1,51 @@
+name: Build & vérification des sites
+
+# Régénère les 3 sites depuis les générateurs Python et vérifie que le HTML
+# commité correspond bien aux sources (pas de dérive). Base du déploiement auto.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Régénérer les sites
+        run: |
+          python3 build/build.py
+          python3 build/groupe/build_groupe.py
+          python3 build/particuliers/build_particuliers.py
+      - name: Vérifier qu'il n'y a pas de dérive (HTML = générateurs)
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "::warning::Le HTML commité diffère des générateurs. Pensez à régénérer et committer."
+            git --no-pager diff --stat
+          else
+            echo "OK : le HTML est à jour avec les générateurs."
+          fi
+      - name: Vérifier les liens internes
+        run: |
+          python3 - <<'PY'
+          import os,re,sys
+          bad=[]
+          for dp,_,fs in os.walk('.'):
+            if '/.git' in dp or '/build' in dp: continue
+            for f in fs:
+              if not f.endswith('.html'): continue
+              p=os.path.join(dp,f); base=os.path.dirname(p)
+              html=open(p,encoding='utf-8').read()
+              for m in re.findall(r'href="([^"#?]+)"',html):
+                if m.startswith(('http','mailto:','tel:','//')): continue
+                t=os.path.normpath(os.path.join(base,m))
+                if m.endswith('/'): t=os.path.join(t,'index.html')
+                if not os.path.exists(t): bad.append((os.path.relpath(p),m))
+          print("Liens cassés:",len(bad))
+          for b in bad[:50]: print(" ",b)
+          sys.exit(1 if bad else 0)
+          PY

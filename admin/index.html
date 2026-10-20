@@ -93,8 +93,11 @@
   </div>
 
   <div class="wrap" style="padding-top:22px;padding-bottom:60px">
-    <div class="tabs" style="margin-bottom:18px">
+    <div class="tabs" style="margin-bottom:18px;flex-wrap:wrap">
       <button class="tab active" data-view="leads">📥 Demandes</button>
+      <button class="tab" data-view="relance">🔔 À relancer</button>
+      <button class="tab" data-view="tickets">🎫 Tickets</button>
+      <button class="tab" data-view="factures">🧾 Factures</button>
       <button class="tab" data-view="settings">⚙️ Prix & paramètres</button>
     </div>
 
@@ -144,9 +147,56 @@
         <div id="set-err" class="form-err"></div>
         <button class="btn btn--primary" id="set-save">Enregistrer</button>
         <span class="muted" id="set-msg" style="margin-left:12px"></span>
-        <p class="muted" style="margin-top:16px">La table <code>settings</code> doit exister (voir <code>supabase/settings.sql</code>).</p>
+        <p class="muted" style="margin-top:16px">La table <code>settings</code> doit exister (voir <code>supabase/full-setup.sql</code>).</p>
       </div>
     </div>
+
+    <!-- À RELANCER -->
+    <div id="panel-relance" class="hidden">
+      <h1 style="font-size:1.6rem;margin:6px 0 0">À relancer</h1>
+      <p class="muted">Les demandes dont la date de relance est atteinte (et non encore gagnées/perdues). Définissez une date de relance dans l'onglet « Demandes » (colonne Relance).</p>
+      <div class="panel"><div id="relance-wrap"><div class="empty-state">—</div></div></div>
+    </div>
+
+    <!-- TICKETS -->
+    <div id="panel-tickets" class="hidden">
+      <h1 style="font-size:1.6rem;margin:6px 0 0">Tickets de support</h1>
+      <p class="muted">Créez et suivez les demandes de support, toutes filiales.</p>
+      <div class="panel" style="padding:20px;margin-bottom:20px">
+        <form id="ticket-form" class="form-grid" style="gap:12px">
+          <div class="form-row"><label>Filiale</label><select class="status" name="entity"><option value="infogerance">Infogérance</option><option value="particuliers">Particuliers</option><option value="groupe">Groupe</option></select></div>
+          <div class="form-row"><label>Priorité</label><select class="status" name="priorite"><option value="normale">Normale</option><option value="basse">Basse</option><option value="haute">Haute</option><option value="urgente">Urgente</option></select></div>
+          <div class="form-row"><label>Client (nom)</label><input name="client_nom"></div>
+          <div class="form-row"><label>Email client</label><input name="client_email" type="email"></div>
+          <div class="form-row" style="grid-column:1/-1"><label>Sujet</label><input name="sujet" required></div>
+          <div class="form-row" style="grid-column:1/-1"><label>Description</label><textarea name="description"></textarea></div>
+          <div style="grid-column:1/-1"><button class="btn btn--primary" type="submit">Créer le ticket</button></div>
+        </form>
+      </div>
+      <div class="panel"><div id="tickets-wrap"><div class="empty-state">Chargement…</div></div></div>
+    </div>
+
+    <!-- FACTURES -->
+    <div id="panel-factures" class="hidden">
+      <h1 style="font-size:1.6rem;margin:6px 0 0">Factures</h1>
+      <p class="muted">Créez des factures simples et suivez leur paiement. <span class="a-completer">Conformité légale (mentions, numérotation, anti-fraude TVA) à valider avec votre comptable.</span></p>
+      <div class="panel" style="padding:20px;margin-bottom:20px">
+        <form id="facture-form" class="form-grid" style="gap:12px">
+          <div class="form-row"><label>Filiale</label><select class="status" name="entity"><option value="infogerance">Infogérance</option><option value="particuliers">Particuliers</option><option value="groupe">Groupe</option></select></div>
+          <div class="form-row"><label>Date</label><input name="date_facture" type="date"></div>
+          <div class="form-row"><label>Client (nom)</label><input name="client_nom" required></div>
+          <div class="form-row"><label>Email client</label><input name="client_email" type="email"></div>
+          <div class="form-row" style="grid-column:1/-1"><label>Adresse client</label><input name="client_adresse"></div>
+          <div class="form-row" style="grid-column:1/-1"><label>Prestation</label><input name="libelle" required></div>
+          <div class="form-row"><label>Quantité</label><input name="quantite" type="number" step="0.01" value="1"></div>
+          <div class="form-row"><label>Prix unitaire HT (€)</label><input name="prix_unitaire" type="number" step="0.01" value="0"></div>
+          <div class="form-row"><label>TVA (%)</label><input name="tva_taux" type="number" step="0.1" value="20"></div>
+          <div style="grid-column:1/-1"><button class="btn btn--primary" type="submit">Créer la facture</button></div>
+        </form>
+      </div>
+      <div class="panel"><div id="factures-wrap"><div class="empty-state">Chargement…</div></div></div>
+    </div>
+
   </div>
 </div>
 
@@ -249,7 +299,7 @@ function render(){
   const rows = visible();
   $('#count').textContent = rows.length+' demande'+(rows.length>1?'s':'');
   if (!rows.length){ $('#table-wrap').innerHTML='<div class="empty-state">Aucune demande pour ce filtre.</div>'; return; }
-  let html='<table><thead><tr><th>Date</th><th>Filiale</th><th>Contact</th><th>Type</th><th>Message</th><th>Statut</th><th>Notes</th><th></th></tr></thead><tbody>';
+  let html='<table><thead><tr><th>Date</th><th>Filiale</th><th>Contact</th><th>Type</th><th>Message</th><th>Statut</th><th>Notes</th><th>Relance</th><th></th></tr></thead><tbody>';
   for (const l of rows){
     const opts=Object.entries(STATUS).map(([k,v])=>`<option value="${k}" ${l.status===k?'selected':''}>${v}</option>`).join('');
     html+=`<tr class="${l.is_read?'':'unread'}" data-id="${l.id}">
@@ -265,6 +315,7 @@ function render(){
       <td class="lead-msg">${esc(l.message)||'<span class="muted">—</span>'}${l.source_url?`<div class="lead-sub" style="margin-top:6px">📍 ${esc(l.source_url)}</div>`:''}</td>
       <td><select class="status st-${l.status}" data-act="status">${opts}</select></td>
       <td><textarea class="notes" data-act="notes" placeholder="Note interne…">${esc(l.notes)}</textarea></td>
+      <td><input type="date" data-act="relance" value="${l.relance_at||''}" title="Date de relance" style="padding:6px;border:1.5px solid var(--gris-200);border-radius:8px;font-family:inherit;font-size:.82rem"></td>
       <td class="row-actions">
         <button class="btn-mini" data-act="read" style="color:var(--cyan-700)">${l.is_read?'Non lu':'Lu'}</button>
         <button class="btn-mini" data-act="del">Suppr.</button>
@@ -281,6 +332,9 @@ $('#table-wrap').addEventListener('change', async (e)=>{
   if (e.target.dataset.act==='status'){
     const v=e.target.value; e.target.className='status st-'+v;
     await update(id,{status:v}); toast('Statut mis à jour');
+  }
+  if (e.target.dataset.act==='relance'){
+    await update(id,{relance_at:e.target.value||null}); toast('Relance programmée');
   }
 });
 $('#table-wrap').addEventListener('blur', async (e)=>{
@@ -318,17 +372,149 @@ $('#status-filter').addEventListener('change',(e)=>{ filterStatus=e.target.value
 $('#entity-filter').addEventListener('change',(e)=>{ filterEntity=e.target.value; render(); });
 $('#search').addEventListener('input',(e)=>{ q=e.target.value.trim().toLowerCase(); render(); });
 
-// ---------- Onglets (Demandes / Paramètres) ----------
+// ---------- Onglets ----------
+const PANELS = ['leads','relance','tickets','factures','settings'];
 document.querySelectorAll('.tab[data-view]').forEach((b)=>{
   b.addEventListener('click', ()=>{
     document.querySelectorAll('.tab[data-view]').forEach(x=>x.classList.remove('active'));
     b.classList.add('active');
     const v=b.getAttribute('data-view');
-    $('#panel-leads').classList.toggle('hidden', v!=='leads');
-    $('#panel-settings').classList.toggle('hidden', v!=='settings');
+    PANELS.forEach(p=>$('#panel-'+p).classList.toggle('hidden', p!==v));
     if (v==='settings') loadSettings();
+    if (v==='relance') loadRelance();
+    if (v==='tickets') loadTickets();
+    if (v==='factures') loadFactures();
   });
 });
+
+// ---------- À relancer ----------
+function loadRelance(){
+  const today=new Date().toISOString().slice(0,10);
+  const due=LEADS.filter(l=>l.relance_at && l.relance_at<=today && !['gagne','perdu','archive'].includes(l.status))
+                 .sort((a,b)=>(a.relance_at<b.relance_at?-1:1));
+  if (!due.length){ $('#relance-wrap').innerHTML='<div class="empty-state">Aucune relance à faire pour le moment. 👍</div>'; return; }
+  let h='<table><thead><tr><th>Relance</th><th>Filiale</th><th>Contact</th><th>Message</th><th>Statut</th><th></th></tr></thead><tbody>';
+  for(const l of due){
+    h+=`<tr data-id="${l.id}"><td class="lead-sub"><strong style="color:var(--danger)">${l.relance_at}</strong></td>
+      <td>${ENTITY[l.entity]||esc(l.entity)}</td>
+      <td><div class="lead-name">${esc(l.nom)||'—'}</div><div class="lead-sub">${l.email?`<a href="mailto:${esc(l.email)}">${esc(l.email)}</a>`:''} ${l.telephone?('· '+esc(l.telephone)):''}</div></td>
+      <td class="lead-msg">${esc(l.message)||'—'}</td>
+      <td><span class="pill st-${l.status}" style="background:var(--gris-50)">${STATUS[l.status]}</span></td>
+      <td><button class="btn-mini" data-act="done" style="color:var(--succes)">Relancé ✓</button></td></tr>`;
+  }
+  h+='</tbody></table>';
+  $('#relance-wrap').innerHTML=h;
+  $('#relance-wrap').querySelectorAll('[data-act="done"]').forEach(btn=>btn.addEventListener('click', async (e)=>{
+    const id=e.target.closest('tr').dataset.id;
+    await update(id,{relance_at:null, status:'contacte'});
+    const l=LEADS.find(x=>x.id===id); if(l){l.relance_at=null;l.status='contacte';}
+    loadRelance(); toast('Marqué comme relancé');
+  }));
+}
+
+// ---------- Tickets ----------
+let TICKETS=[];
+const T_STATUS={ouvert:'Ouvert',en_cours:'En cours',resolu:'Résolu',ferme:'Fermé'};
+async function loadTickets(){
+  const { data, error } = await sb.from('tickets').select('*').order('created_at',{ascending:false});
+  if (error){ $('#tickets-wrap').innerHTML='<div class="empty-state">Table « tickets » introuvable. Exécutez supabase/full-setup.sql.</div>'; return; }
+  TICKETS=data||[]; renderTickets();
+}
+function renderTickets(){
+  if(!TICKETS.length){ $('#tickets-wrap').innerHTML='<div class="empty-state">Aucun ticket.</div>'; return; }
+  let h='<table><thead><tr><th>Date</th><th>Filiale</th><th>Client</th><th>Sujet</th><th>Priorité</th><th>Statut</th><th></th></tr></thead><tbody>';
+  for(const t of TICKETS){
+    const opts=Object.entries(T_STATUS).map(([k,v])=>`<option value="${k}" ${t.status===k?'selected':''}>${v}</option>`).join('');
+    h+=`<tr data-id="${t.id}"><td class="lead-sub">${fmtDate(t.created_at)}</td><td>${ENTITY[t.entity]||esc(t.entity)}</td>
+      <td><div class="lead-name">${esc(t.client_nom)||'—'}</div><div class="lead-sub">${esc(t.client_email)||''}</div></td>
+      <td><strong>${esc(t.sujet)}</strong><div class="lead-sub">${esc(t.description)||''}</div></td>
+      <td>${esc(t.priorite)}</td>
+      <td><select class="status" data-act="t-status">${opts}</select></td>
+      <td><button class="btn-mini" data-act="t-del">Suppr.</button></td></tr>`;
+  }
+  h+='</tbody></table>'; $('#tickets-wrap').innerHTML=h;
+  if($('#tickets-wrap').dataset.bound) return; $('#tickets-wrap').dataset.bound='1';
+  $('#tickets-wrap').addEventListener('change', async (e)=>{
+    if(e.target.dataset.act!=='t-status')return; const id=e.target.closest('tr').dataset.id;
+    await sb.from('tickets').update({status:e.target.value}).eq('id',id); toast('Ticket mis à jour');
+  });
+  $('#tickets-wrap').addEventListener('click', async (e)=>{
+    if(e.target.dataset.act!=='t-del')return; const id=e.target.closest('tr').dataset.id;
+    if(confirm('Supprimer ce ticket ?')){ await sb.from('tickets').delete().eq('id',id); TICKETS=TICKETS.filter(x=>x.id!==id); renderTickets(); }
+  });
+}
+$('#ticket-form').addEventListener('submit', async (e)=>{
+  e.preventDefault(); const f=e.target; const g=n=>f.querySelector(`[name="${n}"]`).value.trim();
+  const { error } = await sb.from('tickets').insert({entity:g('entity'),priorite:g('priorite'),client_nom:g('client_nom'),client_email:g('client_email'),sujet:g('sujet'),description:g('description')});
+  if(error){ toast('Erreur : '+error.message); return; }
+  f.reset(); toast('Ticket créé'); loadTickets();
+});
+
+// ---------- Factures ----------
+let FACTURES=[];
+const F_STATUS={brouillon:'Brouillon',envoyee:'Envoyée',payee:'Payée',annulee:'Annulée'};
+async function loadFactures(){
+  const { data, error } = await sb.from('factures').select('*').order('created_at',{ascending:false});
+  if (error){ $('#factures-wrap').innerHTML='<div class="empty-state">Table « factures » introuvable. Exécutez supabase/full-setup.sql.</div>'; return; }
+  FACTURES=data||[]; renderFactures();
+}
+function eur(n){ return (Number(n)||0).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})+' €'; }
+function renderFactures(){
+  if(!FACTURES.length){ $('#factures-wrap').innerHTML='<div class="empty-state">Aucune facture.</div>'; return; }
+  let h='<table><thead><tr><th>N°</th><th>Date</th><th>Filiale</th><th>Client</th><th>Total TTC</th><th>Statut</th><th></th></tr></thead><tbody>';
+  for(const f of FACTURES){
+    const opts=Object.entries(F_STATUS).map(([k,v])=>`<option value="${k}" ${f.status===k?'selected':''}>${v}</option>`).join('');
+    h+=`<tr data-id="${f.id}"><td><strong>${esc(f.numero)||'—'}</strong></td><td class="lead-sub">${f.date_facture||''}</td>
+      <td>${ENTITY[f.entity]||esc(f.entity)}</td><td>${esc(f.client_nom)||'—'}</td>
+      <td><strong>${eur(f.total_ttc)}</strong></td>
+      <td><select class="status" data-act="f-status">${opts}</select></td>
+      <td class="row-actions"><button class="btn-mini" data-act="f-print" style="color:var(--cyan-700)">Imprimer</button><button class="btn-mini" data-act="f-del">Suppr.</button></td></tr>`;
+  }
+  h+='</tbody></table>'; $('#factures-wrap').innerHTML=h;
+  if($('#factures-wrap').dataset.bound) return; $('#factures-wrap').dataset.bound='1';
+  $('#factures-wrap').addEventListener('change', async (e)=>{
+    if(e.target.dataset.act!=='f-status')return; const id=e.target.closest('tr').dataset.id;
+    await sb.from('factures').update({status:e.target.value}).eq('id',id); toast('Facture mise à jour');
+  });
+  $('#factures-wrap').addEventListener('click', async (e)=>{
+    const act=e.target.dataset.act; if(!act)return; const id=e.target.closest('tr').dataset.id;
+    const f=FACTURES.find(x=>x.id===id);
+    if(act==='f-del'){ if(confirm('Supprimer cette facture ?')){ await sb.from('factures').delete().eq('id',id); FACTURES=FACTURES.filter(x=>x.id!==id); renderFactures(); } }
+    if(act==='f-print'){ printFacture(f); }
+  });
+}
+$('#facture-form').addEventListener('submit', async (e)=>{
+  e.preventDefault(); const f=e.target; const g=n=>f.querySelector(`[name="${n}"]`).value;
+  const q=parseFloat(g('quantite'))||0, pu=parseFloat(g('prix_unitaire'))||0, tva=parseFloat(g('tva_taux'))||0;
+  const ht=q*pu, ttc=ht*(1+tva/100);
+  const { data:num, error:e1 } = await sb.rpc('next_facture_numero');
+  if(e1){ toast('Erreur numéro : '+e1.message); return; }
+  const row={entity:g('entity'),numero:num,date_facture:g('date_facture')||new Date().toISOString().slice(0,10),
+    client_nom:g('client_nom'),client_email:g('client_email'),client_adresse:g('client_adresse'),
+    libelle:g('libelle'),quantite:q,prix_unitaire:pu,tva_taux:tva,total_ht:ht,total_ttc:ttc,status:'brouillon'};
+  const { error } = await sb.from('factures').insert(row);
+  if(error){ toast('Erreur : '+error.message); return; }
+  f.reset(); toast('Facture '+num+' créée'); loadFactures();
+});
+function printFacture(f){
+  const w=window.open('','_blank'); if(!w)return;
+  const ht=Number(f.total_ht)||0, ttc=Number(f.total_ttc)||0, tvaMontant=ttc-ht;
+  w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Facture ${esc(f.numero)}</title>
+  <style>body{font-family:Arial,sans-serif;color:#0f2238;max-width:800px;margin:30px auto;padding:0 24px}
+  h1{color:#0B2A4A} .row{display:flex;justify-content:space-between;gap:30px} table{width:100%;border-collapse:collapse;margin:24px 0}
+  th,td{border:1px solid #ccc;padding:10px;text-align:left} th{background:#f1f5f9} .tot{text-align:right} .muted{color:#64748b;font-size:.85rem}
+  .box{border:1px solid #e2e8f0;border-radius:8px;padding:14px;margin-top:10px}</style></head><body>
+  <div class="row"><div><h1>FACTURE</h1><div><strong>N° ${esc(f.numero)}</strong></div><div>Date : ${esc(f.date_facture)}</div></div>
+  <div style="text-align:right"><strong>DHB ${esc(ENTITY[f.entity]||f.entity)}</strong><div class="muted">[À COMPLÉTER : raison sociale, adresse,<br>SIRET, TVA intracommunautaire]</div></div></div>
+  <div class="box"><strong>Client</strong><br>${esc(f.client_nom)||''}<br>${esc(f.client_adresse)||''}<br>${esc(f.client_email)||''}</div>
+  <table><thead><tr><th>Prestation</th><th>Qté</th><th>PU HT</th><th>Total HT</th></tr></thead>
+  <tbody><tr><td>${esc(f.libelle)||''}</td><td>${f.quantite}</td><td>${eur(f.prix_unitaire)}</td><td>${eur(ht)}</td></tr></tbody></table>
+  <div class="tot">Total HT : <strong>${eur(ht)}</strong><br>TVA (${f.tva_taux} %) : ${eur(tvaMontant)}<br>
+  <span style="font-size:1.3rem">Total TTC : <strong>${eur(ttc)}</strong></span></div>
+  <p class="muted" style="margin-top:30px">[À COMPLÉTER : conditions de paiement, pénalités de retard, mentions légales obligatoires.]</p>
+  <script>window.onload=function(){window.print();}<\/script></body></html>`);
+  w.document.close();
+}
 
 // ---------- Prix & paramètres éditables ----------
 const SETTINGS_FIELDS = {
