@@ -57,6 +57,16 @@
   .row-actions a { color:var(--cyan-700); font-weight:600; }
   .btn-mini { border:none; background:none; color:var(--danger); font-weight:600; cursor:pointer; font-family:inherit; font-size:.82rem; padding:0; }
   .empty-state { padding:50px; text-align:center; color:var(--gris-600); }
+  /* Lisibilité des tableaux : colonnes plus larges + défilement horizontal si besoin */
+  #table-wrap, #tickets-wrap, #factures-wrap, #relance-wrap { overflow-x:auto; }
+  select.status { min-width:130px; }
+  @media(min-width:861px){
+    #table-wrap table { min-width:1180px; }
+    #tickets-wrap table, #factures-wrap table, #relance-wrap table { min-width:900px; }
+    .notes { min-width:180px; min-height:52px; }
+    td input[type=date] { min-width:148px; }
+    .lead-msg { min-width:240px; max-width:360px; }
+  }
 
   .toast { position:fixed; bottom:22px; right:22px; background:var(--nuit); color:#fff; padding:14px 20px; border-radius:12px; box-shadow:var(--ombre-forte); z-index:60; transform:translateY(140%); transition:transform .4s; font-weight:600; }
   .toast.show { transform:translateY(0); }
