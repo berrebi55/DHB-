@@ -104,7 +104,7 @@ def build():
   <div class="wrap">
     <span class="eyebrow">Base de pannes informatiques</span>
     <h1>Pannes informatiques fréquentes : causes et solutions</h1>
-    <p>Un problème précis ? Cherchez-le dans notre base de <strong id="pb-count">{len(pd.P)}</strong> pannes courantes en entreprise, formulées comme vous les tapez dans Google. Pour chacune : les causes, ce que vous pouvez vérifier vous-même, et quand faire appel à nous.</p>
+    <p>Un problème précis ? Cherchez-le dans notre base de <strong id="pb-count">{len(pd.P)}</strong> pannes et questions courantes en entreprise, formulées comme vous les tapez dans Google. Pour chacune : les causes ou repères, ce que vous pouvez faire vous-même, et comment on vous aide.</p>
   </div>
 </section>
 
@@ -139,6 +139,11 @@ def build():
         depth = 2
         r = root(depth)
         cat_label = pd.CATEGORIES[p["cat"]]
+        is_dec = p["cat"] in getattr(pd, "DECISION_CATS", set())
+        lbl_causes = "Ce qui entre en jeu" if is_dec else "Causes les plus fréquentes"
+        lbl_check = "Nos repères & conseils" if is_dec else "Ce que vous pouvez vérifier vous-même"
+        lbl_callout = "En résumé" if is_dec else "Quand faire appel à un professionnel ?"
+        word = "questions" if is_dec else "pannes"
         causes = "".join(f"<li>{c}</li>" for c in p["causes"])
         checks = "".join(f"<li>{c}</li>" for c in p["check"])
         svc = p["service"]
@@ -173,18 +178,18 @@ def build():
   <div class="grid grid-2" style="gap:30px;align-items:start">
     <div class="card reveal">
       <div class="icon-box" style="background:linear-gradient(145deg,#f59e0b,#f97316)">{IC['wrench']}</div>
-      <h3>Causes les plus fréquentes</h3>
+      <h3>{lbl_causes}</h3>
       <ul class="check-list">{causes}</ul>
     </div>
     <div class="card reveal">
       <div class="icon-box">{IC['check']}</div>
-      <h3>Ce que vous pouvez vérifier vous-même</h3>
+      <h3>{lbl_check}</h3>
       <ul class="check-list">{checks}</ul>
     </div>
   </div>
 
   <div class="article-body" style="max-width:820px;margin-top:40px">
-    <div class="callout"><strong>Quand faire appel à un professionnel ?</strong><br>{p['call']}</div>
+    <div class="callout"><strong>{lbl_callout}</strong><br>{p['call']}</div>
     <h2>Comment DHB vous aide</h2>
     <p>Ce problème relève de notre service <a href="{r}services/{svc}/"><strong>{svc_name}</strong></a>. Nous intervenons sur site en Île-de-France et à distance partout en France, avec un interlocuteur unique, un langage clair et un devis gratuit sans engagement.</p>
     <ul class="check-list" style="margin-top:0">
@@ -197,7 +202,7 @@ def build():
 </div></section>
 
 <section class="section section--gris"><div class="wrap">
-  <h2 class="center" style="margin-bottom:30px">Autres pannes de la catégorie « {cat_label} »</h2>
+  <h2 class="center" style="margin-bottom:30px">Autres {word} de la catégorie « {cat_label} »</h2>
   <div class="related">{others_html}</div>
 </div></section>
 
@@ -216,8 +221,12 @@ def build():
 {_problem_faq_jsonld(p)}
 {breadcrumb_jsonld([(DOMAIN + "/", "Accueil"), (DOMAIN + "/pannes-frequentes/", "Pannes fréquentes"), (DOMAIN + "/pannes-frequentes/" + p['slug'] + "/", p['q'])])}
 """
-        title = f"{p['q']} — causes et solutions | DHB"
-        desc = (p["sym"][:150] + " Causes, vérifications et solutions. Dépannage DHB sur site en IdF et à distance.")
+        if is_dec:
+            title = f"{p['q']} | DHB"
+            desc = p["sym"][:158]
+        else:
+            title = f"{p['q']} — causes et solutions | DHB"
+            desc = (p["sym"][:150] + " Causes, vérifications et solutions. Dépannage DHB sur site en IdF et à distance.")
         out[f"pannes-frequentes/{p['slug']}/index.html"] = page(depth, f"pannes-frequentes/{p['slug']}/", title, desc, body)
 
     return out
