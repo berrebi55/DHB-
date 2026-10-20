@@ -76,6 +76,62 @@ Voir `FEUILLE-DE-ROUTE-LANCEMENT.md`. En bref : RC Pro, SAP (crédit d'impôt), 
 
 ---
 
+# 9bis. 🛠️ OPÉRER L'INFOGÉRANCE : ta méthode & tes stratégies (ton métier au quotidien)
+
+> Ce que **tu fais, toi**, en tant qu'infogérant. C'est ce qui fait la différence entre « un gars avec un joli site » et un vrai prestataire fiable.
+
+## A. Standardiser ton offre (pour tenir en solo)
+- **3 forfaits max** (ex. *Essentiel / Pro / Pro+*), facturés **par poste/mois**, « tout inclus ». Standardiser = exécuter vite, chiffrer vite, scaler.
+- **Inclus dans un forfait** : supervision 24/7, maintenance, antivirus managé, sauvegarde, support à distance illimité, X interventions sur site/mois, **reporting mensuel**.
+- **Hors forfait (facturé en plus)** : nouveau matériel, projets, déménagement, interventions hors heures.
+- Côté **particuliers** : abonnement sérénité + intervention ponctuelle (déjà cadré).
+
+## B. Le parcours client (de la signature au run)
+1. **Audit initial (gratuit)** : état des postes, réseau, sauvegarde (testée ?), sécurité, risques. → tu repars avec une photo claire.
+2. **Plan + devis** : 2-3 priorités, en langage simple.
+3. **Onboarding** (le moment critique) : installer **NinjaOne** (agents), **antivirus**, mettre en place/vérifier la **sauvegarde**, **sécuriser** (MFA, mots de passe), **documenter** le parc (inventaire + accès).
+4. **Run** : supervision continue, maintenance, support, **rapport mensuel**.
+5. **Revue trimestrielle** : point sécurité, évolutions, upsell.
+
+## C. Ta routine (discipline = qualité = avis positifs)
+- **Chaque jour** : traiter les **alertes NinjaOne**, vérifier que les **sauvegardes** sont OK, répondre aux tickets/demandes **dans ton délai annoncé**.
+- **Chaque semaine** : postes à risque, mises à jour planifiées, **10-15 actions commerciales** (prospection/relances).
+- **Chaque mois** : **rapport client** (sauvegardes OK, incidents évités, mises à jour faites), **facturation**, point **KPI** (leads, taux de transfo, CA récurrent).
+- **Chaque trimestre** : revue sécurité, mise à jour du contenu/SEO.
+
+## D. Tes engagements de service (SLA) — réalistes en solo
+- Promets des délais **TENABLES** : réponse sous X h ouvrées, intervention selon la criticité. **Ne promets jamais du 24/7** si tu es seul.
+- **Priorisation** : bloquant (activité arrêtée) → gênant → confort.
+- Mieux vaut **sous-promettre et sur-livrer** que l'inverse.
+
+## E. Récurrence & marge (le nerf de la guerre)
+- Vise le **RÉCURRENT** (forfaits) : revenu prévisible, moins de re-vente permanente.
+- **Remote-first** : résous à distance au maximum → plus de clients à l'heure.
+- **Supervision-first** : préviens les pannes → moins d'urgences subies (= moins d'heures perdues).
+- **Calcule ta marge réelle** par offre : coûts outils (NinjaOne/poste, antivirus, sauvegarde, assurance) + **~22 % de cotisations micro**, AVANT marge.
+- **Upsell** : sauvegarde renforcée, cybersécurité, Microsoft 365, nouveaux postes, formation.
+
+## F. Sécurité & protection (toi ET tes clients)
+- MFA partout, **sauvegardes isolées et testées**, accès distant sécurisé (VPN/MFA), principe du moindre privilège.
+- **Documente tout** (parc, accès) et garde-le **réversible** : le client doit pouvoir partir avec ses accès → c'est un argument de confiance.
+- **Contrats** : périmètre clair, SLA, réversibilité, **DPA** (RGPD sous-traitant). Fais-les valider.
+
+## G. Acquisition & fidélisation (ton moteur les 6 premiers mois)
+- **Acquisition** : réseau direct → terrain (commerces/cabinets) → LinkedIn → Google Business → prescripteurs. *(Le SEO, c'est le long terme.)*
+- **Avis Google dès le client n°1** — ton accélérateur n°1.
+- **Fidélisation** : **rapport mensuel** (preuve de valeur = anti-résiliation), réactivité, proximité, **parrainage**.
+- **Niche** : choisis-en **une** à dominer (ex. cabinets compta/avocats, commerces, seniors).
+
+## H. Scaler sans se cramer
+- **Standardiser** (forfaits, procédures, modèles de mails/devis).
+- **Automatiser** (supervision, emails, relances, facturation — déjà en place pour partie).
+- **Sous-traiter / embaucher** quand tu satures (au-delà de ~15-20 clients en solo).
+
+## I. Ton stack d'outils (type infogérant solo)
+Supervision **NinjaOne** · **antivirus/EDR** managé · **sauvegarde** cloud EU · **Microsoft 365 / Google Workspace** · **accès distant** sécurisé · **CRM/factures** (ton admin + app de facturation) · **documentation** (inventaire + coffre à mots de passe).
+
+---
+
 # 10. 📝 INFORMATIONS À ME FOURNIR (remplis ce qui est possible)
 
 > Plus tu remplis, plus je peux avancer et remplacer les `[À COMPLÉTER]`. Laisse vide ce que tu n'as pas encore.
