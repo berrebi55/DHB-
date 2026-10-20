@@ -3,7 +3,7 @@ import json
 import problems_data as pd
 import blog_data
 from base import (page, breadcrumb, breadcrumb_jsonld, cta_band, contact_form,
-                  faq_jsonld, IC, DOMAIN, SERVICES, PHONE_DISPLAY, PHONE_LINK, root)
+                  lead_magnet, faq_jsonld, IC, DOMAIN, SERVICES, PHONE_DISPLAY, PHONE_LINK, root)
 
 SERVICE_NAME = {s: n for s, n, _ in SERVICES}
 ART = {a["slug"]: a for a in blog_data.ARTICLES}
@@ -192,6 +192,7 @@ def build():
       {art_block}
       <li><a href="{r}pannes-frequentes/">Voir toutes les pannes fréquentes</a></li>
     </ul>
+    {lead_magnet(cat_label.lower())}
   </div>
 </div></section>
 

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
 import blog_data
-from base import (page, breadcrumb, breadcrumb_jsonld, cta_band, DOMAIN,
+from base import (page, breadcrumb, breadcrumb_jsonld, cta_band, lead_magnet, DOMAIN,
                   SERVICES, IC, root)
 
 SERVICE_NAME = {s: n for s, n, _ in SERVICES}
@@ -125,6 +125,7 @@ def build():
     <div class="article-body">
       {a['body']}
       {svc_block}
+      {lead_magnet(theme_label.lower())}
     </div>
   </div>
 </article>

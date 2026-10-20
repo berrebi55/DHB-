@@ -231,18 +231,18 @@ def filiale_particuliers():
       <h3>Abonnement sérénité</h3>
       <p>Une assistance informatique disponible toute l'année, pour ne plus jamais rester bloqué(e). Idéal pour être tranquille au quotidien.</p>
       <ul class="check-list"><li>Assistance à distance illimitée</li><li>Interventions à domicile incluses ou à tarif réduit</li><li>Conseils, mises à jour et sécurité</li></ul>
-      <a class="btn btn--dark" href="../contact/" style="margin-top:12px">Demander un devis</a>
+      <div class="price-tag">À partir de <span class="a-completer">[MONTANT]</span> €<small>/mois</small></div>
+      <a class="btn btn--primary btn--block" href="../contact/" style="margin-top:6px">Je m'abonne</a>
     </div>
     <div class="card reveal" style="border-top:4px solid {f['accent']}">
       <h3>Intervention ponctuelle</h3>
       <p>Un problème précis à régler, sans engagement. On intervient à domicile (Île-de-France) ou à distance (partout en France).</p>
       <ul class="check-list"><li>Dépannage à l'unité</li><li>Sans abonnement</li><li>Devis clair avant toute intervention</li></ul>
-      <a class="btn btn--dark" href="../contact/" style="margin-top:12px">Demander de l'aide</a>
+      <div class="price-tag">À partir de <span class="a-completer">[MONTANT]</span> €</div>
+      <a class="btn btn--dark btn--block" href="../contact/" style="margin-top:6px">Être aidé(e) maintenant</a>
     </div>
   </div>
-  <div class="callout" style="max-width:820px;margin:30px auto 0;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:16px;padding:20px 24px">
-    <strong>Site en cours de déploiement.</strong> <span class="a-completer">[À COMPLÉTER : formules détaillées, paiement en ligne (abonnement + intervention) prévu en phase 2.]</span>
-  </div>
+  <p class="center muted" style="max-width:720px;margin:20px auto 0;color:var(--gris-600);font-size:.92rem">Tarif exact confirmé avant toute intervention, sans surprise. <span class="a-completer">[À COMPLÉTER : montants des formules + mise en place du paiement en ligne.]</span></p>
 </div></section>
 {org_jsonld()}
 """

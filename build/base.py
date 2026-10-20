@@ -174,6 +174,24 @@ def contact_form(depth, compact=False, title="Demander un audit gratuit", with_t
     </div>"""
 
 
+def lead_magnet(topic="votre entreprise"):
+    """Aimant à prospects : capture l'email contre un guide gratuit (envoyé par email)."""
+    return f"""
+    <div class="lead-magnet reveal">
+      <div class="lm-ic">📄</div>
+      <div class="lm-body">
+        <h3>Recevez notre guide gratuit</h3>
+        <p><strong>[TITRE DU GUIDE — À COMPLÉTER]</strong> (ex. « Checklist sécurité PME : les 5 failles à vérifier »). Gratuit, par email, sans engagement.</p>
+        <form data-demo-form data-type="question" novalidate>
+          <div class="form-ok">✅ Merci ! On vous envoie le guide par email très vite.</div>
+          <input type="hidden" name="message" value="Demande du guide gratuit — {topic}">
+          <input name="email" type="email" placeholder="Votre email" required aria-label="Votre email">
+          <button class="btn btn--primary" type="submit">Recevoir le guide</button>
+        </form>
+      </div>
+    </div>"""
+
+
 def cta_band(depth, title="Un problème informatique dans votre entreprise ?",
              text="Confiez-nous un premier regard. L'audit est gratuit, sans engagement, et vous repartez avec un plan clair — même si vous ne travaillez pas avec nous."):
     r = root(depth)

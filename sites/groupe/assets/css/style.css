@@ -283,6 +283,20 @@ textarea { resize: vertical; min-height: 120px; }
 .form-ok.show { display: block; }
 .form-err { display: none; background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 14px 16px; border-radius: var(--rayon-sm); font-weight: 600; margin-bottom: 16px; }
 
+/* Prix (côté particuliers) */
+.price-tag { font-size: 1.7rem; font-weight: 900; color: var(--nuit); margin: 10px 0; }
+.price-tag small { font-size: 0.95rem; font-weight: 600; color: var(--gris-600); }
+
+/* Lead magnet (aimant à prospects) */
+.lead-magnet { background: linear-gradient(135deg, #eff8ff, #e0f2fe); border: 1px solid #bae0ff; border-radius: var(--rayon); padding: 24px; margin: 2em 0; display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
+.lead-magnet .lm-ic { font-size: 2.2rem; line-height: 1; }
+.lead-magnet .lm-body { flex: 1; min-width: 240px; }
+.lead-magnet h3 { margin: 0 0 4px; font-size: 1.15rem; }
+.lead-magnet p { margin: 0 0 12px; font-size: 0.95rem; }
+.lead-magnet form { display: flex; gap: 8px; flex-wrap: wrap; align-items: stretch; }
+.lead-magnet input { flex: 1; min-width: 200px; }
+.lead-magnet .form-ok { width: 100%; }
+
 /* Bandeau CTA */
 .cta-band { background: linear-gradient(135deg, var(--nuit) 0%, var(--nuit-600) 100%); border-radius: var(--rayon-lg); padding: 48px; color: #fff; text-align: center; position: relative; overflow: hidden; }
 .cta-band::before { content:''; position:absolute; top:-30%; left:-10%; width:50%; height:160%; background: radial-gradient(circle, rgba(46,196,255,0.25), transparent 70%); }
