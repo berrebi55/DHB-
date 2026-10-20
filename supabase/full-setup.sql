@@ -61,7 +61,7 @@ create table if not exists public.factures (
   date_facture date not null default current_date,
   client_nom text, client_email text, client_adresse text,
   libelle text, quantite numeric not null default 1, prix_unitaire numeric not null default 0,
-  tva_taux numeric not null default 20,
+  tva_taux numeric not null default 0,
   total_ht numeric not null default 0, total_ttc numeric not null default 0,
   status text not null default 'brouillon' check (status in ('brouillon','envoyee','payee','annulee')),
   notes text,
