@@ -48,6 +48,60 @@ VILLE_CONTENT = {
                        "pragmatique : sécuriser les données, fiabiliser le réseau et limiter les interruptions d'activité."),
         "delai": "Support à distance immédiat pour les urgences logicielles et réseau, et déplacements sur site planifiés dans toute la commune et ses zones d'activité.",
     },
+    "depannage-informatique-saint-ouen": {
+        "ville": "Saint-Ouen",
+        "dep": "Seine-Saint-Denis (93)",
+        "title": "Dépannage & maintenance informatique à Saint-Ouen (93) — entreprises | DHB",
+        "desc": "Maintenance et dépannage informatique pour entreprises et commerces à Saint-Ouen (93) : intervention sur site rapide et support à distance. Audit gratuit, prix clairs.",
+        "h1": "Maintenance & dépannage informatique à Saint-Ouen",
+        "contexte": ("Au cœur de Plaine Commune et aux portes de Paris, Saint-Ouen conjugue un tissu dense de commerces, de "
+                     "jeunes entreprises, d'agences et de professions libérales, avec une forte dynamique immobilière et tertiaire. "
+                     "Ces structures, souvent de petite taille, ont besoin d'une informatique fiable et d'un interlocuteur de proximité "
+                     "qui comprend leurs contraintes sans jargon."),
+        "specifique": ("Nous accompagnons les TPE, commerces et cabinets audoniens avec une vraie réactivité locale : fiabiliser les "
+                       "postes et le réseau, sécuriser les données, et mettre en place des sauvegardes sérieuses — avec des prix annoncés "
+                       "à l'avance, pas de mauvaise surprise."),
+        "delai": "Proximité immédiate de Paris et de Saint-Denis : interventions sur site rapides à Saint-Ouen, en complément d'un support à distance disponible dès réception de votre demande.",
+    },
+    "depannage-informatique-aubervilliers": {
+        "ville": "Aubervilliers",
+        "dep": "Seine-Saint-Denis (93)",
+        "title": "Dépannage & maintenance informatique à Aubervilliers (93) — entreprises | DHB",
+        "desc": "Maintenance et dépannage informatique pour entreprises, commerces et grossistes à Aubervilliers (93) : intervention sur site et support à distance. Audit gratuit.",
+        "h1": "Maintenance & dépannage informatique à Aubervilliers",
+        "contexte": ("Aubervilliers, grande ville de Plaine Commune, abrite un tissu économique très varié : commerces et grossistes, "
+                     "ateliers, PME, associations et de nombreuses structures en plein développement. Cette diversité se traduit par des "
+                     "parcs informatiques mixtes (caisses, postes bureautiques, réseau) qui demandent un entretien rigoureux et un dépannage réactif."),
+        "specifique": ("Nous aidons les entreprises et commerces albertivillariens à garder une informatique opérationnelle : réseau et "
+                       "Wi-Fi fiables, caisses et postes qui tiennent, données sauvegardées et sécurisées — avec un interlocuteur unique et des tarifs clairs."),
+        "delai": "Support à distance immédiat pour les urgences, et déplacements sur site rapides à Aubervilliers et dans tout le nord du 93.",
+    },
+    "depannage-informatique-epinay-sur-seine": {
+        "ville": "Épinay-sur-Seine",
+        "dep": "Seine-Saint-Denis (93)",
+        "title": "Dépannage & maintenance informatique à Épinay-sur-Seine (93) | DHB",
+        "desc": "Maintenance et dépannage informatique pour entreprises, commerces et indépendants à Épinay-sur-Seine (93) : intervention sur site et à distance. Audit gratuit.",
+        "h1": "Maintenance & dépannage informatique à Épinay-sur-Seine",
+        "contexte": ("Épinay-sur-Seine, au nord de la Seine-Saint-Denis, mêle commerces de proximité, petites entreprises de services, "
+                     "cabinets et un tissu associatif actif. Ces acteurs ont besoin d'une informatique simple, fiable et peu coûteuse à "
+                     "entretenir, avec quelqu'un de joignable en cas de souci."),
+        "specifique": ("Nous accompagnons les professionnels spinassiens avec des solutions adaptées à leur taille : remise à niveau des "
+                       "postes, sécurité et sauvegarde, messagerie professionnelle — le tout expliqué simplement et à prix annoncé."),
+        "delai": "Support à distance dans la journée pour les incidents courants, et interventions sur site à Épinay-sur-Seine et dans le nord 93.",
+    },
+    "depannage-informatique-pantin": {
+        "ville": "Pantin",
+        "dep": "Seine-Saint-Denis (93)",
+        "title": "Dépannage & maintenance informatique à Pantin (93) — entreprises | DHB",
+        "desc": "Maintenance et dépannage informatique pour entreprises, agences et startups à Pantin (93) : intervention sur site rapide et support à distance. Audit gratuit.",
+        "h1": "Maintenance & dépannage informatique à Pantin",
+        "contexte": ("Aux portes de Paris, Pantin est devenue un pôle dynamique pour les agences, les studios créatifs, les startups et "
+                     "les entreprises de services, aux côtés d'un tissu de commerces et d'artisans. Ces structures, exigeantes et connectées, "
+                     "attendent une informatique rapide, sécurisée et un prestataire qui parle leur langage."),
+        "specifique": ("Nous accompagnons les entreprises pantinoises avec une approche moderne : réseau et Wi-Fi performants, cybersécurité "
+                       "adaptée, sauvegarde fiable et support réactif — sur site comme à distance, avec des tarifs transparents."),
+        "delai": "Interventions sur site réactives grâce à la proximité de Paris, en complément d'un support à distance immédiat pour tout ce qui peut se régler sans déplacement.",
+    },
     "depannage-informatique-nanterre": {
         "ville": "Nanterre",
         "dep": "Hauts-de-Seine (92)",

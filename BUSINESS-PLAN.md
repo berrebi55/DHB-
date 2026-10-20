@@ -102,6 +102,45 @@ Démarrage en **micro-entreprise**. Cœur = **infogérance** (supervision via Ni
 
 ---
 
+# 10. Analyse locale RÉELLE — nord 93 (relevé du 21/10/2026)
+
+> Synthèse exploitable d'une analyse terrain (Google Maps, sites, Google Ads Transparency, Meta Ad Library).
+
+**Trous du marché (= nos opportunités)**
+- Quasi **aucun concurrent local n'affiche ses prix pro** (seuls Infranat/Easy Service le font, hors 93).
+- **Aucune offre unifiée** « pro + particulier » avec beaucoup d'avis.
+- **Meta/Instagram quasi vide** dans le 93 pour ce secteur → pub pas chère à tester.
+- Beaucoup de fiches Google à **moins de 20 avis** → la fiche Google Business bien notée prend vite l'avantage.
+- Des prestataires « zone 93 » sont en réalité **basés à Paris/92** → la **vraie proximité** est un argument libre.
+
+**Prix de référence relevés (échantillon local)**
+- Dépannage domicile : **35-90 €/h** (médiane ≈ 55-60 €) ; après crédit d'impôt 50 % ≈ 17-45 €.
+- Abonnement particulier : **12-30 €/mois** (Super Geek 11,90 ; Les Techniciens 15/20/30).
+- Infogérance : **15-159 € HT/poste/mois** (médiane ≈ 50 €) ; Easy Service Paris 49/89/159 €.
+
+**Grille de prix conseillée pour DHB (estimée, à valider sur ta marge)**
+| Offre | Fourchette conseillée | Position marché |
+|---|---|---|
+| Infogérance TPE /poste/mois HT | Essentiel **35-39 €** · Standard **59 €** (EDR+sauvegarde) · Premium **89 €** (sur site inclus) · min **150 €/mois** | Entrée sous la médiane, haut au niveau Easy Service |
+| Intervention pro ponctuelle | **70-80 €/h HT** | Médiane |
+| Dépannage domicile particulier | **59-69 €/h TTC** (déplacement 93 inclus) ≈ 30-35 € après crédit d'impôt | Sous Docteur Ordinateur (89 €) |
+| Assistance à distance particulier | Unitaire **39-49 €** · Abonnement **14,90-19,90 €/mois** | Dans la fourchette marché |
+
+**Niche retenue** : TPE / commerces / professions libérales / associations **1-15 postes à Saint-Denis / Plaine Commune**, avec abonnement « même technicien ». Les particuliers = trésorerie + avis.
+
+**Positionnement** : « L'informaticien de proximité du nord 93 : **prix affichés**, intervention sur site rapide, à distance partout en France. »
+
+**5 actions prioritaires (de l'analyse)**
+1. **Google Business Profile** (Saint-Denis, zone 93) + **15-20 avis en 90 jours**.
+2. **Page Tarifs publique** (pro par poste + particulier) — rare chez les concurrents.
+3. **Pages locales** : Saint-Denis, Saint-Ouen, Aubervilliers, Épinay, La Plaine, Pantin, Montreuil.
+4. **Test pub 300-500 €/mois** : Google recherche locale + 1 pub Meta (canal vide dans le 93).
+5. **Offre d'appel** : « audit gratuit 30 min » (TPE) + « diagnostic à distance 15 min » (particuliers), avec délai annoncé.
+
+**Budget pub → leads (hypothèses à recalibrer avec Keyword Planner)** : ~30 €/lead en réaliste ; démarrer à **300-500 €/mois** (Google local + fiche), ajouter Meta à partir de 1 000 €. ⚠️ Volume de recherche local limité : vérifier avant de monter le budget.
+
+---
+
 # ANNEXE — Prompt réutilisable : analyse de marché & concurrents (local)
 
 > Colle ce prompt dans un assistant **avec accès web** (ou demande-le-moi). Remplace les `[...]`.
