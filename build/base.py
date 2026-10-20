@@ -174,20 +174,21 @@ def contact_form(depth, compact=False, title="Demander un audit gratuit", with_t
     </div>"""
 
 
-def lead_magnet(topic="votre entreprise"):
-    """Aimant à prospects : capture l'email contre un guide gratuit (envoyé par email)."""
+def lead_magnet(topic="votre entreprise", pdf="../../assets/guides/checklist-securite-pme.pdf"):
+    """Aimant à prospects : guide PDF réel, en échange de l'email (lead enregistré)."""
     return f"""
     <div class="lead-magnet reveal">
       <div class="lm-ic">📄</div>
       <div class="lm-body">
-        <h3>Recevez notre guide gratuit</h3>
-        <p><strong>[TITRE DU GUIDE — À COMPLÉTER]</strong> (ex. « Checklist sécurité PME : les 5 failles à vérifier »). Gratuit, par email, sans engagement.</p>
+        <h3>Guide gratuit : Sécurité informatique en PME</h3>
+        <p><strong>La checklist des 7 points essentiels</strong> pour réduire vos risques, sans jargon. Laissez votre email pour le recevoir — ou téléchargez-le directement.</p>
         <form data-demo-form data-type="question" novalidate>
-          <div class="form-ok">✅ Merci ! On vous envoie le guide par email très vite.</div>
-          <input type="hidden" name="message" value="Demande du guide gratuit — {topic}">
+          <div class="form-ok">✅ Merci ! <a href="{pdf}" target="_blank" rel="noopener"><strong>Cliquez ici pour télécharger le guide (PDF)</strong></a>.</div>
+          <input type="hidden" name="message" value="Demande du guide « Sécurité PME » — {topic}">
           <input name="email" type="email" placeholder="Votre email" required aria-label="Votre email">
           <button class="btn btn--primary" type="submit">Recevoir le guide</button>
         </form>
+        <p style="margin:10px 0 0;font-size:.85rem"><a href="{pdf}" target="_blank" rel="noopener">📥 Télécharger directement (PDF)</a></p>
       </div>
     </div>"""
 
