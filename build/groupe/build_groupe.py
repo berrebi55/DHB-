@@ -26,7 +26,7 @@ FILIALES = [
      "points": ["Infogérance & maintenance de parc", "Cybersécurité & sauvegarde", "Support sur site (IdF) et à distance (France)"]},
     {"slug": "particuliers", "nom": "DHB Particuliers", "baseline": "Pour les particuliers",
      "desc": "Assistance informatique à domicile et à distance pour les particuliers : abonnement sérénité ou intervention ponctuelle.",
-     "base": "particuliers/", "url_prod": "https://aide.dhb-groupe.fr", "actif": False, "accent": "#16a34a",
+     "base": "../particuliers/", "url_prod": "https://www.dhb-assistance.fr", "actif": True, "accent": "#16a34a",
      "points": ["Dépannage à domicile et à distance", "Abonnement assistance illimitée", "Intervention ponctuelle sans engagement"]},
 ]
 
@@ -265,7 +265,7 @@ def le_groupe():
   <p>Le groupe DHB rassemble des structures spécialisées dans les services informatiques. Notre mission : rendre l'informatique simple et sereine, que vous soyez une entreprise qui veut un parc fiable et sécurisé, ou un particulier qui a besoin d'aide à la maison.</p>
   <h2>Nos filiales</h2>
   <p><strong><a href="../../infogerance/">DHB Infogérance</a></strong> accompagne les entreprises : maintenance, dépannage, cybersécurité, sauvegarde et infogérance globale, sur site en Île-de-France et à distance partout en France.</p>
-  <p><strong><a href="../particuliers/">DHB Particuliers</a></strong> aide les particuliers au quotidien : dépannage, assistance et conseils, en abonnement ou à l'intervention.</p>
+  <p><strong><a href="../../particuliers/">DHB Particuliers</a></strong> aide les particuliers au quotidien : dépannage, assistance et conseils, en abonnement ou à l'intervention.</p>
   <h2>Nos valeurs</h2>
   <ul><li><strong>Proximité</strong> : un interlocuteur qui vous connaît.</li><li><strong>Clarté</strong> : des explications simples, jamais de jargon.</li><li><strong>Transparence</strong> : des engagements, pas de prix cachés.</li></ul>
   <p class="a-completer">[À COMPLÉTER PAR LE PROPRIÉTAIRE : histoire du groupe, fondateur(s), forme juridique, date de création.]</p>
@@ -291,7 +291,7 @@ def contact():
     <p>✉ <a href="mailto:{EMAIL}">{EMAIL}</a> <span class="a-completer">[EXEMPLE]</span></p>
     <p>📍 Sur site en Île-de-France · à distance partout en France.</p>
     <div class="card" style="margin-top:16px"><h3>Vous cherchez un service précis ?</h3>
-      <p style="margin:0">Entreprises → <a href="../../infogerance/">DHB Infogérance</a><br>Particuliers → <a href="../particuliers/">DHB Particuliers</a></p></div>
+      <p style="margin:0">Entreprises → <a href="../../infogerance/">DHB Infogérance</a><br>Particuliers → <a href="../../particuliers/">DHB Particuliers</a></p></div>
   </div>
   <div class="reveal"><div class="form-card">
     <h3 class="mt-0">Nous écrire</h3>
@@ -327,7 +327,6 @@ def legal(slug, title, h1, blocks):
 def build():
     pages = {
         "index.html": home(),
-        "particuliers/index.html": filiale_particuliers(),
         "le-groupe/index.html": le_groupe(),
         "contact/index.html": contact(),
         "mentions-legales/index.html": legal("mentions-legales/", "Mentions légales", "Mentions légales",

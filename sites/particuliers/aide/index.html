@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Centre d'aide informatique pour particuliers | DHB Particuliers</title>
+<meta name="description" content="Centre d'aide DHB Particuliers : réponses simples aux problèmes informatiques du quotidien (ordinateur lent, virus, box, photos, smartphone). Et une aide à domicile ou à distance.">
+<link rel="canonical" href="https://www.dhb-assistance.fr/aide/">
+<meta name="robots" content="index, follow">
+<meta property="og:type" content="website"><meta property="og:title" content="Centre d'aide informatique pour particuliers | DHB Particuliers">
+<meta property="og:description" content="Centre d'aide DHB Particuliers : réponses simples aux problèmes informatiques du quotidien (ordinateur lent, virus, box, photos, smartphone). Et une aide à domicile ou à distance."><meta property="og:url" content="https://www.dhb-assistance.fr/aide/">
+<meta property="og:locale" content="fr_FR"><meta property="og:site_name" content="DHB Particuliers">
+<meta name="theme-color" content="#15803d">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
+<link rel="stylesheet" href="../assets/css/style.css">
+<link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml">
+<style>
+:root{--cyan:#22c55e;--cyan-600:#16a34a;--cyan-700:#15803d;}
+.hero{background:linear-gradient(160deg,#064e3b 0%,#053b2e 55%,#04291f 100%);}
+.btn--primary{box-shadow:0 10px 24px -8px rgba(34,197,94,.55);}
+.pb-toolbar{position:sticky;top:76px;z-index:20;background:var(--blanc);padding:18px 0;border-bottom:1px solid var(--gris-100)}
+.pb-search{max-width:560px;margin:0 auto 14px;position:relative}
+.pb-search input{padding-left:44px}
+.pb-search svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--gris-400)}
+.pb-filters{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.pb-filter{border:1.5px solid var(--gris-200);background:#fff;color:var(--nuit);padding:8px 15px;border-radius:999px;font-weight:600;font-size:.88rem;cursor:pointer;transition:all .2s;font-family:inherit}
+.pb-filter:hover{border-color:var(--cyan-600)} .pb-filter.active{background:var(--cyan-700);color:#fff;border-color:var(--cyan-700)}
+.pb-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:34px}
+.pb-card{display:flex;flex-direction:column;background:#fff;border:1px solid var(--gris-100);border-radius:var(--rayon);padding:22px;box-shadow:var(--ombre-douce);transition:transform .2s,box-shadow .2s;color:inherit}
+.pb-card:hover{transform:translateY(-4px);box-shadow:var(--ombre);color:inherit}
+.pb-cat{display:inline-flex;gap:6px;align-self:flex-start;font-size:.78rem;font-weight:800;color:var(--cyan-700);background:#f0fdf4;border:1px solid #bbf7d0;padding:3px 10px;border-radius:999px;margin-bottom:12px}
+.pb-card h3{font-size:1.08rem;margin-bottom:8px} .pb-card p{font-size:.93rem;margin-bottom:14px;flex:1}
+.pb-link{font-weight:700;color:var(--cyan-700);font-size:.92rem}
+.pb-empty{display:none;text-align:center;color:var(--gris-600);padding:40px}.pb-empty.show{display:block}
+@media(max-width:960px){.pb-grid{grid-template-columns:repeat(2,1fr)}.pb-toolbar{top:0}}
+@media(max-width:680px){.pb-grid{grid-template-columns:1fr}}
+</style>
+
+</head>
+<body>
+<a class="skip-link" href="#contenu">Aller au contenu</a>
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="logo" href="../" aria-label="DHB Particuliers">
+      <span class="logo__mark">D<b>H</b>B <span style="font-size:.8rem;font-weight:700;color:var(--gris-600)">Particuliers</span></span>
+      <span class="logo__tag">Assistance & dépannage informatique pour les particuliers</span>
+    </a>
+    <nav class="nav" aria-label="Navigation principale">
+      <a class="nav-link" href="../">Accueil</a>
+      <a class="nav-link" href="../aide/">Centre d'aide</a>
+      <a class="nav-link" href="../abonnement/">Abonnement & tarifs</a>
+      <a class="nav-link" href="../contact/">Contact</a>
+    </nav>
+    <div class="header-cta"><a class="btn btn--primary" href="../contact/">Être aidé(e)</a></div>
+    <button class="burger" aria-label="Menu" aria-expanded="false" aria-controls="mnav"><span></span><span></span><span></span></button>
+  </div>
+</header>
+<div class="mobile-nav" id="mnav">
+  <a href="../">Accueil</a>
+  <a href="../aide/">Centre d'aide</a>
+  <a href="../abonnement/">Abonnement & tarifs</a>
+  <a href="../contact/">Contact</a>
+  <a class="btn btn--primary btn--block" href="../contact/">Être aidé(e)</a>
+</div>
+<main id="contenu">
+
+<section class="page-hero"><div class="wrap">
+  <div class="breadcrumb"><a href="../">Accueil</a> <span>/</span> Centre d'aide</div>
+  <span class="eyebrow">Centre d'aide</span>
+  <h1>Un souci informatique ? Trouvez la réponse</h1>
+  <p>Cherchez votre problème ci-dessous, expliqué simplement. Et si vous préférez qu'on s'en occupe, on est là.</p>
+</div></section>
+<div class="pb-toolbar"><div class="wrap">
+  <div class="pb-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input id="pb-search" type="search" placeholder="Rechercher (ex : ordinateur lent, virus, photos…)" aria-label="Rechercher"></div>
+  <div class="pb-filters"><button class="pb-filter active" data-cat="all">Tout</button><button class="pb-filter" data-cat="ordi">💻 Ordinateur (lenteur, panne)</button><button class="pb-filter" data-cat="internet">📶 Internet, box & Wi-Fi</button><button class="pb-filter" data-cat="securite">🛡️ Sécurité & arnaques</button><button class="pb-filter" data-cat="donnees">📷 Photos & données</button><button class="pb-filter" data-cat="email">✉️ Email & comptes</button><button class="pb-filter" data-cat="mobile">📱 Smartphone & tablette</button><button class="pb-filter" data-cat="impression">🖨️ Imprimante</button><button class="pb-filter" data-cat="conseil">💡 Conseils & achat</button></div>
+</div></div>
+<section class="section section--tight"><div class="wrap">
+  <div class="pb-grid"><a class="pb-card" href="ordinateur-maison-tres-lent/" data-cat="ordi" data-kw="mon ordinateur est devenu très lent, que faire ? votre ordinateur met une éternité à démarrer et rame à chaque clic ? c'est frustrant, mais dans la majorité des cas, ça se répare sans en racheter un."><span class="pb-cat">💻 Ordinateur (lenteur, panne)</span><h3>Mon ordinateur est devenu très lent, que faire ?</h3><p>Votre ordinateur met une éternité à démarrer et rame à chaque clic ? C'est frustrant, mais dans la majorité de…</p><span class="pb-link">Voir l'aide →</span></a><a class="pb-card" href="ordinateur-ne-sallume-plus-maison/" data-cat="ordi" data-kw="mon ordinateur ne s'allume plus du tout vous appuyez sur le bouton et rien ne se passe : pas de lumière, pas de bruit."><span class="pb-cat">💻 Ordinateur (lenteur, panne)</span><h3>Mon ordinateur ne s'allume plus du tout</h3><p>Vous appuyez sur le bouton et rien ne se passe : pas de lumière, pas de bruit.…</p><span class="pb-link">Voir l'aide →</span></a><a class="pb-card" href="ordinateur-chauffe-ventilateur-bruyant/" data-cat="ordi" data-kw="mon ordinateur chauffe et le ventilateur fait beaucoup de bruit la machine devient chaude et bruyante, parfois elle ralentit ou s'éteint toute seule."><span class="pb-cat">💻 Ordinateur (lenteur, panne)</span><h3>Mon ordinateur chauffe et le ventilateur fait beaucoup de bruit</h3><p>La machine devient chaude et bruyante, parfois elle ralentit ou s'éteint toute seule.…</p><span class="pb-link">Voir l'aide →</span></a><a class="pb-card" href="plus-dinternet-a-la-maison/" data-cat="internet" data-kw="je n'ai plus internet à la maison, comment faire ? plus de connexion sur aucun appareil ? avant d'appeler l'opérateur (et d'attendre), quelques gestes simples résolvent souvent la panne."><span class="pb-cat">📶 Internet, box & Wi-Fi</span><h3>Je n'ai plus Internet à la maison, comment faire ?</h3><p>Plus de connexion sur aucun appareil ? Avant d'appeler l'opérateur (et d'attendre), quelques gestes simples ré…</p><span class="pb-link">Voir l'aide →</span></a><a class="pb-card" href="wifi-faible-dans-la-maison/" data-cat="internet" data-kw="le wi-fi ne capte pas bien dans certaines pièces la connexion est bonne près de la box mais faible ou inexistante dans les chambres ou à l'étage."><span class="pb-cat">📶 Internet, box & Wi-Fi</span><h3>Le Wi-Fi ne capte pas bien dans certaines pièces</h3><p>La connexion est bonne près de la box mais faible ou inexistante dans les chambres ou à l'étage.…</p><span class="pb-link">Voir l'aide →</span></a><a class="pb-card" href="box-internet-clignote-rouge/" data-cat="internet" data-kw="la box clignote en rouge / orange, est-ce grave ? un voyant anormal sur la box inquiète, mais il indique surtout quoi vérifier."><span class="pb-cat">📶 Internet, box & Wi-Fi</span><h3>La box clignote en rouge / orange, est-ce grave ?</h3><p>Un voyant anormal sur la box inquiète, mais il indique surtout quoi vérifier.…</p><span class="pb-link">Voir l'aide →</span></a><a class="pb-card" href="tv-streaming-qui-rame/" data-cat="internet" data-kw="netflix / la tv connectée rame ou se coupe les vidéos se mettent en pause, se chargent sans fin ou affichent une mauvaise qualité."><span class="pb-cat">📶 Internet, box & Wi-Fi</span><h3>Netflix / la TV connectée rame ou se coupe</h3><p>Les vidéos se mettent en pause, se chargent sans fin ou affichent une mauvaise qualité.…</p><span class="pb-link">Voir l'aide →</span></a><a class="pb-card" href="pubs-partout-ordinateur/" data-cat="securite" data-kw="j'ai des publicités partout et une page d'accueil bizarre des fenêtres de pub surgissent, votre moteur de recherche a changé : votre navigateur est « détourné »."><span class="pb-cat">🛡️ Sécurité & arnaques</span><h3>J'ai des publicités partout et une page d'accueil bizarre</h3><p>Des fenêtres de pub surgissent, votre moteur de recherche a changé : votre navigateur est « détourné ».…</p><span class="pb-link">Voir l'aide →</span></a><a class="pb-card" href="faux-virus-arnaque-microsoft/" data-cat="securite" data-kw="un message dit que mon pc est infecté et me demande d'appeler un numéro une page plein écran affiche une alerte alarmante et un numéro à appeler « d'urgence ». c'est une arnaque très répandue."><span class="pb-cat">🛡️ Sécurité & arnaques</span><h3>Un message dit que mon PC est infecté et me demande d'appeler un numéro</h3><p>Une page plein écran affiche une alerte alarmante et un numéro à appeler « d'urgence ». C'est une arnaque très…</p><span class="pb-link">Voir l'aide →</span></a><a class="pb-card" href="compte-facebook-email-pirate/" data-cat="securite" data-kw="mon compte (email, facebook…) a été piraté vous ne pouvez plus vous connecter, ou vos contacts reçoivent des messages étranges en votre nom."><span class="pb-cat">🛡️ Sécurité & arnaques</span><h3>Mon compte (email, Facebook…) a été piraté</h3><p>Vous ne pouvez plus vous connecter, ou vos contacts reçoivent des messages étranges en votre nom.…</p><span class="pb-link">Voir l'aide →</span></a><a class="pb-card" href="reconnaitre-arnaque-sms-colis/" data-cat="securite" data-kw="comment reconnaître une arnaque par sms ou email (colis, banque…) ? un sms « votre colis est bloqué » ou un email « votre compte va être suspendu » avec un lien : ce sont des pièges très courants."><span class="pb-cat">🛡️ Sécurité & arnaques</span><h3>Comment reconnaître une arnaque par SMS ou email (colis, banque…) ?</h3><p>Un SMS « votre colis est bloqué » ou un email « votre compte va être suspendu » avec un lien : ce sont des piè…</p><span class="pb-link">Voir l'aide →</span></a><a class="pb-card" href="mot-de-passe-oublie-aide/" data-cat="securite" data-kw="j'ai oublié mes mots de passe et je m'y perds vous ne retrouvez plus vos mots de passe, vous les notez sur des papiers partout, ou vous utilisez le même partout."><span class="pb-cat">🛡️ Sécurité & arnaques</span><h3>J'ai oublié mes mots de passe et je m'y perds</h3><p>Vous ne retrouvez plus vos mots de passe, vous les notez sur des papiers partout, ou vous utilisez le même par…</p><span class="pb-link">Voir l'aide →</span></a><a class="pb-card" href="recuperer-photos-supprimees/" data-cat="donnees" data-kw="j'ai supprimé des photos / fichiers importants, sont-ils récupérables ? des souvenirs effacés par erreur ? souvent, tout n'est pas perdu — mais il faut agir vite et bien."><span class="pb-cat">📷 Photos & données</span><h3>J'ai supprimé des photos / fichiers importants, sont-ils récupérables ?</h3><p>Des souvenirs effacés par erreur ? Souvent, tout n'est pas perdu — mais il faut agir vite et bien.…</p><span class="pb-link">Voir l'aide →</span></a><a class="pb-card" href="sauvegarder-ses-photos-souvenirs/" data-cat="donnees" data-kw="comment sauvegarder mes photos et souvenirs pour ne jamais les perdre ? vos photos ne sont que sur votre téléphone ou votre pc ? une casse, un vol ou une panne, et tout disparaît. voici comment dormir tranquille."><span class="pb-cat">📷 Photos & données</span><h3>Comment sauvegarder mes photos et souvenirs pour ne jamais les perdre ?</h3><p>Vos photos ne sont que sur votre téléphone ou votre PC ? Une casse, un vol ou une panne, et tout disparaît. Vo…</p><span class="pb-link">Voir l'aide →</span></a><a class="pb-card" href="cle-usb-disque-non-reconnu-maison/" data-cat="donnees" data-kw="ma clé usb ou mon disque externe n'est pas reconnu vous branchez votre clé ou disque et rien n'apparaît, ou l'ordinateur propose de le « formater »."><span class="pb-cat">📷 Photos & données</span><h3>Ma clé USB ou mon disque externe n'est pas reconnu</h3><p>Vous branchez votre clé ou disque et rien n'apparaît, ou l'ordinateur propose de le « formater ».…</p><span class="pb-link">Voir l'aide →</span></a><a class="pb-card" href="creer-adresse-mail-aide/" data-cat="email" data-kw="comment créer une adresse email (et bien la gérer) ? besoin d'une adresse email, ou envie d'y voir plus clair dans la vôtre ? on vous accompagne pas à pas."><span class="pb-cat">✉️ Email & comptes</span><h3>Comment créer une adresse email (et bien la gérer) ?</h3><p>Besoin d'une adresse email, ou envie d'y voir plus clair dans la vôtre ? On vous accompagne pas à pas.…</p><span class="pb-link">Voir l'aide →</span></a><a class="pb-card" href="boite-mail-pleine-de-spams/" data-cat="email" data-kw="ma boîte mail est envahie de spams / courriers indésirables vous recevez des dizaines de messages publicitaires ou suspects chaque jour."><span class="pb-cat">✉️ Email & comptes</span><h3>Ma boîte mail est envahie de spams / courriers indésirables</h3><p>Vous recevez des dizaines de messages publicitaires ou suspects chaque jour.…</p><span class="pb-link">Voir l'aide →</span></a><a class="pb-card" href="smartphone-lent-ou-plein/" data-cat="mobile" data-kw="mon téléphone est lent ou affiche « stockage plein » votre smartphone rame, ne prend plus de photos ou refuse les mises à jour faute de place."><span class="pb-cat">📱 Smartphone & tablette</span><h3>Mon téléphone est lent ou affiche « stockage plein »</h3><p>Votre smartphone rame, ne prend plus de photos ou refuse les mises à jour faute de place.…</p><span class="pb-link">Voir l'aide →</span></a><a class="pb-card" href="transferer-donnees-nouveau-telephone/" data-cat="mobile" data-kw="comment transférer mes données vers un nouveau téléphone ? nouveau téléphone, mais la peur de perdre contacts, photos, applis et messages ?"><span class="pb-cat">📱 Smartphone & tablette</span><h3>Comment transférer mes données vers un nouveau téléphone ?</h3><p>Nouveau téléphone, mais la peur de perdre contacts, photos, applis et messages ?…</p><span class="pb-link">Voir l'aide →</span></a><a class="pb-card" href="imprimante-maison-nimprime-plus/" data-cat="impression" data-kw="mon imprimante n'imprime plus rien ne sort, ou l'imprimante apparaît « hors ligne » alors qu'elle est allumée."><span class="pb-cat">🖨️ Imprimante</span><h3>Mon imprimante n'imprime plus</h3><p>Rien ne sort, ou l'imprimante apparaît « hors ligne » alors qu'elle est allumée.…</p><span class="pb-link">Voir l'aide →</span></a><a class="pb-card" href="quel-ordinateur-acheter/" data-cat="conseil" data-kw="quel ordinateur acheter (sans se faire avoir) ? face aux dizaines de modèles et au jargon, difficile de savoir quoi choisir pour son budget et ses besoins."><span class="pb-cat">💡 Conseils & achat</span><h3>Quel ordinateur acheter (sans se faire avoir) ?</h3><p>Face aux dizaines de modèles et au jargon, difficile de savoir quoi choisir pour son budget et ses besoins.…</p><span class="pb-link">Voir l'aide →</span></a><a class="pb-card" href="aider-un-proche-age-a-distance/" data-cat="conseil" data-kw="comment aider un proche âgé avec son informatique ? un parent qui galère avec son ordinateur, sa tablette ou ses démarches en ligne, et vous n'êtes pas toujours là pour l'aider ?"><span class="pb-cat">💡 Conseils & achat</span><h3>Comment aider un proche âgé avec son informatique ?</h3><p>Un parent qui galère avec son ordinateur, sa tablette ou ses démarches en ligne, et vous n'êtes pas toujours l…</p><span class="pb-link">Voir l'aide →</span></a></div>
+  <div class="pb-empty" id="pb-empty"><p>Rien ne correspond. <a href="../contact/">Expliquez-nous votre problème</a>, on vous aide.</p></div>
+</div></section>
+<section class="section"><div class="wrap"><div class="cta-band reveal">
+  <h2>Vous préférez qu'on s'en occupe ?</h2>
+  <p>À domicile en Île-de-France ou à distance partout en France. Sans jargon, sans engagement.</p>
+  <div class="hero-cta"><a class="btn btn--primary btn--lg" href="../contact/">Être aidé(e)</a><a class="btn btn--ghost btn--lg" href="../abonnement/">Voir l'abonnement</a></div>
+</div></div></section>
+<script>(function(){var s=document.getElementById('pb-search'),c=[].slice.call(document.querySelectorAll('.pb-card')),f=[].slice.call(document.querySelectorAll('.pb-filter')),e=document.getElementById('pb-empty'),cat='all';function n(x){return(x||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}function a(){var q=n(s.value.trim()),k=0;c.forEach(function(x){var okc=(cat==='all'||x.getAttribute('data-cat')===cat),okq=(!q||n(x.getAttribute('data-kw')).indexOf(q)>-1),sh=okc&&okq;x.style.display=sh?'':'none';if(sh)k++});if(e)e.classList.toggle('show',k===0)}s.addEventListener('input',a);f.forEach(function(b){b.addEventListener('click',function(){f.forEach(function(y){y.classList.remove('active')});b.classList.add('active');cat=b.getAttribute('data-cat');a()})})})();</script>
+
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div class="footer-contact">
+        <span class="logo__mark" style="color:#fff">D<b>H</b>B Particuliers</span>
+        <p>Assistance & dépannage informatique pour les particuliers. À domicile en Île-de-France, à distance partout en France.</p>
+        <p>☎ <a href="tel:+33123456789">01 23 45 67 89</a><br>✉ <a href="mailto:bonjour@dhb-assistance.fr">bonjour@dhb-assistance.fr</a></p>
+      </div>
+      <div><h4>Aide</h4><a href="../aide/">Centre d'aide</a><a href="../abonnement/">Abonnement & tarifs</a></div>
+      <div><h4>Infos</h4><a href="../a-propos/">À propos</a><a href="../contact/">Contact</a></div>
+      <div><h4>Légal</h4><a href="../mentions-legales/">Mentions légales</a><a href="../politique-confidentialite/">Confidentialité</a></div>
+    </div>
+    <div class="footer-bottom"><span>© 2026 DHB Particuliers. <span class="a-completer">[SIRET : À COMPLÉTER]</span></span></div>
+  </div>
+</footer>
+<div class="float-cta">
+  <a class="float-btn" href="tel:+33123456789" aria-label="Appeler"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.6a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.5-1.1a2 2 0 0 1 2.1-.5c.8.3 1.7.5 2.6.6a2 2 0 0 1 1.7 2z"/></svg><span>Appeler</span></a>
+</div>
+<div class="cookie-banner" role="dialog" aria-label="Cookies">
+  <div class="cookie-inner">
+    <p><strong>🍪 Respect de votre vie privée.</strong> Cookies nécessaires et, avec votre accord, de mesure d'audience. Refus aussi simple qu'acceptation.</p>
+    <div class="cookie-actions"><button class="btn btn--outline" data-cookie="refuse">Refuser</button><button class="btn btn--primary" data-cookie="accept">Tout accepter</button></div>
+  </div>
+</div>
+<script src="../assets/js/supabase-config.js"></script>
+<script src="../assets/js/main.js" defer></script>
+</body>
+</html>
