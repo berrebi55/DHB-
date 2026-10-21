@@ -244,3 +244,76 @@ drop policy if exists "abos auth all" on public.abonnements;
 create policy "abos auth all" on public.abonnements for all to authenticated using (true) with check (true);
 drop policy if exists "prestations auth all" on public.prestations;
 create policy "prestations auth all" on public.prestations for all to authenticated using (true) with check (true);
+
+-- =====================================================================
+--  MODULE AVANCÉ : rôles multi-utilisateur, signature devis en ligne,
+--  facturation récurrente — additif (idempotent).
+-- =====================================================================
+
+-- ---------- 1) PROFILS & RÔLES (multi-utilisateur) ----------
+create table if not exists public.profiles (
+  id uuid primary key references auth.users(id) on delete cascade,
+  email text,
+  role text not null default 'collaborateur' check (role in ('admin','collaborateur')),
+  created_at timestamptz not null default now()
+);
+
+-- À la création d'un compte : 1er inscrit = admin, les suivants = collaborateur.
+create or replace function public.handle_new_user()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare has_admin boolean;
+begin
+  select exists(select 1 from public.profiles where role = 'admin') into has_admin;
+  insert into public.profiles (id, email, role)
+    values (new.id, new.email, case when has_admin then 'collaborateur' else 'admin' end)
+    on conflict (id) do nothing;
+  return new;
+end; $$;
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created after insert on auth.users
+  for each row execute function public.handle_new_user();
+
+-- Rattrapage : crée un profil admin pour les comptes déjà existants sans profil.
+insert into public.profiles (id, email, role)
+  select u.id, u.email, 'admin' from auth.users u
+  where not exists (select 1 from public.profiles p where p.id = u.id)
+on conflict (id) do nothing;
+
+-- Helper : l'utilisateur courant est-il admin ?
+create or replace function public.is_admin()
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists(select 1 from public.profiles where id = auth.uid() and role = 'admin');
+$$;
+
+alter table public.profiles enable row level security;
+drop policy if exists "profiles self read" on public.profiles;
+create policy "profiles self read" on public.profiles for select to authenticated using (true);
+drop policy if exists "profiles admin write" on public.profiles;
+create policy "profiles admin write" on public.profiles for all to authenticated
+  using (public.is_admin()) with check (public.is_admin());
+
+-- ---------- 2) SIGNATURE DEVIS EN LIGNE ----------
+alter table public.devis add column if not exists public_token uuid not null default gen_random_uuid();
+alter table public.devis add column if not exists signed_at timestamptz;
+alter table public.devis add column if not exists signature_nom text;
+alter table public.devis add column if not exists signature_ip text;
+create unique index if not exists devis_public_token_idx on public.devis (public_token);
+-- La lecture/signature publique passe par des Edge Functions (service role),
+-- donc AUCUNE policy anon sur la table : les devis restent privés.
+
+-- ---------- 3) FACTURATION RÉCURRENTE (suivi) ----------
+alter table public.abonnements add column if not exists jour_facturation int;
+alter table public.abonnements add column if not exists derniere_facture_le date;
+-- Par défaut, facturer le jour du mois de la date de début.
+update public.abonnements
+  set jour_facturation = extract(day from date_debut)::int
+  where jour_facturation is null and date_debut is not null;
+
+-- Restreindre les paramètres (prix) aux admins : les collaborateurs ne touchent pas aux tarifs.
+drop policy if exists "settings auth write" on public.settings;
+create policy "settings admin write" on public.settings for all to authenticated
+  using (public.is_admin()) with check (public.is_admin());
+
+-- ---------- 4) RELANCES AUTO (anti-spam : 1 relance / 7 j max) ----------
+alter table public.devis    add column if not exists derniere_relance_le date;
+alter table public.factures add column if not exists derniere_relance_le date;

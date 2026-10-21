@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Votre devis — DHB</title>
+<style>
+  :root{ --nuit:#0B2A4A; --cyan:#0e7490; --cyan7:#155e75; --gris:#64748b; --bg:#f1f5f9; --ok:#16a34a; }
+  *{box-sizing:border-box} body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:0;background:var(--bg);color:#0f2238}
+  .wrap{max-width:760px;margin:30px auto;padding:0 18px}
+  .card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:26px;box-shadow:0 10px 30px rgba(2,32,71,.06);margin-bottom:18px}
+  h1{color:var(--nuit);margin:.2em 0} .muted{color:var(--gris);font-size:.9rem}
+  table{width:100%;border-collapse:collapse;margin:16px 0} th,td{border:1px solid #e2e8f0;padding:10px;text-align:left} th{background:#f8fafc}
+  .tot{text-align:right;font-size:1.05rem} .big{font-size:1.5rem;font-weight:800;color:var(--nuit)}
+  .btn{display:inline-block;background:var(--cyan7);color:#fff;border:none;border-radius:10px;padding:14px 22px;font-size:1rem;font-weight:700;cursor:pointer}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  input{width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:8px;font-size:1rem}
+  .ok{background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46;padding:16px;border-radius:10px}
+  .err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;padding:16px;border-radius:10px}
+  label{font-weight:600;display:block;margin:10px 0 6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="state" class="card">Chargement du devis…</div>
+</div>
+
+<script>
+// Configuration publique Supabase (clé anon/publishable uniquement).
+var CFG = {
+  url: "https://yjnaxzlvuwrvyyqxnvgn.supabase.co",
+  anonKey: "sb_publishable_16JlSXS7tzUjlgGAQsmr8w_ZCIRTkSE"
+};
+var ENTITY = { groupe:"Groupe", infogerance:"Infogérance", particuliers:"Particuliers" };
+function eur(n){ return (Number(n)||0).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})+' €'; }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+function fn(name){ return CFG.url+'/functions/v1/'+name; }
+var HEADERS = { 'Content-Type':'application/json','Authorization':'Bearer '+CFG.anonKey,'apikey':CFG.anonKey };
+
+var token = new URLSearchParams(location.search).get('token');
+var box = document.getElementById('state');
+
+if(!token){ box.className='card err'; box.textContent="Lien invalide : aucun devis spécifié."; }
+else { charger(); }
+
+async function charger(){
+  try{
+    var r = await fetch(fn('get-devis-public')+'?token='+encodeURIComponent(token), { headers:HEADERS });
+    var d = await r.json();
+    if(!d || !d.ok){ box.className='card err'; box.textContent="Devis introuvable ou lien expiré."; return; }
+    afficher(d.devis);
+  }catch(e){ box.className='card err'; box.textContent="Erreur : "+e.message; }
+}
+
+function afficher(v){
+  var lignes = Array.isArray(v.lignes)?v.lignes:[];
+  var rows = lignes.map(function(l){
+    return '<tr><td>'+esc(l.libelle)+'</td><td>'+esc(l.qte)+'</td><td>'+eur(l.pu)+'</td><td>'+eur((l.qte||0)*(l.pu||0))+'</td></tr>';
+  }).join('');
+  var ht = Number(v.total_ht)||0, ttc = Number(v.total_ttc)||0, tvaM = ttc-ht;
+  var dejaSigne = !!v.signed_at;
+  var html =
+    '<div class="card">'+
+      '<h1>Devis '+esc(v.numero)+'</h1>'+
+      '<div class="muted">DHB '+esc(ENTITY[v.entity]||v.entity)+' · Valable '+esc(v.validite_jours||30)+' jours</div>'+
+      '<p><strong>Client :</strong> '+esc(v.client_nom)+'</p>'+
+      '<table><thead><tr><th>Prestation</th><th>Qté</th><th>PU HT</th><th>Total HT</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+      '<div class="tot">Total HT : <strong>'+eur(ht)+'</strong><br>'+
+        (Number(v.tva_taux)>0 ? 'TVA ('+esc(v.tva_taux)+' %) : '+eur(tvaM)+'<br>' : '<span class="muted">TVA non applicable, art. 293 B du CGI</span><br>')+
+        '<span class="big">'+(Number(v.tva_taux)>0?'Total TTC':'Total')+' : '+eur(ttc)+'</span></div>'+
+    '</div>';
+
+  if(dejaSigne){
+    html += '<div class="card ok"><strong>✓ Devis déjà accepté</strong><br>Signé par '+esc(v.signature_nom||'')+'. Merci de votre confiance !</div>';
+  } else {
+    html += '<div class="card" id="sign">'+
+      '<h2 style="margin-top:0">Accepter ce devis</h2>'+
+      '<p class="muted">En saisissant votre nom et en cliquant sur « Accepter », vous validez ce devis (acceptation en ligne tenant lieu de bon pour accord).</p>'+
+      '<label for="nom">Votre nom et prénom</label>'+
+      '<input id="nom" placeholder="ex. Jean Dupont">'+
+      '<p style="margin-top:16px"><button class="btn" id="go">Accepter le devis ✓</button></p>'+
+      '<div id="msg"></div>'+
+    '</div>';
+  }
+  box.outerHTML = html;
+  var go = document.getElementById('go');
+  if(go) go.addEventListener('click', signer);
+}
+
+async function signer(){
+  var nom = (document.getElementById('nom').value||'').trim();
+  var msg = document.getElementById('msg');
+  if(!nom){ msg.innerHTML='<p class="err">Merci d’indiquer votre nom.</p>'; return; }
+  var go = document.getElementById('go'); go.disabled=true; go.textContent='Validation…';
+  try{
+    var r = await fetch(fn('sign-devis'), { method:'POST', headers:HEADERS, body:JSON.stringify({ token:token, signature_nom:nom }) });
+    var d = await r.json();
+    if(d && d.ok){
+      document.getElementById('sign').outerHTML = '<div class="card ok"><strong>✓ Merci '+esc(nom)+' !</strong><br>Votre acceptation a bien été enregistrée. Nous revenons vers vous rapidement.</div>';
+    } else {
+      msg.innerHTML='<p class="err">Erreur : '+esc((d&&d.error)||'inconnue')+'</p>'; go.disabled=false; go.textContent='Accepter le devis ✓';
+    }
+  }catch(e){ msg.innerHTML='<p class="err">Erreur : '+esc(e.message)+'</p>'; go.disabled=false; go.textContent='Accepter le devis ✓'; }
+}
+</script>
+</body>
+</html>
