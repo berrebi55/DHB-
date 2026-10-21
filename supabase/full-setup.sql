@@ -143,3 +143,104 @@ end $$;
 --  (mentions obligatoires, continuité de numérotation, règles anti-fraude
 --  TVA en France) reste à valider avec votre comptable avant tout usage réel.
 -- =====================================================================
+
+-- =====================================================================
+--  MODULE CRM (clients, devis, abonnements, prestations) — additif
+-- =====================================================================
+
+-- CLIENTS (fiche centrale)
+create table if not exists public.clients (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now(),
+  entity text not null default 'infogerance',
+  type text not null default 'entreprise' check (type in ('entreprise','particulier')),
+  nom text, entreprise text, email text, telephone text, adresse text,
+  statut text not null default 'prospect' check (statut in ('prospect','client','inactif')),
+  notes text,
+  updated_at timestamptz not null default now()
+);
+create index if not exists clients_created_idx on public.clients (created_at desc);
+
+-- Liens optionnels vers un client
+alter table public.leads    add column if not exists client_id uuid;
+alter table public.tickets  add column if not exists client_id uuid;
+alter table public.factures add column if not exists client_id uuid;
+alter table public.factures add column if not exists lignes jsonb;
+
+-- DEVIS (multi-lignes)
+create table if not exists public.devis (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now(),
+  entity text not null default 'infogerance',
+  numero text,
+  client_id uuid references public.clients(id) on delete set null,
+  client_nom text, client_email text, client_adresse text,
+  date_devis date not null default current_date,
+  validite_jours int not null default 30,
+  lignes jsonb not null default '[]',
+  tva_taux numeric not null default 0,
+  total_ht numeric not null default 0, total_ttc numeric not null default 0,
+  statut text not null default 'brouillon' check (statut in ('brouillon','envoye','accepte','refuse','expire')),
+  notes text,
+  updated_at timestamptz not null default now()
+);
+create index if not exists devis_created_idx on public.devis (created_at desc);
+
+-- ABONNEMENTS / contrats récurrents
+create table if not exists public.abonnements (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now(),
+  entity text not null default 'infogerance',
+  client_id uuid references public.clients(id) on delete set null,
+  client_nom text,
+  libelle text,
+  montant_mensuel numeric not null default 0,
+  date_debut date not null default current_date,
+  date_renouvellement date,
+  statut text not null default 'actif' check (statut in ('actif','suspendu','resilie')),
+  notes text,
+  updated_at timestamptz not null default now()
+);
+create index if not exists abos_created_idx on public.abonnements (created_at desc);
+
+-- PRESTATIONS (modèles de lignes réutilisables)
+create table if not exists public.prestations (
+  id uuid primary key default gen_random_uuid(),
+  entity text not null default 'infogerance',
+  libelle text, prix_unitaire numeric not null default 0,
+  created_at timestamptz not null default now()
+);
+
+-- Numérotation des devis (continue, par année)
+create table if not exists public.devis_compteurs (annee int primary key, dernier int not null default 0);
+create or replace function public.next_devis_numero()
+returns text language plpgsql as $$
+declare y int := extract(year from now())::int; n int;
+begin
+  insert into public.devis_compteurs(annee, dernier) values (y, 1)
+    on conflict (annee) do update set dernier = public.devis_compteurs.dernier + 1
+    returning dernier into n;
+  return 'DEV-' || y::text || '-' || lpad(n::text, 4, '0');
+end; $$;
+
+-- updated_at
+drop trigger if exists trg_clients_touch on public.clients;
+create trigger trg_clients_touch before update on public.clients for each row execute function public.touch_updated_at();
+drop trigger if exists trg_devis_touch on public.devis;
+create trigger trg_devis_touch before update on public.devis for each row execute function public.touch_updated_at();
+drop trigger if exists trg_abos_touch on public.abonnements;
+create trigger trg_abos_touch before update on public.abonnements for each row execute function public.touch_updated_at();
+
+-- RLS (admin uniquement)
+alter table public.clients enable row level security;
+alter table public.devis enable row level security;
+alter table public.abonnements enable row level security;
+alter table public.prestations enable row level security;
+drop policy if exists "clients auth all" on public.clients;
+create policy "clients auth all" on public.clients for all to authenticated using (true) with check (true);
+drop policy if exists "devis auth all" on public.devis;
+create policy "devis auth all" on public.devis for all to authenticated using (true) with check (true);
+drop policy if exists "abos auth all" on public.abonnements;
+create policy "abos auth all" on public.abonnements for all to authenticated using (true) with check (true);
+drop policy if exists "prestations auth all" on public.prestations;
+create policy "prestations auth all" on public.prestations for all to authenticated using (true) with check (true);

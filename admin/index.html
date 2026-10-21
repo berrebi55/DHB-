@@ -104,11 +104,86 @@
 
   <div class="wrap" style="padding-top:22px;padding-bottom:60px">
     <div class="tabs" style="margin-bottom:18px;flex-wrap:wrap">
+      <button class="tab" data-view="dashboard">📊 Tableau de bord</button>
       <button class="tab active" data-view="leads">📥 Demandes</button>
       <button class="tab" data-view="relance">🔔 À relancer</button>
-      <button class="tab" data-view="tickets">🎫 Tickets</button>
+      <button class="tab" data-view="clients">👥 Clients</button>
+      <button class="tab" data-view="devis">📝 Devis</button>
       <button class="tab" data-view="factures">🧾 Factures</button>
-      <button class="tab" data-view="settings">⚙️ Prix & paramètres</button>
+      <button class="tab" data-view="abonnements">🔁 Abonnements</button>
+      <button class="tab" data-view="tickets">🎫 Tickets</button>
+      <button class="tab" data-view="settings">⚙️ Paramètres</button>
+    </div>
+
+    <!-- TABLEAU DE BORD -->
+    <div id="panel-dashboard" class="hidden">
+      <h1 style="font-size:1.6rem;margin:6px 0 0">Tableau de bord</h1>
+      <p class="muted">Vue d'ensemble de ton activité.</p>
+      <div class="kpis" id="dash-kpis"></div>
+      <div class="panel" style="padding:22px"><h3 class="mt-0">Demandes par statut</h3><div id="dash-status"></div></div>
+    </div>
+
+    <!-- CLIENTS -->
+    <div id="panel-clients" class="hidden">
+      <h1 style="font-size:1.6rem;margin:6px 0 0">Clients</h1>
+      <p class="muted">Ta base de clients et prospects (fiche centrale).</p>
+      <div class="panel" style="padding:20px;margin-bottom:20px">
+        <form id="client-form" class="form-grid" style="gap:12px">
+          <input type="hidden" name="id">
+          <div class="form-row"><label>Type</label><select class="status" name="type"><option value="entreprise">Entreprise</option><option value="particulier">Particulier</option></select></div>
+          <div class="form-row"><label>Filiale</label><select class="status" name="entity"><option value="infogerance">Infogérance</option><option value="particuliers">Particuliers</option><option value="groupe">Groupe</option></select></div>
+          <div class="form-row"><label>Nom du contact</label><input name="nom" required></div>
+          <div class="form-row"><label>Entreprise (si pro)</label><input name="entreprise"></div>
+          <div class="form-row"><label>Email</label><input name="email" type="email"></div>
+          <div class="form-row"><label>Téléphone</label><input name="telephone" type="tel"></div>
+          <div class="form-row" style="grid-column:1/-1"><label>Adresse</label><input name="adresse"></div>
+          <div class="form-row"><label>Statut</label><select class="status" name="statut"><option value="prospect">Prospect</option><option value="client">Client</option><option value="inactif">Inactif</option></select></div>
+          <div class="form-row" style="grid-column:1/-1"><label>Notes</label><textarea name="notes"></textarea></div>
+          <div style="grid-column:1/-1"><button class="btn btn--primary" type="submit" id="client-save-btn">Ajouter le client</button> <button type="button" class="btn btn--outline" id="client-reset" style="display:none">Annuler</button></div>
+        </form>
+      </div>
+      <div class="panel"><div class="toolbar"><input type="search" id="client-search" placeholder="Rechercher un client…"><span class="muted" id="client-count" style="margin-left:auto"></span></div><div id="clients-wrap"><div class="empty-state">Chargement…</div></div></div>
+    </div>
+
+    <!-- DEVIS -->
+    <div id="panel-devis" class="hidden">
+      <h1 style="font-size:1.6rem;margin:6px 0 0">Devis</h1>
+      <p class="muted">Crée des devis (plusieurs lignes), imprime-les, et convertis-les en facture.</p>
+      <div class="panel" style="padding:20px;margin-bottom:20px">
+        <div class="form-grid" style="gap:12px">
+          <div class="form-row"><label>Filiale</label><select class="status" id="dv-entity"><option value="infogerance">Infogérance</option><option value="particuliers">Particuliers</option><option value="groupe">Groupe</option></select></div>
+          <div class="form-row"><label>Client (nom)</label><input id="dv-client-nom"></div>
+          <div class="form-row"><label>Email client</label><input id="dv-client-email" type="email"></div>
+          <div class="form-row"><label>Adresse client</label><input id="dv-client-adresse"></div>
+          <div class="form-row"><label>Validité (jours)</label><input id="dv-validite" type="number" value="30"></div>
+          <div class="form-row"><label>TVA (%) — 0 si franchise</label><input id="dv-tva" type="number" step="0.1" value="0"></div>
+        </div>
+        <h4 style="margin:14px 0 6px">Lignes</h4>
+        <div id="dv-lignes"></div>
+        <button type="button" class="btn btn--outline" id="dv-add-ligne" style="margin-top:8px">+ Ajouter une ligne</button>
+        <div style="margin-top:14px;text-align:right;font-weight:800" id="dv-total">Total HT : 0,00 €</div>
+        <div style="margin-top:14px"><button class="btn btn--primary" id="dv-save">Créer le devis</button></div>
+      </div>
+      <div class="panel"><div id="devis-wrap"><div class="empty-state">Chargement…</div></div></div>
+    </div>
+
+    <!-- ABONNEMENTS -->
+    <div id="panel-abonnements" class="hidden">
+      <h1 style="font-size:1.6rem;margin:6px 0 0">Abonnements & contrats récurrents</h1>
+      <p class="muted">Suis tes revenus récurrents et les dates de renouvellement.</p>
+      <div class="kpis" id="abo-kpis"></div>
+      <div class="panel" style="padding:20px;margin-bottom:20px">
+        <form id="abo-form" class="form-grid" style="gap:12px">
+          <div class="form-row"><label>Filiale</label><select class="status" name="entity"><option value="infogerance">Infogérance</option><option value="particuliers">Particuliers</option></select></div>
+          <div class="form-row"><label>Client (nom)</label><input name="client_nom" required></div>
+          <div class="form-row"><label>Libellé (forfait)</label><input name="libelle" required></div>
+          <div class="form-row"><label>Montant mensuel (€)</label><input name="montant_mensuel" type="number" step="0.01" value="0"></div>
+          <div class="form-row"><label>Début</label><input name="date_debut" type="date"></div>
+          <div class="form-row"><label>Renouvellement</label><input name="date_renouvellement" type="date"></div>
+          <div style="grid-column:1/-1"><button class="btn btn--primary" type="submit">Ajouter l'abonnement</button></div>
+        </form>
+      </div>
+      <div class="panel"><div id="abos-wrap"><div class="empty-state">Chargement…</div></div></div>
     </div>
 
     <div id="panel-leads">
@@ -383,15 +458,19 @@ $('#entity-filter').addEventListener('change',(e)=>{ filterEntity=e.target.value
 $('#search').addEventListener('input',(e)=>{ q=e.target.value.trim().toLowerCase(); render(); });
 
 // ---------- Onglets ----------
-const PANELS = ['leads','relance','tickets','factures','settings'];
+const PANELS = ['dashboard','leads','relance','clients','devis','factures','abonnements','tickets','settings'];
 document.querySelectorAll('.tab[data-view]').forEach((b)=>{
   b.addEventListener('click', ()=>{
     document.querySelectorAll('.tab[data-view]').forEach(x=>x.classList.remove('active'));
     b.classList.add('active');
     const v=b.getAttribute('data-view');
     PANELS.forEach(p=>$('#panel-'+p).classList.toggle('hidden', p!==v));
+    if (v==='dashboard') loadDashboard();
     if (v==='settings') loadSettings();
     if (v==='relance') loadRelance();
+    if (v==='clients') loadClients();
+    if (v==='devis') loadDevis();
+    if (v==='abonnements') loadAbonnements();
     if (v==='tickets') loadTickets();
     if (v==='factures') loadFactures();
   });
@@ -579,6 +658,269 @@ $('#set-save').addEventListener('click', async ()=>{
   if (error){ msg.textContent='Erreur : '+error.message; msg.style.color='var(--danger)'; }
   else { msg.textContent='✅ Enregistré. Les sites afficheront le nouveau prix immédiatement.'; msg.style.color='var(--succes)'; toast('Prix mis à jour'); }
   setTimeout(()=>{ msg.textContent=''; }, 5000);
+});
+
+// ======================================================================
+//  TABLEAU DE BORD (KPI)
+// ======================================================================
+async function loadDashboard(){
+  const kp=$('#dash-kpis'), st=$('#dash-status');
+  kp.innerHTML='<div class="kpi"><div class="k-val">…</div><div class="k-lab">Chargement</div></div>';
+  // Leads déjà en mémoire (LEADS). On récupère abonnements + factures pour les montants.
+  const nouveaux=LEADS.filter(l=>l.status==='nouveau').length;
+  const gagnes=LEADS.filter(l=>l.status==='gagne').length;
+  const today=new Date().toISOString().slice(0,10);
+  const relances=LEADS.filter(l=>l.relance_at && l.relance_at<=today && !['gagne','perdu','archive'].includes(l.status)).length;
+  let mrr=0, caPayes=0;
+  try{
+    const { data:abos } = await sb.from('abonnements').select('montant_mensuel,statut');
+    if(abos) mrr=abos.filter(a=>a.statut==='actif').reduce((s,a)=>s+(Number(a.montant_mensuel)||0),0);
+  }catch(e){}
+  try{
+    const { data:facs } = await sb.from('factures').select('total_ttc,status');
+    if(facs) caPayes=facs.filter(f=>f.status==='payee').reduce((s,f)=>s+(Number(f.total_ttc)||0),0);
+  }catch(e){}
+  kp.innerHTML=`
+    <div class="kpi accent"><div class="k-val">${nouveaux}</div><div class="k-lab">Demandes nouvelles</div></div>
+    <div class="kpi"><div class="k-val">${relances}</div><div class="k-lab">Relances à faire</div></div>
+    <div class="kpi win"><div class="k-val">${eur(mrr)}</div><div class="k-lab">Revenu récurrent / mois (MRR)</div></div>
+    <div class="kpi win"><div class="k-val">${eur(caPayes)}</div><div class="k-lab">Factures payées (total)</div></div>`;
+  // Répartition par statut
+  const counts={}; LEADS.forEach(l=>{counts[l.status]=(counts[l.status]||0)+1;});
+  const total=LEADS.length||1;
+  let h='';
+  Object.keys(STATUS).forEach(k=>{
+    const n=counts[k]||0, pct=Math.round(n/total*100);
+    h+=`<div style="margin:8px 0"><div style="display:flex;justify-content:space-between;font-size:.9rem"><span>${STATUS[k]}</span><strong>${n}</strong></div>
+      <div style="background:var(--gris-100);border-radius:6px;height:10px;overflow:hidden"><div style="width:${pct}%;height:100%;background:var(--cyan-700)"></div></div></div>`;
+  });
+  st.innerHTML=h || '<div class="empty-state">Aucune donnée.</div>';
+}
+
+// ======================================================================
+//  CLIENTS (fiche centrale)
+// ======================================================================
+let CLIENTS=[];
+async function loadClients(){
+  const { data, error } = await sb.from('clients').select('*').order('created_at',{ascending:false});
+  if (error){ $('#clients-wrap').innerHTML='<div class="empty-state">Table « clients » introuvable. Exécutez supabase/full-setup.sql.</div>'; return; }
+  CLIENTS=data||[]; renderClients();
+}
+const C_STATUT={prospect:'Prospect',client:'Client',inactif:'Inactif'};
+function renderClients(){
+  const term=($('#client-search').value||'').trim().toLowerCase();
+  let list=CLIENTS;
+  if(term) list=CLIENTS.filter(c=>((c.nom||'')+' '+(c.entreprise||'')+' '+(c.email||'')+' '+(c.telephone||'')).toLowerCase().includes(term));
+  $('#client-count').textContent=list.length+' client'+(list.length>1?'s':'');
+  if(!list.length){ $('#clients-wrap').innerHTML='<div class="empty-state">Aucun client. Ajoute ton premier client ci-dessus.</div>'; return; }
+  let h='<table><thead><tr><th>Nom</th><th>Type</th><th>Filiale</th><th>Contact</th><th>Statut</th><th></th></tr></thead><tbody>';
+  for(const c of list){
+    h+=`<tr data-id="${c.id}"><td><div class="lead-name">${esc(c.nom)||'—'}</div><div class="lead-sub">${esc(c.entreprise)||''}</div></td>
+      <td>${c.type==='entreprise'?'Entreprise':'Particulier'}</td>
+      <td>${ENTITY[c.entity]||esc(c.entity)}</td>
+      <td class="lead-sub">${c.email?`<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>`:''}${c.telephone?('<br>'+esc(c.telephone)):''}</td>
+      <td><span class="pill">${C_STATUT[c.statut]||esc(c.statut)}</span></td>
+      <td class="row-actions"><button class="btn-mini" data-act="c-edit" style="color:var(--cyan-700)">Modifier</button><button class="btn-mini" data-act="c-del">Suppr.</button></td></tr>`;
+  }
+  h+='</tbody></table>'; $('#clients-wrap').innerHTML=h;
+}
+$('#client-search').addEventListener('input', renderClients);
+$('#client-form').addEventListener('submit', async (e)=>{
+  e.preventDefault(); const f=e.target; const g=n=>f.querySelector(`[name="${n}"]`).value.trim();
+  const id=g('id');
+  const row={type:g('type'),entity:g('entity'),nom:g('nom'),entreprise:g('entreprise'),email:g('email'),
+    telephone:g('telephone'),adresse:g('adresse'),statut:g('statut'),notes:g('notes')};
+  let error;
+  if(id){ ({error}=await sb.from('clients').update(row).eq('id',id)); }
+  else { ({error}=await sb.from('clients').insert(row)); }
+  if(error){ toast('Erreur : '+error.message); return; }
+  f.reset(); f.querySelector('[name="id"]').value=''; $('#client-save-btn').textContent='Ajouter le client'; $('#client-reset').style.display='none';
+  toast(id?'Client mis à jour':'Client ajouté'); loadClients();
+});
+$('#client-reset').addEventListener('click', ()=>{
+  const f=$('#client-form'); f.reset(); f.querySelector('[name="id"]').value='';
+  $('#client-save-btn').textContent='Ajouter le client'; $('#client-reset').style.display='none';
+});
+$('#clients-wrap').addEventListener('click', async (e)=>{
+  const act=e.target.dataset.act; if(!act)return; const id=e.target.closest('tr').dataset.id;
+  const c=CLIENTS.find(x=>x.id===id); if(!c)return;
+  if(act==='c-del'){ if(confirm('Supprimer ce client ?')){ await sb.from('clients').delete().eq('id',id); CLIENTS=CLIENTS.filter(x=>x.id!==id); renderClients(); toast('Client supprimé'); } }
+  if(act==='c-edit'){
+    const f=$('#client-form'); const s=n=>f.querySelector(`[name="${n}"]`);
+    s('id').value=c.id; s('type').value=c.type||'entreprise'; s('entity').value=c.entity||'infogerance';
+    s('nom').value=c.nom||''; s('entreprise').value=c.entreprise||''; s('email').value=c.email||'';
+    s('telephone').value=c.telephone||''; s('adresse').value=c.adresse||''; s('statut').value=c.statut||'prospect'; s('notes').value=c.notes||'';
+    $('#client-save-btn').textContent='Enregistrer les modifications'; $('#client-reset').style.display='inline-block';
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+});
+
+// ======================================================================
+//  DEVIS (multi-lignes + impression + conversion en facture)
+// ======================================================================
+let DEVIS=[];
+const DV_STATUT={brouillon:'Brouillon',envoye:'Envoyé',accepte:'Accepté',refuse:'Refusé',expire:'Expiré'};
+function dvAddLigne(libelle,qte,pu){
+  const row=document.createElement('div');
+  row.className='dv-ligne'; row.style.cssText='display:grid;grid-template-columns:1fr 70px 110px 32px;gap:8px;margin-bottom:8px;align-items:center';
+  row.innerHTML=`<input class="dv-lib" placeholder="Prestation" value="${esc(libelle||'')}">
+    <input class="dv-qte" type="number" step="1" value="${qte!=null?qte:1}" title="Quantité">
+    <input class="dv-pu" type="number" step="0.01" value="${pu!=null?pu:0}" title="Prix unitaire HT">
+    <button type="button" class="btn-mini dv-del" title="Supprimer" style="color:var(--danger)">✕</button>`;
+  $('#dv-lignes').appendChild(row);
+  row.querySelectorAll('input').forEach(i=>i.addEventListener('input',dvTotal));
+  row.querySelector('.dv-del').addEventListener('click',()=>{ row.remove(); dvTotal(); });
+  dvTotal();
+}
+function dvReadLignes(){
+  return [].slice.call(document.querySelectorAll('#dv-lignes .dv-ligne')).map(r=>({
+    libelle:r.querySelector('.dv-lib').value.trim(),
+    qte:parseFloat(r.querySelector('.dv-qte').value)||0,
+    pu:parseFloat(r.querySelector('.dv-pu').value)||0
+  })).filter(l=>l.libelle||l.pu);
+}
+function dvTotal(){
+  const ht=dvReadLignes().reduce((s,l)=>s+l.qte*l.pu,0);
+  $('#dv-total').textContent='Total HT : '+eur(ht);
+  return ht;
+}
+$('#dv-add-ligne').addEventListener('click',()=>dvAddLigne());
+$('#dv-save').addEventListener('click', async ()=>{
+  const lignes=dvReadLignes();
+  if(!lignes.length){ toast('Ajoute au moins une ligne'); return; }
+  const tva=parseFloat($('#dv-tva').value)||0;
+  const ht=lignes.reduce((s,l)=>s+l.qte*l.pu,0), ttc=ht*(1+tva/100);
+  const { data:num, error:e1 } = await sb.rpc('next_devis_numero');
+  if(e1){ toast('Erreur numéro : '+e1.message); return; }
+  const row={entity:$('#dv-entity').value,numero:num,client_nom:$('#dv-client-nom').value.trim(),
+    client_email:$('#dv-client-email').value.trim(),client_adresse:$('#dv-client-adresse').value.trim(),
+    validite_jours:parseInt($('#dv-validite').value)||30,lignes,tva_taux:tva,total_ht:ht,total_ttc:ttc,statut:'brouillon'};
+  const { error } = await sb.from('devis').insert(row);
+  if(error){ toast('Erreur : '+error.message); return; }
+  $('#dv-lignes').innerHTML=''; dvAddLigne(); $('#dv-client-nom').value=''; $('#dv-client-email').value=''; $('#dv-client-adresse').value='';
+  toast('Devis '+num+' créé'); loadDevis();
+});
+async function loadDevis(){
+  if(!$('#dv-lignes').children.length) dvAddLigne();
+  const { data, error } = await sb.from('devis').select('*').order('created_at',{ascending:false});
+  if (error){ $('#devis-wrap').innerHTML='<div class="empty-state">Table « devis » introuvable. Exécutez supabase/full-setup.sql.</div>'; return; }
+  DEVIS=data||[]; renderDevis();
+}
+function renderDevis(){
+  if(!DEVIS.length){ $('#devis-wrap').innerHTML='<div class="empty-state">Aucun devis.</div>'; return; }
+  let h='<table><thead><tr><th>N°</th><th>Date</th><th>Filiale</th><th>Client</th><th>Total HT</th><th>Statut</th><th></th></tr></thead><tbody>';
+  for(const d of DEVIS){
+    const opts=Object.entries(DV_STATUT).map(([k,v])=>`<option value="${k}" ${d.statut===k?'selected':''}>${v}</option>`).join('');
+    h+=`<tr data-id="${d.id}"><td><strong>${esc(d.numero)||'—'}</strong></td><td class="lead-sub">${d.date_devis||fmtDate(d.created_at)}</td>
+      <td>${ENTITY[d.entity]||esc(d.entity)}</td><td>${esc(d.client_nom)||'—'}</td>
+      <td><strong>${eur(d.total_ht)}</strong></td>
+      <td><select class="status" data-act="d-status">${opts}</select></td>
+      <td class="row-actions"><button class="btn-mini" data-act="d-print" style="color:var(--cyan-700)">Imprimer</button><button class="btn-mini" data-act="d-fac" style="color:var(--succes)">→ Facture</button><button class="btn-mini" data-act="d-del">Suppr.</button></td></tr>`;
+  }
+  h+='</tbody></table>'; $('#devis-wrap').innerHTML=h;
+  if($('#devis-wrap').dataset.bound) return; $('#devis-wrap').dataset.bound='1';
+  $('#devis-wrap').addEventListener('change', async (e)=>{
+    if(e.target.dataset.act!=='d-status')return; const id=e.target.closest('tr').dataset.id;
+    await sb.from('devis').update({statut:e.target.value}).eq('id',id);
+    const d=DEVIS.find(x=>x.id===id); if(d)d.statut=e.target.value; toast('Devis mis à jour');
+  });
+  $('#devis-wrap').addEventListener('click', async (e)=>{
+    const act=e.target.dataset.act; if(!act)return; const id=e.target.closest('tr').dataset.id;
+    const d=DEVIS.find(x=>x.id===id); if(!d)return;
+    if(act==='d-del'){ if(confirm('Supprimer ce devis ?')){ await sb.from('devis').delete().eq('id',id); DEVIS=DEVIS.filter(x=>x.id!==id); renderDevis(); } }
+    if(act==='d-print'){ printDevis(d); }
+    if(act==='d-fac'){ devisToFacture(d); }
+  });
+}
+async function devisToFacture(d){
+  if(!confirm('Convertir le devis '+(d.numero||'')+' en facture ?')) return;
+  const { data:num, error:e1 } = await sb.rpc('next_facture_numero');
+  if(e1){ toast('Erreur numéro : '+e1.message); return; }
+  const lignes=Array.isArray(d.lignes)?d.lignes:[];
+  const resume=lignes.length?('Prestations (voir détail) — devis '+(d.numero||'')):'Prestation';
+  const row={entity:d.entity,numero:num,date_facture:new Date().toISOString().slice(0,10),
+    client_nom:d.client_nom,client_email:d.client_email,client_adresse:d.client_adresse,
+    libelle:resume,quantite:1,prix_unitaire:d.total_ht,tva_taux:d.tva_taux,
+    total_ht:d.total_ht,total_ttc:d.total_ttc,lignes,status:'brouillon'};
+  const { error } = await sb.from('factures').insert(row);
+  if(error){ toast('Erreur : '+error.message); return; }
+  await sb.from('devis').update({statut:'accepte'}).eq('id',d.id);
+  const dd=DEVIS.find(x=>x.id===d.id); if(dd)dd.statut='accepte'; renderDevis();
+  toast('Facture '+num+' créée depuis le devis');
+}
+function printDevis(d){
+  const w=window.open('','_blank'); if(!w)return;
+  const lignes=Array.isArray(d.lignes)?d.lignes:[];
+  const ht=Number(d.total_ht)||0, ttc=Number(d.total_ttc)||0, tvaMontant=ttc-ht;
+  const rows=lignes.map(l=>`<tr><td>${esc(l.libelle)||''}</td><td>${l.qte}</td><td>${eur(l.pu)}</td><td>${eur((l.qte||0)*(l.pu||0))}</td></tr>`).join('');
+  w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Devis ${esc(d.numero)}</title>
+  <style>body{font-family:Arial,sans-serif;color:#0f2238;max-width:800px;margin:30px auto;padding:0 24px}
+  h1{color:#0B2A4A} .row{display:flex;justify-content:space-between;gap:30px} table{width:100%;border-collapse:collapse;margin:24px 0}
+  th,td{border:1px solid #ccc;padding:10px;text-align:left} th{background:#f1f5f9} .tot{text-align:right} .muted{color:#64748b;font-size:.85rem}
+  .box{border:1px solid #e2e8f0;border-radius:8px;padding:14px;margin-top:10px}</style></head><body>
+  <div class="row"><div><h1>DEVIS</h1><div><strong>N° ${esc(d.numero)}</strong></div><div>Date : ${esc(d.date_devis||'')}</div><div>Validité : ${d.validite_jours||30} jours</div></div>
+  <div style="text-align:right"><strong>DHB ${esc(ENTITY[d.entity]||d.entity)}</strong><div class="muted">[À COMPLÉTER : raison sociale, adresse,<br>SIRET, TVA intracommunautaire]</div></div></div>
+  <div class="box"><strong>Client</strong><br>${esc(d.client_nom)||''}<br>${esc(d.client_adresse)||''}<br>${esc(d.client_email)||''}</div>
+  <table><thead><tr><th>Prestation</th><th>Qté</th><th>PU HT</th><th>Total HT</th></tr></thead><tbody>${rows}</tbody></table>
+  <div class="tot">Total HT : <strong>${eur(ht)}</strong><br>${Number(d.tva_taux)>0 ? `TVA (${d.tva_taux} %) : ${eur(tvaMontant)}<br>` : `<span class="muted">TVA non applicable, art. 293 B du CGI</span><br>`}
+  <span style="font-size:1.3rem">${Number(d.tva_taux)>0 ? 'Total TTC' : 'Total'} : <strong>${eur(ttc)}</strong></span></div>
+  <p class="muted" style="margin-top:30px">Devis valable ${d.validite_jours||30} jours. [À COMPLÉTER : conditions, modalités de paiement, mentions légales.]</p>
+  <script>window.onload=function(){window.print();}<\/script></body></html>`);
+  w.document.close();
+}
+
+// ======================================================================
+//  ABONNEMENTS / contrats récurrents
+// ======================================================================
+let ABOS=[];
+const A_STATUT={actif:'Actif',suspendu:'Suspendu',resilie:'Résilié'};
+async function loadAbonnements(){
+  const { data, error } = await sb.from('abonnements').select('*').order('created_at',{ascending:false});
+  if (error){ $('#abos-wrap').innerHTML='<div class="empty-state">Table « abonnements » introuvable. Exécutez supabase/full-setup.sql.</div>'; return; }
+  ABOS=data||[]; renderAbos();
+}
+function renderAbos(){
+  const actifs=ABOS.filter(a=>a.statut==='actif');
+  const mrr=actifs.reduce((s,a)=>s+(Number(a.montant_mensuel)||0),0);
+  $('#abo-kpis').innerHTML=`
+    <div class="kpi accent"><div class="k-val">${actifs.length}</div><div class="k-lab">Abonnements actifs</div></div>
+    <div class="kpi win"><div class="k-val">${eur(mrr)}</div><div class="k-lab">MRR (récurrent / mois)</div></div>
+    <div class="kpi win"><div class="k-val">${eur(mrr*12)}</div><div class="k-lab">ARR (projection / an)</div></div>
+    <div class="kpi"><div class="k-val">${ABOS.length}</div><div class="k-lab">Total contrats</div></div>`;
+  if(!ABOS.length){ $('#abos-wrap').innerHTML='<div class="empty-state">Aucun abonnement.</div>'; return; }
+  let h='<table><thead><tr><th>Client</th><th>Forfait</th><th>Filiale</th><th>€/mois</th><th>Renouvellement</th><th>Statut</th><th></th></tr></thead><tbody>';
+  const today=new Date().toISOString().slice(0,10);
+  for(const a of ABOS){
+    const opts=Object.entries(A_STATUT).map(([k,v])=>`<option value="${k}" ${a.statut===k?'selected':''}>${v}</option>`).join('');
+    const bientot=a.date_renouvellement && a.date_renouvellement<=today && a.statut==='actif';
+    h+=`<tr data-id="${a.id}"><td><div class="lead-name">${esc(a.client_nom)||'—'}</div></td>
+      <td>${esc(a.libelle)||'—'}</td><td>${ENTITY[a.entity]||esc(a.entity)}</td>
+      <td><strong>${eur(a.montant_mensuel)}</strong></td>
+      <td class="lead-sub"${bientot?' style="color:var(--danger);font-weight:700"':''}>${a.date_renouvellement||'—'}${bientot?' ⚠':''}</td>
+      <td><select class="status" data-act="a-status">${opts}</select></td>
+      <td><button class="btn-mini" data-act="a-del">Suppr.</button></td></tr>`;
+  }
+  h+='</tbody></table>'; $('#abos-wrap').innerHTML=h;
+  if($('#abos-wrap').dataset.bound) return; $('#abos-wrap').dataset.bound='1';
+  $('#abos-wrap').addEventListener('change', async (e)=>{
+    if(e.target.dataset.act!=='a-status')return; const id=e.target.closest('tr').dataset.id;
+    await sb.from('abonnements').update({statut:e.target.value}).eq('id',id);
+    const a=ABOS.find(x=>x.id===id); if(a)a.statut=e.target.value; renderAbos(); toast('Abonnement mis à jour');
+  });
+  $('#abos-wrap').addEventListener('click', async (e)=>{
+    if(e.target.dataset.act!=='a-del')return; const id=e.target.closest('tr').dataset.id;
+    if(confirm('Supprimer cet abonnement ?')){ await sb.from('abonnements').delete().eq('id',id); ABOS=ABOS.filter(x=>x.id!==id); renderAbos(); }
+  });
+}
+$('#abo-form').addEventListener('submit', async (e)=>{
+  e.preventDefault(); const f=e.target; const g=n=>f.querySelector(`[name="${n}"]`).value.trim();
+  const row={entity:g('entity'),client_nom:g('client_nom'),libelle:g('libelle'),
+    montant_mensuel:parseFloat(g('montant_mensuel'))||0,
+    date_debut:g('date_debut')||new Date().toISOString().slice(0,10),
+    date_renouvellement:g('date_renouvellement')||null,statut:'actif'};
+  const { error } = await sb.from('abonnements').insert(row);
+  if(error){ toast('Erreur : '+error.message); return; }
+  f.reset(); toast('Abonnement ajouté'); loadAbonnements();
 });
 
 // Démarrage
