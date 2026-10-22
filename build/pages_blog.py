@@ -31,7 +31,7 @@ def build():
         c = THEME_COLOR[a["theme"]]
         cards += f"""
         <div class="card post-card reveal">
-          <div class="thumb" style="background:linear-gradient(135deg,{c},#2EC4FF)">{blog_data.THEMES[a['theme']]}</div>
+          <span class="article-tag" style="align-self:flex-start;margin-bottom:12px">{blog_data.THEMES[a['theme']]}</span>
           <span class="article-tag" style="margin-bottom:10px">{blog_data.THEMES[a['theme']]}</span>
           <h3>{a['title']}</h3>
           <p class="excerpt">{a['excerpt']}</p>
@@ -113,10 +113,10 @@ def build():
 <section class="page-hero">
   {breadcrumb(depth, [("blog/", "Blog"), (None, theme_label)])}
   <div class="wrap">
-    <span class="article-tag" style="background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.25)">{theme_label}</span>
+    <span class="article-tag">{theme_label}</span>
     <h1 style="margin-top:14px">{a['title']}</h1>
-    <div class="article-meta" style="color:#c3d4e6;margin-top:10px">
-      <span>Par l'équipe DHB</span><span>·</span><span>Lecture ~6 min</span>
+    <div class="article-meta" style="margin-top:10px">
+      <span>Par l'équipe DHB Pro</span><span>·</span><span>Lecture ~6 min</span>
     </div>
   </div>
 </section>

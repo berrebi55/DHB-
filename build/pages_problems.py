@@ -47,28 +47,7 @@ def build():
               <span class="pb-link">Voir les causes et solutions →</span>
             </a>"""
 
-    extra_css = """
-<style>
-.pb-toolbar{position:sticky;top:76px;z-index:20;background:var(--blanc);padding:18px 0;border-bottom:1px solid var(--gris-100)}
-.pb-search{max-width:560px;margin:0 auto 14px;position:relative}
-.pb-search input{padding-left:44px}
-.pb-search svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--gris-400)}
-.pb-filters{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
-.pb-filter{border:1.5px solid var(--gris-200);background:#fff;color:var(--nuit);padding:8px 15px;border-radius:999px;font-weight:600;font-size:.88rem;cursor:pointer;transition:all .2s;font-family:inherit}
-.pb-filter:hover{border-color:var(--cyan)}
-.pb-filter.active{background:var(--nuit);color:#fff;border-color:var(--nuit)}
-.pb-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:34px}
-.pb-card{display:flex;flex-direction:column;background:#fff;border:1px solid var(--gris-100);border-radius:var(--rayon);padding:22px;box-shadow:var(--ombre-douce);transition:transform .2s,box-shadow .2s;color:inherit}
-.pb-card:hover{transform:translateY(-4px);box-shadow:var(--ombre);color:inherit}
-.pb-cat{display:inline-block;align-self:flex-start;font-size:.72rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--cyan-700);background:var(--gris-50);border:1px solid var(--gris-100);padding:3px 10px;border-radius:999px;margin-bottom:12px}
-.pb-card h3{font-size:1.08rem;margin-bottom:8px}
-.pb-card p{font-size:.93rem;margin-bottom:14px;flex:1}
-.pb-link{font-weight:700;color:var(--cyan-700);font-size:.92rem}
-.pb-empty{display:none;text-align:center;color:var(--gris-600);padding:40px}
-.pb-empty.show{display:block}
-@media(max-width:960px){.pb-grid{grid-template-columns:repeat(2,1fr)}.pb-toolbar{top:0}}
-@media(max-width:680px){.pb-grid{grid-template-columns:1fr}}
-</style>"""
+    extra_css = ""  # styles des filtres : feuille commune (.pb-*)
 
     filter_js = """
 <script>
@@ -164,7 +143,7 @@ def build():
 <section class="page-hero">
   {breadcrumb(depth, [("pannes-frequentes/", "Pannes fréquentes"), (None, cat_label)])}
   <div class="wrap">
-    <span class="article-tag" style="background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.25)">{cat_label}</span>
+    <span class="article-tag">{cat_label}</span>
     <h1 style="margin-top:14px">{p['q']}</h1>
     <p>{p['sym']}</p>
     <div class="hero-cta">

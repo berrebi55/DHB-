@@ -151,5 +151,25 @@ site :
 
 ## 5. Ce qui a été livré
 
-Voir `admin-react/README.md` pour l'utilisation et le déploiement, et la section
-« Migration » de `supabase/full-setup.sql` (bloc « REFONTE v2 »).
+- **Back-office** (`admin-react/`) entièrement reconstruit : navigation par
+  sections, tableau de bord actionnable, CRM, devis/factures/paiements,
+  abonnements, tickets, pilotage, système. Utilisation et déploiement :
+  `admin-react/README.md`.
+- **Base** : bloc « REFONTE v2 » de `supabase/full-setup.sql` (additif,
+  idempotent, testé 3 fois de suite sur PostgreSQL 16).
+- **Edge Functions** sécurisées (`supabase/functions/_shared/securite.ts`),
+  nouvelles : `send-devis`, `invite-user`.
+- **Sites publics** : identité commune `build/marque.py` + feuille de style
+  commune (`sites/infogerance/assets/css/style.css`, copiée dans les deux
+  autres sites), personnalités via `<body data-site="groupe|pro|assistance">`.
+  Tout régénérer : `python3 build/build_all.py`
+  (`DHB_LIENS=prod` pour des liens vers les vrais domaines).
+- **Non modifiés** : `admin/index.html` (ancienne admin, dépréciée) et
+  `sites/groupe/devis.html` (page de signature, autonome).
+
+### Reste à compléter par le propriétaire
+
+Tous les emplacements `[À COMPLÉTER PAR LE PROPRIÉTAIRE]` / `[EXEMPLE]` :
+téléphone, emails, SIRET, forme juridique, hébergeur, histoire du groupe,
+avis clients vérifiés, frais de déplacement, fiche entreprise (Système →
+Paramètres : IBAN, mentions de facture, pénalités de retard).

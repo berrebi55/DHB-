@@ -2,8 +2,8 @@
 """DHB — moteur de gabarit partagé (head, header, footer, composants)."""
 
 # --- Valeurs d'EXEMPLE à remplacer par le propriétaire -----------------------
-SITE_NAME = "DHB"
-SIGNATURE = "Maintenance & sécurité informatique pour les entreprises"
+SITE_NAME = "DHB Pro"
+SIGNATURE = "Infogérance, maintenance & cybersécurité pour les entreprises"
 DOMAIN = "https://pro.dhb-groupe.fr"                 # [EXEMPLE À REMPLACER] — filiale Infogérance (entreprises)
 PHONE_DISPLAY = "01 23 45 67 89"                      # [EXEMPLE À REMPLACER]
 PHONE_LINK = "+33123456789"                           # [EXEMPLE À REMPLACER]
@@ -12,6 +12,8 @@ EMAIL = "contact@dhb-informatique.fr"                 # [EXEMPLE À REMPLACER]
 ADDRESS_CITY = "Paris"                                # [EXEMPLE À REMPLACER]
 ADDRESS_REGION = "Île-de-France"
 YEAR = 2026
+
+import marque  # identité commune des 3 sites
 
 # Profondeur -> préfixe racine relatif (le site est 100 % relatif, portable)
 def root(depth):
@@ -57,17 +59,16 @@ def nav_html(depth):
     return f"""
     <nav class="nav" aria-label="Navigation principale">
       <div class="nav-item">
-        <a class="nav-link" href="{r}services/">Services ▾</a>
+        <a class="nav-link" href="{r}services/">Services</a>
         <div class="dropdown">{serv_items}</div>
       </div>
       <div class="nav-item">
-        <a class="nav-link" href="{r}zones/">Zones ▾</a>
-        <div class="dropdown">{ville_items}</div>
+        <a class="nav-link" href="{r}zones/">Zones</a>
+        <div class="dropdown dropdown--cols">{ville_items}</div>
       </div>
       <a class="nav-link" href="{r}pannes-frequentes/">Pannes fréquentes</a>
-      <a class="nav-link" href="{r}blog/">Blog</a>
+      <a class="nav-link" href="{r}blog/">Conseils</a>
       <a class="nav-link" href="{r}a-propos/">À propos</a>
-      <a class="nav-link" href="{r}contact/">Contact</a>
     </nav>"""
 
 
@@ -80,16 +81,13 @@ def mobile_nav_html(depth):
         f'<a href="{r}zones/{slug}/">{name}</a>' for slug, name in VILLES
     )
     return f"""
-    <div class="mobile-nav" id="mobile-nav">
       <details><summary>Services</summary>{serv_items}</details>
       <details><summary>Zones d'intervention</summary>{ville_items}</details>
       <a href="{r}pannes-frequentes/">Pannes fréquentes</a>
-      <a href="{r}blog/">Blog</a>
+      <a href="{r}blog/">Conseils</a>
       <a href="{r}a-propos/">À propos</a>
       <a href="{r}contact/">Contact</a>
-      <a class="btn btn--primary btn--block" href="{r}contact/">Demander un audit gratuit</a>
-      <a class="btn btn--outline btn--block" href="tel:{PHONE_LINK}">Appeler le {PHONE_DISPLAY}</a>
-    </div>"""
+      <a class="btn btn--primary btn--block" href="{r}contact/">Demander un devis</a>"""
 
 
 # --- Icônes SVG inline (légères, cohérentes) ---------------------------------
@@ -198,14 +196,13 @@ def lead_magnet(topic="votre entreprise", pdf="../../assets/guides/checklist-sec
 
 
 def cta_band(depth, title="Un problème informatique dans votre entreprise ?",
-             text="Confiez-nous un premier regard. L'audit est gratuit, sans engagement, et vous repartez avec un plan clair — même si vous ne travaillez pas avec nous."):
+             text="Décrivez-nous la situation : premier diagnostic gratuit et sans engagement, avec un plan d'action clair — même si vous ne travaillez pas avec nous ensuite."):
     r = root(depth)
     return f"""
-    <section class="section"><div class="wrap"><div class="cta-band reveal">
-      <h2>{title}</h2>
-      <p>{text}</p>
+    <section class="section section--tight"><div class="wrap"><div class="cta-band">
+      <div><h2>{title}</h2><p>{text}</p></div>
       <div class="hero-cta">
-        <a class="btn btn--primary btn--lg" href="{r}contact/">Demander un audit gratuit</a>
+        <a class="btn btn--primary btn--lg" href="{r}contact/">Demander un devis</a>
         <a class="btn btn--ghost btn--lg" href="tel:{PHONE_LINK}">{IC['phone']} {PHONE_DISPLAY}</a>
       </div>
     </div></div></section>"""
@@ -215,7 +212,7 @@ def faq_block(items, heading="Questions fréquentes"):
     rows = ""
     for q, a in items:
         rows += f'<details class="faq-item"><summary>{q}</summary><div class="faq-body"><p>{a}</p></div></details>\n'
-    return f'<section class="section section--gris"><div class="wrap" style="max-width:800px"><h2 class="center">{heading}</h2>{rows}</div></section>'
+    return f'<section class="section section--soft"><div class="wrap"><div class="section-head center"><h2>{heading}</h2></div><div class="faq-list">{rows}</div></div></section>'
 
 
 def faq_jsonld(items):
@@ -277,11 +274,19 @@ def page(depth, slug_path, title, description, body, extra_head="", og_type="web
     """slug_path: chemin relatif sans slash initial, ex. 'services/cybersecurite/' ou '' pour l'accueil."""
     r = root(depth)
     canonical = DOMAIN + "/" + slug_path
+    colonnes = [
+        ("Services", [(f"{r}services/{slug}/", name) for slug, name, _ in SERVICES[:6]] + [(f"{r}services/", "Tous les services")]),
+        ("Zones", [(f"{r}zones/{slug}/", name) for slug, name in VILLES[2:7]] + [(f"{r}zones/", "Toutes les zones")]),
+        ("Entreprise", [(f"{r}a-propos/", "À propos"), (f"{r}pannes-frequentes/", "Pannes fréquentes"), (f"{r}blog/", "Conseils"),
+                        (f"{r}contact/", "Contact"), (f"{r}mentions-legales/", "Mentions légales"),
+                        (f"{r}politique-confidentialite/", "Confidentialité (RGPD)"), (f"{r}plan-du-site/", "Plan du site")]),
+    ]
+    contact = {"phone_display": PHONE_DISPLAY, "phone_link": PHONE_LINK, "email": EMAIL}
     return f"""<!doctype html>
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>{title}</title>
 <meta name="description" content="{description}">
 <link rel="canonical" href="{canonical}">
@@ -292,98 +297,18 @@ def page(depth, slug_path, title, description, body, extra_head="", og_type="web
 <meta property="og:url" content="{canonical}">
 <meta property="og:image" content="{DOMAIN}/assets/img/og.svg">
 <meta property="og:locale" content="fr_FR">
-<meta property="og:site_name" content="{SITE_NAME} — {SIGNATURE}">
-<meta name="theme-color" content="#0B2A4A">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
-<link rel="stylesheet" href="{r}assets/css/style.css">
-<link rel="icon" href="{r}assets/img/favicon.svg" type="image/svg+xml">
+<meta property="og:site_name" content="{SITE_NAME}">
+{marque.head_assets("pro", depth)}
 {extra_head}
 </head>
-<body>
-<a class="skip-link" href="#contenu">Aller au contenu</a>
-<header class="site-header">
-  <div class="wrap header-inner">
-    <a class="logo" href="{r}" aria-label="{SITE_NAME} — accueil">
-      <span class="logo__mark">D<b>H</b>B</span>
-      <span class="logo__tag">{SIGNATURE}</span>
-    </a>
-    {nav_html(depth)}
-    <div class="header-cta">
-      <a class="btn btn--primary" href="{r}contact/">Audit gratuit</a>
-    </div>
-    <button class="burger" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="mobile-nav"><span></span><span></span><span></span></button>
-  </div>
-</header>
-{mobile_nav_html(depth)}
-<div class="dhb-annonce" data-setting="annonce" hidden></div>
+<body data-site="pro">
+{marque.header("pro", depth, nav_html(depth), mobile_nav_html(depth), "Demander un devis", f"{r}contact/", PHONE_DISPLAY, PHONE_LINK)}
 <main id="contenu">
 {body}
 </main>
-<footer class="site-footer">
-  <div class="wrap">
-    <div class="footer-grid">
-      <div class="footer-contact">
-        <a class="logo" href="{r}" style="margin-bottom:14px"><span class="logo__mark">D<b>H</b>B</span><span class="logo__tag">{SIGNATURE}</span></a>
-        <p>Maintenance, dépannage et sécurité informatique pour les entreprises, indépendants, cabinets, commerces et associations.</p>
-        <p>📍 Sur site en <strong style="color:#cfe0f0">Île-de-France</strong> · 💻 à distance partout en <strong style="color:#cfe0f0">France</strong></p>
-        <p>☎ <a href="tel:{PHONE_LINK}">{PHONE_DISPLAY}</a><br>✉ <a href="mailto:{EMAIL}">{EMAIL}</a></p>
-      </div>
-      <div>
-        <h4>Nos services</h4>
-        <a href="{r}services/depannage-assistance-informatique/">Dépannage & assistance</a>
-        <a href="{r}services/maintenance-parc-informatique/">Maintenance du parc</a>
-        <a href="{r}services/cybersecurite/">Cybersécurité</a>
-        <a href="{r}services/sauvegarde-restauration/">Sauvegarde & restauration</a>
-        <a href="{r}services/infogerance-globale/">Infogérance globale</a>
-      </div>
-      <div>
-        <h4>Zones</h4>
-        <a href="{r}zones/depannage-informatique-paris/">Paris</a>
-        <a href="{r}zones/depannage-informatique-boulogne-billancourt/">Boulogne-Billancourt</a>
-        <a href="{r}zones/depannage-informatique-nanterre/">Nanterre</a>
-        <a href="{r}zones/support-informatique-a-distance-france/">À distance (France)</a>
-        <a href="{r}zones/">Toutes les zones</a>
-      </div>
-      <div>
-        <h4>Entreprise</h4>
-        <a href="{r}a-propos/">À propos</a>
-        <a href="{r}pannes-frequentes/">Pannes fréquentes</a>
-        <a href="{r}blog/">Blog</a>
-        <a href="{r}contact/">Contact</a>
-        <a href="{r}mentions-legales/">Mentions légales</a>
-        <a href="{r}politique-confidentialite/">Confidentialité (RGPD)</a>
-        <a href="{r}plan-du-site/">Plan du site</a>
-      </div>
-    </div>
-    <div class="footer-bottom">
-      <span>© {YEAR} {SITE_NAME}. Tous droits réservés. <span class="a-completer">[SIRET, forme juridique : À COMPLÉTER]</span></span>
-      <nav aria-label="Liens légaux">
-        <a href="{r}mentions-legales/">Mentions légales</a>
-        <a href="{r}politique-confidentialite/">Confidentialité</a>
-        <a href="{r}plan-du-site/">Plan du site</a>
-      </nav>
-    </div>
-  </div>
-</footer>
-
-<div class="float-cta">
-  <a class="float-btn wa" href="https://wa.me/{WHATSAPP}" target="_blank" rel="noopener" aria-label="Nous écrire sur WhatsApp">{IC['wa']}<span>WhatsApp</span></a>
-  <a class="float-btn" href="tel:{PHONE_LINK}" aria-label="Être rappelé(e)">{IC['phone']}<span>Être rappelé(e)</span></a>
-</div>
-
-<div class="cookie-banner" role="dialog" aria-live="polite" aria-label="Gestion des cookies">
-  <div class="cookie-inner">
-    <p><strong>🍪 Respect de votre vie privée.</strong> Nous utilisons uniquement des cookies nécessaires au fonctionnement du site et, avec votre accord, des cookies de mesure d'audience. Vous pouvez refuser aussi simplement qu'accepter.</p>
-    <div class="cookie-actions">
-      <button class="btn btn--outline" data-cookie="refuse">Refuser</button>
-      <button class="btn btn--primary" data-cookie="accept">Tout accepter</button>
-    </div>
-  </div>
-</div>
-
-<script src="{r}assets/js/supabase-config.js"></script>
-<script src="{r}assets/js/main.js" defer></script>
+{marque.footer("pro", depth, "Maintenance, dépannage, cybersécurité et infogérance pour les TPE, PME, indépendants, cabinets, commerces et associations.", colonnes, contact)}
+{marque.barre_mobile(PHONE_DISPLAY, PHONE_LINK, "Demander un devis", f"{r}contact/")}
+{marque.cookies()}
+{marque.scripts(depth)}
 </body>
 </html>"""

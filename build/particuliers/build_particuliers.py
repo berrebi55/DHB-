@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-"""Générateur du site DHB PARTICULIERS (grand public). Sortie : sites/particuliers/.
-Prix affichés (B2C), accent vert, base d'aide (Q&A grand public), SEO propre.
+"""Générateur du site DHB ASSISTANCE (particuliers, grand public). Sortie : sites/particuliers/.
+Prix affichés (B2C), identité teal rassurante, base d'aide (Q&A grand public), SEO propre.
 Exécuter : python3 build/particuliers/build_particuliers.py
 """
 import os, sys, json, datetime
@@ -9,10 +9,12 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(HERE))
 OUT = os.path.join(REPO, "sites", "particuliers")
 sys.path.insert(0, HERE)
+sys.path.insert(0, os.path.dirname(HERE))
 import aide_data as ad
+import marque  # noqa: E402
 
 # --- Constantes (valeurs d'EXEMPLE) ---
-NAME = "DHB Particuliers"
+NAME = "DHB Assistance"
 SIGN = "Assistance & dépannage informatique pour les particuliers"
 DOMAIN = "https://www.dhb-assistance.fr"   # [EXEMPLE]
 PHONE_D = "01 23 45 67 89"                  # [EXEMPLE]
@@ -22,28 +24,6 @@ EMAIL = "bonjour@dhb-assistance.fr"         # [EXEMPLE]
 YEAR = 2026
 PRIX_ABO = "14,90"   # recommandé d'après l'étude de marché (modifiable dans l'admin)
 PRIX_INT = "59"      # recommandé d'après l'étude de marché (modifiable dans l'admin)
-
-ACCENT_CSS = """<style>
-:root{--cyan:#22c55e;--cyan-600:#16a34a;--cyan-700:#15803d;}
-.hero{background:linear-gradient(160deg,#064e3b 0%,#053b2e 55%,#04291f 100%);}
-.btn--primary{box-shadow:0 10px 24px -8px rgba(34,197,94,.55);}
-.pb-toolbar{position:sticky;top:76px;z-index:20;background:var(--blanc);padding:18px 0;border-bottom:1px solid var(--gris-100)}
-.pb-search{max-width:560px;margin:0 auto 14px;position:relative}
-.pb-search input{padding-left:44px}
-.pb-search svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--gris-400)}
-.pb-filters{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
-.pb-filter{border:1.5px solid var(--gris-200);background:#fff;color:var(--nuit);padding:8px 15px;border-radius:999px;font-weight:600;font-size:.88rem;cursor:pointer;transition:all .2s;font-family:inherit}
-.pb-filter:hover{border-color:var(--cyan-600)} .pb-filter.active{background:var(--cyan-700);color:#fff;border-color:var(--cyan-700)}
-.pb-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:34px}
-.pb-card{display:flex;flex-direction:column;background:#fff;border:1px solid var(--gris-100);border-radius:var(--rayon);padding:22px;box-shadow:var(--ombre-douce);transition:transform .2s,box-shadow .2s;color:inherit}
-.pb-card:hover{transform:translateY(-4px);box-shadow:var(--ombre);color:inherit}
-.pb-cat{display:inline-flex;gap:6px;align-self:flex-start;font-size:.78rem;font-weight:800;color:var(--cyan-700);background:#f0fdf4;border:1px solid #bbf7d0;padding:3px 10px;border-radius:999px;margin-bottom:12px}
-.pb-card h3{font-size:1.08rem;margin-bottom:8px} .pb-card p{font-size:.93rem;margin-bottom:14px;flex:1}
-.pb-link{font-weight:700;color:var(--cyan-700);font-size:.92rem}
-.pb-empty{display:none;text-align:center;color:var(--gris-600);padding:40px}.pb-empty.show{display:block}
-@media(max-width:960px){.pb-grid{grid-template-columns:repeat(2,1fr)}.pb-toolbar{top:0}}
-@media(max-width:680px){.pb-grid{grid-template-columns:1fr}}
-</style>"""
 
 STRIPE_SCRIPT = """<script>
 (function(){
@@ -60,8 +40,8 @@ STRIPE_SCRIPT = """<script>
 })();
 </script>"""
 
-IC_PHONE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.6a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.5-1.1a2 2 0 0 1 2.1-.5c.8.3 1.7.5 2.6.6a2 2 0 0 1 1.7 2z"/></svg>'
-CHECK = '<svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>'
+IC_PHONE = marque.ICONES["phone"]
+CHECK = marque.ICONES["check"]
 
 
 def org_jsonld():
@@ -76,11 +56,28 @@ def page(depth, slug_path, title, desc, body, extra=""):
     R = "../" * depth
     home = R if R else "./"
     canonical = DOMAIN + "/" + slug_path
+    nav = f"""
+    <nav class="nav" aria-label="Navigation principale">
+      <a class="nav-link" href="{home}#services">Nos services</a>
+      <a class="nav-link" href="{R}abonnement/">Tarifs</a>
+      <a class="nav-link" href="{R}aide/">Centre d'aide</a>
+      <a class="nav-link" href="{R}a-propos/">Qui sommes-nous</a>
+      <a class="nav-link" href="{R}contact/">Contact</a>
+    </nav>"""
+    mobile = (f'<a href="{home}#services">Nos services</a><a href="{R}abonnement/">Tarifs</a>'
+              f'<a href="{R}aide/">Centre d\'aide</a><a href="{R}a-propos/">Qui sommes-nous</a><a href="{R}contact/">Contact</a>'
+              f'<a class="btn btn--primary btn--block" href="{R}contact/">Être aidé(e)</a>')
+    colonnes = [
+        ("Vous aider", [(f"{home}#services", "Nos services"), (f"{R}abonnement/", "Abonnement et tarifs"), (f"{R}aide/", "Centre d'aide")]),
+        ("DHB Assistance", [(f"{R}a-propos/", "Qui sommes-nous"), (f"{R}contact/", "Contact")]),
+        ("Informations", [(f"{R}mentions-legales/", "Mentions légales"), (f"{R}politique-confidentialite/", "Confidentialité (RGPD)")]),
+    ]
+    contact = {"phone_display": PHONE_D, "phone_link": PHONE_L, "email": EMAIL}
     return f"""<!doctype html>
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>{title}</title>
 <meta name="description" content="{desc}">
 <link rel="canonical" href="{canonical}">
@@ -88,72 +85,31 @@ def page(depth, slug_path, title, desc, body, extra=""):
 <meta property="og:type" content="website"><meta property="og:title" content="{title}">
 <meta property="og:description" content="{desc}"><meta property="og:url" content="{canonical}">
 <meta property="og:locale" content="fr_FR"><meta property="og:site_name" content="{NAME}">
-<meta name="theme-color" content="#15803d">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
-<link rel="stylesheet" href="{R}assets/css/style.css">
-<link rel="icon" href="{R}assets/img/favicon.svg" type="image/svg+xml">
-{ACCENT_CSS}
+{marque.head_assets("assistance", depth)}
 {extra}
 </head>
-<body>
-<a class="skip-link" href="#contenu">Aller au contenu</a>
-<header class="site-header">
-  <div class="wrap header-inner">
-    <a class="logo" href="{home}" aria-label="{NAME}">
-      <span class="logo__mark">D<b>H</b>B <span style="font-size:.8rem;font-weight:700;color:var(--gris-600)">Particuliers</span></span>
-      <span class="logo__tag">{SIGN}</span>
-    </a>
-    <nav class="nav" aria-label="Navigation principale">
-      <a class="nav-link" href="{home}">Accueil</a>
-      <a class="nav-link" href="{R}aide/">Centre d'aide</a>
-      <a class="nav-link" href="{R}abonnement/">Abonnement & tarifs</a>
-      <a class="nav-link" href="{R}contact/">Contact</a>
-    </nav>
-    <div class="header-cta"><a class="btn btn--primary" href="{R}contact/">Être aidé(e)</a></div>
-    <button class="burger" aria-label="Menu" aria-expanded="false" aria-controls="mnav"><span></span><span></span><span></span></button>
-  </div>
-</header>
-<div class="mobile-nav" id="mnav">
-  <a href="{home}">Accueil</a>
-  <a href="{R}aide/">Centre d'aide</a>
-  <a href="{R}abonnement/">Abonnement & tarifs</a>
-  <a href="{R}contact/">Contact</a>
-  <a class="btn btn--primary btn--block" href="{R}contact/">Être aidé(e)</a>
-</div>
-<div class="dhb-annonce" data-setting="annonce" hidden></div>
+<body data-site="assistance">
+{marque.header("assistance", depth, nav, mobile, "Être aidé(e)", f"{R}contact/", PHONE_D, PHONE_L)}
 <main id="contenu">
 {body}
 </main>
-<footer class="site-footer">
-  <div class="wrap">
-    <div class="footer-grid">
-      <div class="footer-contact">
-        <span class="logo__mark" style="color:#fff">D<b>H</b>B Particuliers</span>
-        <p>{SIGN}. À domicile en Île-de-France, à distance partout en France.</p>
-        <p>☎ <a href="tel:{PHONE_L}">{PHONE_D}</a><br>✉ <a href="mailto:{EMAIL}">{EMAIL}</a></p>
-      </div>
-      <div><h4>Aide</h4><a href="{R}aide/">Centre d'aide</a><a href="{R}abonnement/">Abonnement & tarifs</a></div>
-      <div><h4>Infos</h4><a href="{R}a-propos/">À propos</a><a href="{R}contact/">Contact</a></div>
-      <div><h4>Légal</h4><a href="{R}mentions-legales/">Mentions légales</a><a href="{R}politique-confidentialite/">Confidentialité</a></div>
-    </div>
-    <div class="footer-bottom"><span>© {YEAR} {NAME}. <span class="a-completer">[SIRET : À COMPLÉTER]</span></span></div>
-  </div>
-</footer>
-<div class="float-cta">
-  <a class="float-btn" href="tel:{PHONE_L}" aria-label="Appeler">{IC_PHONE}<span>Appeler</span></a>
-</div>
-<div class="cookie-banner" role="dialog" aria-label="Cookies">
-  <div class="cookie-inner">
-    <p><strong>🍪 Respect de votre vie privée.</strong> Cookies nécessaires et, avec votre accord, de mesure d'audience. Refus aussi simple qu'acceptation.</p>
-    <div class="cookie-actions"><button class="btn btn--outline" data-cookie="refuse">Refuser</button><button class="btn btn--primary" data-cookie="accept">Tout accepter</button></div>
-  </div>
-</div>
-<script src="{R}assets/js/supabase-config.js"></script>
-<script src="{R}assets/js/main.js" defer></script>
-{STRIPE_SCRIPT}
+{marque.footer("assistance", depth, "Dépannage et accompagnement informatique pour les particuliers : à domicile en Île-de-France, à distance partout en France. Sans jargon, avec patience.", colonnes, contact)}
+{marque.barre_mobile(PHONE_D, PHONE_L, "Être aidé(e)", f"{R}contact/")}
+{marque.cookies()}
+{marque.scripts(depth, STRIPE_SCRIPT)}
 </body>
 </html>"""
+
+
+SV_IC = {
+    "ordi": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>',
+    "securite": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/></svg>',
+    "internet": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2 9a15 15 0 0 1 20 0M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19.5" r="1"/></svg>',
+    "donnees": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-8 8"/></svg>',
+    "mobile": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>',
+    "proches": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.3"/><path d="M15.5 14.2A5 5 0 0 1 21 19"/></svg>',
+    "guide": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="26" height="26" aria-hidden="true"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/><path d="M12 8v5M12 16h.01"/></svg>',
+}
 
 
 def contact_form(depth, title="Être aidé(e) rapidement"):
@@ -161,16 +117,16 @@ def contact_form(depth, title="Être aidé(e) rapidement"):
     return f"""
     <div class="form-card">
       <h3 class="mt-0">{title}</h3>
-      <p style="font-size:.95rem">Réponse rapide · à domicile (IdF) ou à distance (France) · sans engagement</p>
+      <p style="font-size:.95rem">Réponse rapide · à domicile (Île-de-France) ou à distance · sans engagement</p>
       <form data-demo-form data-type="devis" novalidate>
-        <div class="form-ok">✅ Merci ! On vous recontacte très vite pour vous aider. Pour une urgence, appelez le <a href="tel:{PHONE_L}">{PHONE_D}</a>.</div>
-        <div class="form-row"><label for="n">Nom et prénom</label><input id="n" name="nom" required></div>
+        <div class="form-ok">Merci, votre demande est bien reçue. Nous vous rappelons très vite. Pour une urgence, appelez le <a href="tel:{PHONE_L}">{PHONE_D}</a>.</div>
+        <div class="form-row"><label for="n">Nom et prénom</label><input id="n" name="nom" autocomplete="name" required></div>
         <div class="form-grid">
-          <div class="form-row"><label for="e">Email</label><input id="e" name="email" type="email" required></div>
-          <div class="form-row"><label for="t">Téléphone</label><input id="t" name="telephone" type="tel"></div>
+          <div class="form-row"><label for="e">Email</label><input id="e" name="email" type="email" autocomplete="email" required></div>
+          <div class="form-row"><label for="t">Téléphone</label><input id="t" name="telephone" type="tel" autocomplete="tel"></div>
         </div>
         <div class="form-row"><label for="m">Votre problème</label><textarea id="m" name="message" placeholder="Décrivez ce qui ne va pas, avec vos mots…"></textarea></div>
-        <div class="form-row consent"><input id="c" type="checkbox" required><label for="c" style="font-weight:500;margin:0">J'accepte d'être recontacté(e). Voir la <a href="{R}politique-confidentialite/">politique de confidentialité</a>.</label></div>
+        <div class="form-row consent"><input id="c" type="checkbox" required><label for="c" style="font-weight:400;margin:0">J'accepte d'être recontacté(e). Voir la <a href="{R}politique-confidentialite/">politique de confidentialité</a>.</label></div>
         <button class="btn btn--primary btn--lg btn--block" type="submit">Demander de l'aide</button>
       </form>
     </div>"""
@@ -179,122 +135,169 @@ def contact_form(depth, title="Être aidé(e) rapidement"):
 def lead_magnet(depth):
     pdf = "../" * depth + "assets/guides/guide-anti-arnaques.pdf"
     return f"""
-    <div class="lead-magnet reveal"><div class="lm-ic">🛡️</div><div class="lm-body">
+    <div class="lead-magnet"><div class="lm-ic icon-box" style="margin:0">{SV_IC['guide']}</div><div class="lm-body">
       <h3>Guide gratuit : éviter les arnaques informatiques</h3>
-      <p><strong>Les 5 pièges les plus courants</strong> (faux SMS, faux support, phishing…) et comment réagir. Laissez votre email pour le recevoir, ou téléchargez-le directement.</p>
+      <p><strong>Les 5 pièges les plus courants</strong> (faux SMS, faux support, hameçonnage…) et comment réagir. Laissez votre email pour le recevoir, ou téléchargez-le directement.</p>
       <form data-demo-form data-type="question" novalidate>
-        <div class="form-ok">✅ Merci ! <a href="{pdf}" target="_blank" rel="noopener"><strong>Télécharger le guide (PDF)</strong></a>.</div>
+        <div class="form-ok">Merci ! <a href="{pdf}" target="_blank" rel="noopener"><strong>Télécharger le guide (PDF)</strong></a>.</div>
         <input type="hidden" name="message" value="Demande du guide anti-arnaques">
         <input name="email" type="email" placeholder="Votre email" required aria-label="Votre email">
         <button class="btn btn--primary" type="submit">Recevoir le guide</button>
       </form>
-      <p style="margin:10px 0 0;font-size:.85rem"><a href="{pdf}" target="_blank" rel="noopener">📥 Télécharger directement (PDF)</a></p>
+      <p style="margin:10px 0 0;font-size:.88rem"><a href="{pdf}" target="_blank" rel="noopener">Télécharger directement (PDF)</a></p>
     </div></div>"""
 
 
 def offres_cards(depth):
     R = "../" * depth
     return f"""
-    <div class="grid grid-2" style="align-items:start">
-      <div class="card reveal" style="border-top:4px solid var(--cyan-600)">
+    <div class="offers">
+      <div class="offer offer--main">
+        <span class="offer-badge">Le plus serein</span>
         <h3>Abonnement sérénité</h3>
-        <p>Une assistance toute l'année pour ne plus jamais rester bloqué(e). Idéal pour être tranquille, et pour aider un proche.</p>
+        <p>Une assistance toute l'année pour ne plus rester bloqué(e). Idéal pour être tranquille, et pour aider un proche.</p>
+        <span class="price-from">À partir de</span>
+        <div class="price-tag"><span data-setting="abonnement_prix">{PRIX_ABO}</span> €<small> / mois</small></div>
         <ul class="check-list">
           <li>Assistance à distance <strong>illimitée</strong></li>
           <li>Interventions à domicile incluses ou à tarif réduit</li>
           <li>Conseils, mises à jour et sécurité</li>
-          <li>Un interlocuteur patient, sans jargon</li>
+          <li>Sans engagement de durée</li>
         </ul>
-        <div class="price-tag">À partir de <span data-setting="abonnement_prix">{PRIX_ABO}</span> €<small>/mois</small></div>
-        <a class="btn btn--primary btn--block" href="{R}contact/" data-checkout="abonnement">Je m'abonne</a>
+        <a class="btn btn--primary btn--lg btn--block" href="{R}contact/" data-checkout="abonnement">Je m'abonne</a>
       </div>
-      <div class="card reveal" style="border-top:4px solid var(--cyan-600)">
+      <div class="offer">
         <h3>Intervention ponctuelle</h3>
-        <p>Un souci précis à régler, sans engagement. On intervient chez vous (Île-de-France) ou à distance (partout en France).</p>
+        <p>Un souci précis à régler, sans abonnement. À domicile (Île-de-France) ou à distance (partout en France).</p>
+        <span class="price-from">À partir de</span>
+        <div class="price-tag"><span data-setting="intervention_prix">{PRIX_INT}</span> €</div>
         <ul class="check-list">
           <li>Dépannage à l'unité</li>
-          <li>Sans abonnement</li>
-          <li>Tarif annoncé avant toute intervention</li>
+          <li>Tarif exact annoncé avant d'intervenir</li>
+          <li>Explications claires sur ce qui a été fait</li>
           <li>Paiement simple</li>
         </ul>
-        <div class="price-tag">À partir de <span data-setting="intervention_prix">{PRIX_INT}</span> €</div>
-        <a class="btn btn--dark btn--block" href="{R}contact/" data-checkout="intervention">Être aidé(e) maintenant</a>
+        <a class="btn btn--outline btn--lg btn--block" href="{R}contact/" data-checkout="intervention">Être aidé(e) maintenant</a>
       </div>
     </div>"""
 
 
 def home():
     aides = ad.A[:6]
-    cards = ""
-    for a in aides:
-        cards += f"""<a class="card" href="aide/{a['slug']}/" style="color:inherit"><span class="pb-cat">{ad.CAT_ICON[a['cat']]} {ad.CATEGORIES[a['cat']]}</span><h3 style="font-size:1.05rem">{a['q']}</h3><span class="pb-link">Voir l'aide →</span></a>"""
+    cards = "".join(
+        f'<a class="pb-card" href="aide/{a["slug"]}/"><span class="pb-cat">{ad.CATEGORIES[a["cat"]]}</span>'
+        f'<h3>{a["q"]}</h3><span class="pb-link">Voir l\'aide {marque.ICONES["arrow"]}</span></a>' for a in aides)
     services = [
-        ("💻", "Ordinateur lent ou en panne", "On répare, on nettoie, on accélère."),
-        ("🦠", "Virus & arnaques", "Nettoyage, sécurité, et conseils pour éviter les pièges."),
-        ("📶", "Internet, box & Wi-Fi", "Connexion rétablie et Wi-Fi qui couvre toute la maison."),
-        ("📷", "Photos & sauvegarde", "On récupère et on protège vos souvenirs."),
-        ("📱", "Smartphone & tablette", "Transfert, nettoyage, prise en main."),
-        ("👵", "Aide aux proches / seniors", "Avec patience et pédagogie, à domicile ou à distance."),
+        ("ordi", "Ordinateur lent ou en panne", "On répare, on nettoie et on redonne de la vitesse à votre ordinateur."),
+        ("securite", "Virus et arnaques", "Nettoyage, protection, et des conseils simples pour éviter les pièges."),
+        ("internet", "Internet, box et Wi-Fi", "Connexion rétablie et un Wi-Fi qui couvre bien toute la maison."),
+        ("donnees", "Photos et sauvegarde", "On récupère, on range et on protège vos souvenirs."),
+        ("mobile", "Smartphone et tablette", "Transfert, réglages et prise en main, à votre rythme."),
+        ("proches", "Aide aux proches", "Avec patience et pédagogie, pour vos parents ou grands-parents."),
     ]
-    sv = "".join(f'<div class="card reveal"><div style="font-size:2rem;margin-bottom:10px">{i}</div><h3 style="font-size:1.1rem">{t}</h3><p>{d}</p></div>' for i, t, d in services)
+    sv = "".join(f'<div class="card"><div class="icon-box">{SV_IC[k]}</div><h3>{t}</h3><p>{d}</p></div>' for k, t, d in services)
+    steps = [
+        ("Vous nous expliquez", "Par téléphone ou via le formulaire, avec vos mots. Pas besoin de connaître les termes techniques."),
+        ("On vous annonce le prix", "Avant toute intervention, vous savez ce que ça coûte. Vous décidez ensuite, sans pression."),
+        ("On règle le problème", "À distance ou chez vous, et on vous explique ce qui a été fait pour que ça ne se reproduise pas."),
+    ]
+    steps_html = "".join(f'<div class="step"><div class="num">{i}</div><h3>{t}</h3><p>{d}</p></div>' for i, (t, d) in enumerate(steps, 1))
+    faq = [
+        ("Combien coûte une intervention ?", f"L'intervention ponctuelle démarre à {PRIX_INT} € et l'abonnement à {PRIX_ABO} € par mois. Le tarif exact vous est toujours annoncé avant d'intervenir."),
+        ("Intervenez-vous à domicile ?", "Oui, en Île-de-France. Partout ailleurs en France, nous intervenons à distance : la plupart des soucis se règlent ainsi, sans déplacement."),
+        ("Comment fonctionne l'aide à distance ?", "Avec votre accord, nous voyons votre écran grâce à un petit logiciel sécurisé. Vous voyez tout ce que nous faisons et pouvez arrêter à tout moment."),
+        ("Puis-je prendre l'abonnement pour un proche ?", "Oui, c'est l'un des usages les plus fréquents. Nous accompagnons votre proche avec patience, chez lui ou à distance."),
+        ("Y a-t-il un engagement ?", "Non. L'abonnement est sans engagement de durée et l'intervention ponctuelle se fait à l'unité."),
+    ]
+    faq_html = "".join(f'<details class="faq-item"><summary>{q}</summary><div class="faq-body"><p>{r}</p></div></details>' for q, r in faq)
+    faq_ld = {"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
+        {"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": r}} for q, r in faq]}
     body = f"""
 <section class="hero">
   <div class="wrap hero-inner">
-    <div class="reveal">
-      <h1>Votre dépanneur informatique de confiance, à la maison.</h1>
-      <p class="lead">Ordinateur lent, virus, box Internet, photos à récupérer, aide pour vos démarches… On vous dépanne et on vous accompagne, sans jargon, chez vous ou à distance.</p>
-      <ul class="reassurance">
-        <li>{CHECK} À domicile en Île-de-France</li>
-        <li>{CHECK} À distance partout en France</li>
-        <li>{CHECK} Sans jargon, avec patience</li>
-      </ul>
+    <div>
+      <span class="eyebrow">Assistance informatique pour les particuliers</span>
+      <h1>Un souci avec l'informatique ? On s'en occupe, simplement.</h1>
+      <p class="lead">Ordinateur lent, virus, box Internet, photos à récupérer, smartphone à configurer… Nous vous aidons chez vous ou à distance, sans jargon et avec patience.</p>
+      <div class="price-chips">
+        <span class="price-chip"><small>Intervention</small><b>dès <span data-setting="intervention_prix">{PRIX_INT}</span> €</b></span>
+        <span class="price-chip"><small>Abonnement</small><b>dès <span data-setting="abonnement_prix">{PRIX_ABO}</span> € / mois</b></span>
+      </div>
       <div class="hero-cta">
         <a class="btn btn--primary btn--lg" href="contact/">Être aidé(e)</a>
-        <a class="btn btn--ghost btn--lg" href="tel:{PHONE_L}">{IC_PHONE} {PHONE_D}</a>
+        <a class="btn btn--outline btn--lg" href="tel:{PHONE_L}">{IC_PHONE} {PHONE_D}</a>
       </div>
+      <p class="hero-note">Tarif annoncé avant toute intervention · Sans engagement</p>
     </div>
-    <div class="hero-visual reveal" aria-hidden="true">
-      <h3>🙂 Simple et rassurant</h3>
-      <div class="status-row"><span>On parle votre langage</span><span class="badge-ok"><span class="dot"></span>Sans jargon</span></div>
-      <div class="status-row"><span>À domicile ou à distance</span><span class="badge-ok"><span class="dot"></span>Au choix</span></div>
-      <div class="status-row"><span>Tarif annoncé avant</span><span class="badge-ok"><span class="dot"></span>Sans surprise</span></div>
-      <div class="status-row"><span>Abonnement ou à l'unité</span><span class="badge-ok"><span class="dot"></span>Sans engagement</span></div>
+    <div class="hero-card">
+      <h2>Pourquoi on nous appelle</h2>
+      <p class="sub">Ce que nous vous garantissons, à chaque intervention.</p>
+      <ul class="check-list">
+        <li><strong>On parle votre langage</strong> : aucune question n'est bête.</li>
+        <li><strong>Le prix avant</strong> : vous savez ce que vous payez.</li>
+        <li><strong>À domicile ou à distance</strong> : vous choisissez.</li>
+        <li><strong>Vos données restent à vous</strong> : rien n'est fait sans votre accord.</li>
+      </ul>
     </div>
   </div>
 </section>
 
-<section class="section"><div class="wrap">
-  <div class="center" style="max-width:720px;margin:0 auto 46px"><span class="eyebrow">Comment on vous aide</span><h2>Tout ce qui vous embête, on s'en occupe</h2></div>
+<section class="section" id="services"><div class="wrap">
+  <div class="section-head center"><span class="eyebrow">Nos services</span><h2>Tout ce qui vous embête, on s'en occupe</h2></div>
   <div class="grid grid-3">{sv}</div>
 </div></section>
 
-<section class="section section--gris"><div class="wrap">
-  <div class="center" style="max-width:720px;margin:0 auto 46px"><span class="eyebrow">Nos formules</span><h2>Abonnement ou intervention, à vous de choisir</h2><p class="lead">Des prix clairs, annoncés à l'avance. Sans engagement caché.</p></div>
+<section class="section section--tint"><div class="wrap">
+  <div class="section-head center"><span class="eyebrow">Nos formules</span><h2>Abonnement ou intervention, à vous de choisir</h2>
+    <p>Des prix clairs, annoncés à l'avance. Aucun engagement caché.</p></div>
   {offres_cards(0)}
-  <p class="center" style="margin-top:24px"><a class="btn btn--dark" href="abonnement/">Voir le détail des formules →</a></p>
+  <p class="center" style="margin-top:24px"><a class="text-link" href="abonnement/">Voir le détail des formules {marque.ICONES['arrow']}</a></p>
 </div></section>
 
 <section class="section"><div class="wrap">
-  <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px;margin-bottom:34px">
-    <div><span class="eyebrow">Centre d'aide</span><h2 class="mb-0">Un souci ? Trouvez la réponse</h2></div>
-    <a class="btn btn--dark" href="aide/">Tout le centre d'aide</a>
-  </div>
+  <div class="section-head center"><span class="eyebrow">Comment ça marche</span><h2>Trois étapes, sans surprise</h2></div>
+  <div class="steps steps--3">{steps_html}</div>
+</div></section>
+
+<section class="section section--soft"><div class="wrap">
+  <div class="section-head"><span class="eyebrow">Centre d'aide</span><h2>Un souci ? Trouvez la réponse</h2>
+    <p>Des explications simples pour les problèmes les plus courants. <a class="text-link" href="aide/">Tout le centre d'aide</a></p></div>
   <div class="pb-grid">{cards}</div>
   <div style="max-width:820px;margin:34px auto 0">{lead_magnet(0)}</div>
 </div></section>
 
-<section class="section section--gris"><div class="wrap">
-  <div class="grid grid-2" style="align-items:center;gap:48px">
-    <div class="reveal"><span class="eyebrow">On est là</span><h2>Dites-nous ce qui ne va pas</h2><p class="lead">Expliquez votre problème avec vos mots. On vous recontacte vite, et on vous aide à domicile ou à distance.</p>
-      <ul class="check-list" style="margin-top:16px"><li>Sans jargon</li><li>Tarif annoncé avant</li><li>Sans engagement</li></ul>
-    </div>
-    <div class="reveal">{contact_form(0)}</div>
+<section class="section"><div class="wrap zone">
+  <div>
+    <span class="eyebrow">Où intervenons-nous ?</span>
+    <h2>Chez vous en Île-de-France, à distance partout en France</h2>
+    <p class="lead">Nous nous déplaçons en Île-de-France, en priorité au nord de Paris. Partout ailleurs, l'assistance à distance règle la plupart des problèmes.</p>
+    <div class="chips"><span class="chip chip--prio">Saint-Denis</span><span class="chip chip--prio">Saint-Ouen</span><span class="chip chip--prio">Aubervilliers</span><span class="chip">Épinay-sur-Seine</span><span class="chip">Pantin</span><span class="chip">Paris</span><span class="chip">Toute l'Île-de-France</span></div>
+  </div>
+  <div>
+    <div class="zone-box"><h3>{marque.ICONES['pin']} À domicile</h3><p>Île-de-France. Frais de déplacement éventuels annoncés avant. <span class="a-completer">[À COMPLÉTER PAR LE PROPRIÉTAIRE]</span></p></div>
+    <div class="zone-box"><h3>{IC_PHONE} À distance</h3><p>Partout en France, avec un logiciel sécurisé et votre accord.</p></div>
+    <div class="avis-vide" style="margin-top:16px"><strong>Avis clients</strong><br><span class="a-completer">[À COMPLÉTER PAR LE PROPRIÉTAIRE : avis vérifiés uniquement]</span></div>
   </div>
 </div></section>
+
+<section class="section section--tint"><div class="wrap">
+  <div class="section-head center"><span class="eyebrow">Questions fréquentes</span><h2>Vos questions, nos réponses</h2></div>
+  <div class="faq-list">{faq_html}</div>
+</div></section>
+
+<section class="section"><div class="wrap">
+  <div class="grid grid-2" style="align-items:center;gap:48px">
+    <div><span class="eyebrow">On est là</span><h2>Dites-nous ce qui ne va pas</h2><p class="lead">Expliquez votre problème avec vos mots. Nous vous rappelons vite pour trouver la solution, chez vous ou à distance.</p>
+      <ul class="check-list" style="margin-top:16px"><li>Sans jargon</li><li>Tarif annoncé avant</li><li>Sans engagement</li></ul>
+    </div>
+    <div>{contact_form(0)}</div>
+  </div>
+</div></section>
+<script type="application/ld+json">{json.dumps(faq_ld, ensure_ascii=False)}</script>
 {org_jsonld()}
 """
-    return page(0, "", f"{NAME} — dépannage & assistance informatique à domicile et à distance",
-                "DHB Particuliers : dépannage et assistance informatique à domicile (Île-de-France) et à distance (France). Ordinateur, virus, box, photos. Abonnement ou intervention, prix clairs.", body)
+    return page(0, "", f"{NAME} — dépannage et assistance informatique à domicile et à distance",
+                "DHB Assistance : dépannage et assistance informatique pour les particuliers, à domicile (Île-de-France) et à distance (France). Ordinateur, virus, box, photos. Prix clairs.", body)
 
 
 def abonnement():
@@ -308,16 +311,15 @@ def abonnement():
 <section class="section"><div class="wrap">{offres_cards(1)}
   <p class="center muted" style="max-width:720px;margin:24px auto 0;color:var(--gris-600)">Les montants affichés sont des exemples de départ. <span class="a-completer">[À COMPLÉTER : grille détaillée + mise en place du paiement en ligne (abonnement + intervention).]</span></p>
 </div></section>
-<section class="section section--gris"><div class="wrap" style="max-width:800px">
+<section class="section section--tint"><div class="wrap" style="max-width:800px">
   <h2 class="center" style="margin-bottom:30px">Questions fréquentes</h2>
   <details class="faq-item"><summary>Y a-t-il un engagement ?</summary><div class="faq-body"><p>Non. L'abonnement est sans engagement de durée, et l'intervention ponctuelle se fait à l'unité. Vous restez libre.</p></div></details>
   <details class="faq-item"><summary>Intervenez-vous à domicile ?</summary><div class="faq-body"><p>Oui, à domicile en Île-de-France, et à distance partout en France (la plupart des soucis se règlent à distance, sans déplacement).</p></div></details>
   <details class="faq-item"><summary>Comment se passe le paiement ?</summary><div class="faq-body"><p>Simplement, et le tarif vous est toujours annoncé avant. <span class="a-completer">[À COMPLÉTER : moyens de paiement / paiement en ligne.]</span></p></div></details>
   <details class="faq-item"><summary>L'abonnement convient-il pour aider un proche âgé ?</summary><div class="faq-body"><p>Tout à fait : c'est même l'un de ses usages les plus appréciés. On accompagne vos proches avec patience, à distance ou chez eux.</p></div></details>
 </div></section>
-<section class="section"><div class="wrap"><div class="cta-band reveal">
-  <h2>Prêt(e) à être tranquille ?</h2>
-  <p>Dites-nous votre besoin, on vous conseille la bonne formule — sans vous pousser à la plus chère.</p>
+<section class="section section--tight"><div class="wrap"><div class="cta-band">
+  <div><h2>Prêt(e) à être tranquille ?</h2><p>Dites-nous votre besoin, on vous conseille la bonne formule — sans vous pousser à la plus chère.</p></div>
   <div class="hero-cta"><a class="btn btn--primary btn--lg" href="../contact/">Être aidé(e)</a><a class="btn btn--ghost btn--lg" href="tel:{PHONE_L}">{IC_PHONE} {PHONE_D}</a></div>
 </div></div></section>
 {org_jsonld()}
@@ -331,12 +333,12 @@ def aide_index():
     filters = '<button class="pb-filter active" data-cat="all">Tout</button>'
     for k, label in ad.CATEGORIES.items():
         if cats[k]:
-            filters += f'<button class="pb-filter" data-cat="{k}">{ad.CAT_ICON[k]} {label}</button>'
+            filters += f'<button class="pb-filter" data-cat="{k}">{label}</button>'
     items = ""
     for k, label in ad.CATEGORIES.items():
         for a in cats[k]:
             kw = (a["q"] + " " + a["sym"]).lower().replace('"', "")
-            items += f"""<a class="pb-card" href="{a['slug']}/" data-cat="{k}" data-kw="{kw}"><span class="pb-cat">{ad.CAT_ICON[k]} {label}</span><h3>{a['q']}</h3><p>{a['sym'][:110]}…</p><span class="pb-link">Voir l'aide →</span></a>"""
+            items += f"""<a class="pb-card" href="{a['slug']}/" data-cat="{k}" data-kw="{kw}"><span class="pb-cat">{label}</span><h3>{a['q']}</h3><p>{a['sym'][:110]}…</p><span class="pb-link">Voir l'aide</span></a>"""
     js = """<script>(function(){var s=document.getElementById('pb-search'),c=[].slice.call(document.querySelectorAll('.pb-card')),f=[].slice.call(document.querySelectorAll('.pb-filter')),e=document.getElementById('pb-empty'),cat='all';function n(x){return(x||'').toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'')}function a(){var q=n(s.value.trim()),k=0;c.forEach(function(x){var okc=(cat==='all'||x.getAttribute('data-cat')===cat),okq=(!q||n(x.getAttribute('data-kw')).indexOf(q)>-1),sh=okc&&okq;x.style.display=sh?'':'none';if(sh)k++});if(e)e.classList.toggle('show',k===0)}s.addEventListener('input',a);f.forEach(function(b){b.addEventListener('click',function(){f.forEach(function(y){y.classList.remove('active')});b.classList.add('active');cat=b.getAttribute('data-cat');a()})})})();</script>"""
     body = f"""
 <section class="page-hero"><div class="wrap">
@@ -353,15 +355,14 @@ def aide_index():
   <div class="pb-grid">{items}</div>
   <div class="pb-empty" id="pb-empty"><p>Rien ne correspond. <a href="../contact/">Expliquez-nous votre problème</a>, on vous aide.</p></div>
 </div></section>
-<section class="section"><div class="wrap"><div class="cta-band reveal">
-  <h2>Vous préférez qu'on s'en occupe ?</h2>
-  <p>À domicile en Île-de-France ou à distance partout en France. Sans jargon, sans engagement.</p>
+<section class="section section--tight"><div class="wrap"><div class="cta-band">
+  <div><h2>Vous préférez qu'on s'en occupe ?</h2><p>À domicile en Île-de-France ou à distance partout en France. Sans jargon, sans engagement.</p></div>
   <div class="hero-cta"><a class="btn btn--primary btn--lg" href="../contact/">Être aidé(e)</a><a class="btn btn--ghost btn--lg" href="../abonnement/">Voir l'abonnement</a></div>
 </div></div></section>
 {js}
 """
     return page(1, "aide/", f"Centre d'aide informatique pour particuliers | {NAME}",
-                "Centre d'aide DHB Particuliers : réponses simples aux problèmes informatiques du quotidien (ordinateur lent, virus, box, photos, smartphone). Et une aide à domicile ou à distance.", body, extra="")
+                "Centre d'aide DHB Assistance : réponses simples aux problèmes informatiques du quotidien (ordinateur lent, virus, box, photos, smartphone). Et une aide à domicile ou à distance.", body, extra="")
 
 
 def aide_page(a):
@@ -378,10 +379,10 @@ def aide_page(a):
     body = f"""
 <section class="page-hero"><div class="wrap">
   <div class="breadcrumb"><a href="{r}">Accueil</a> <span>/</span> <a href="{r}aide/">Centre d'aide</a> <span>/</span> {label}</div>
-  <span class="pb-cat" style="background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.25)">{ad.CAT_ICON[a['cat']]} {label}</span>
+  <span class="pb-cat">{label}</span>
   <h1 style="margin-top:12px">{a['q']}</h1>
   <p>{a['sym']}</p>
-  <div class="hero-cta"><a class="btn btn--primary btn--lg" href="{r}contact/">Être aidé(e)</a><a class="btn btn--ghost btn--lg" href="tel:{PHONE_L}">{IC_PHONE} {PHONE_D}</a></div>
+  <div class="hero-cta"><a class="btn btn--primary btn--lg" href="{r}contact/">Être aidé(e)</a><a class="btn btn--outline btn--lg" href="tel:{PHONE_L}">{IC_PHONE} {PHONE_D}</a></div>
 </div></section>
 <section class="section"><div class="wrap">
   <div class="grid grid-2" style="gap:30px;align-items:start">
@@ -389,11 +390,11 @@ def aide_page(a):
     <div class="card reveal"><h3>Ce que vous pouvez essayer</h3><ul class="check-list">{checks}</ul></div>
   </div>
   <div class="article-body" style="max-width:820px;margin-top:40px">
-    <div class="callout" style="background:#f0fdf4;border-color:#bbf7d0"><strong>On peut s'en occuper pour vous</strong><br>{a['call']}</div>
+    <div class="callout"><strong>On peut s'en occuper pour vous</strong><br>{a['call']}</div>
     {lead_magnet(2)}
   </div>
 </div></section>
-<section class="section section--gris"><div class="wrap">
+<section class="section section--tint"><div class="wrap">
   <h2 class="center" style="margin-bottom:30px">Autres aides « {label} »</h2>
   <div class="related">{others_html}</div>
 </div></section>
@@ -417,24 +418,24 @@ def contact():
 </div></section>
 <section class="section"><div class="wrap"><div class="grid grid-2" style="gap:48px;align-items:start">
   <div class="reveal"><h2>Nos coordonnées</h2>
-    <p>☎ <a href="tel:{PHONE_L}"><strong>{PHONE_D}</strong></a> <span class="a-completer">[EXEMPLE]</span></p>
-    <p>✉ <a href="mailto:{EMAIL}">{EMAIL}</a> <span class="a-completer">[EXEMPLE]</span></p>
-    <p>📍 À domicile en Île-de-France · à distance partout en France.</p>
-    <div class="card" style="margin-top:16px;background:#f0fdf4;border-color:#bbf7d0"><h3>Une urgence ?</h3><p class="mb-0">Appelez directement le <a href="tel:{PHONE_L}"><strong>{PHONE_D}</strong></a>.</p></div>
+    <div class="zone-box"><h3>{IC_PHONE} Téléphone</h3><p><a href="tel:{PHONE_L}"><strong>{PHONE_D}</strong></a> <span class="a-completer">[EXEMPLE]</span></p></div>
+    <div class="zone-box"><h3>{marque.ICONES['mail']} Email</h3><p><a href="mailto:{EMAIL}">{EMAIL}</a> <span class="a-completer">[EXEMPLE]</span></p></div>
+    <div class="zone-box"><h3>{marque.ICONES['pin']} Zone</h3><p>À domicile en Île-de-France · à distance partout en France.</p></div>
+    <div class="callout" style="margin-top:16px"><h3>Une urgence ?</h3><p class="mb-0">Appelez directement le <a href="tel:{PHONE_L}"><strong>{PHONE_D}</strong></a>.</p></div>
   </div>
   <div class="reveal">{contact_form(1)}</div>
 </div></div></section>
 {org_jsonld()}
 """
     return page(1, "contact/", f"Contact — {NAME}",
-                "Contactez DHB Particuliers pour un dépannage informatique à domicile (IdF) ou à distance (France). Réponse rapide, sans jargon.", body)
+                "Contactez DHB Assistance pour un dépannage informatique à domicile (IdF) ou à distance (France). Réponse rapide, sans jargon.", body)
 
 
 def a_propos():
     body = f"""
 <section class="page-hero"><div class="wrap"><div class="breadcrumb"><a href="../">Accueil</a> <span>/</span> À propos</div>
   <span class="eyebrow">À propos</span><h1>Votre informatique, en toute confiance</h1>
-  <p>DHB Particuliers, c'est la branche grand public du groupe DHB : une aide informatique proche, patiente et sans jargon.</p></div></section>
+  <p>DHB Assistance, c'est l'activité grand public du groupe DHB : une aide informatique proche, patiente et sans jargon.</p></div></section>
 <section class="section"><div class="wrap"><div class="article-body" style="max-width:820px">
   <h2>Notre état d'esprit</h2>
   <p>On sait à quel point un problème informatique peut être stressant quand on n'est pas du métier. Notre promesse : vous écouter, vous expliquer simplement, et régler les choses — sans vous faire sentir dépassé(e).</p>
@@ -447,14 +448,14 @@ def a_propos():
 {org_jsonld()}
 """
     return page(1, "a-propos/", f"À propos — {NAME}",
-                "DHB Particuliers : aide informatique proche, patiente et sans jargon, à domicile en Île-de-France et à distance partout en France.", body)
+                "DHB Assistance : aide informatique proche, patiente et sans jargon, à domicile en Île-de-France et à distance partout en France.", body)
 
 
 def legal(slug, title, h1, blocks):
     body = f"""
 <section class="page-hero"><div class="wrap"><div class="breadcrumb"><a href="../">Accueil</a> <span>/</span> {h1}</div><h1>{h1}</h1></div></section>
 <section class="section"><div class="wrap"><div class="article-body">{blocks}</div></div></section>"""
-    return page(1, slug, f"{title} | {NAME}", f"{h1} du site DHB Particuliers.", body)
+    return page(1, slug, f"{title} | {NAME}", f"{h1} du site DHB Assistance.", body)
 
 
 def build():
@@ -470,18 +471,18 @@ def build():
             '<h2>Hébergement</h2><p class="a-completer">[À COMPLÉTER : hébergeur]</p>'
             '<h2>Données personnelles</h2><p>Voir la <a href="../politique-confidentialite/">politique de confidentialité</a>.</p>'),
         "politique-confidentialite/index.html": legal("politique-confidentialite/", "Politique de confidentialité", "Politique de confidentialité (RGPD)",
-            '<p>DHB Particuliers collecte via le formulaire uniquement les informations nécessaires pour vous recontacter et vous aider (nom, email, téléphone, message). Elles ne sont jamais revendues.</p>'
+            '<p>DHB Assistance collecte via le formulaire uniquement les informations nécessaires pour vous recontacter et vous aider (nom, email, téléphone, message). Elles ne sont jamais revendues.</p>'
             f'<h2>Vos droits</h2><p>Conformément au RGPD : accès, rectification, suppression. Contact : <a href="mailto:{EMAIL}">{EMAIL}</a>.</p><p class="a-completer">[À COMPLÉTER : durées de conservation, mesure d\'audience.]</p>'),
     }
     # Pages de retour paiement (Stripe)
     pages["paiement-reussi/index.html"] = page(1, "paiement-reussi/", f"Merci — {NAME}",
         "Votre paiement a bien été pris en compte. Merci !",
-        f"""<section class="page-hero"><div class="wrap"><h1>Merci ! 🎉</h1><p>Votre paiement a bien été pris en compte. On revient vers vous très vite.</p>
+        f"""<section class="page-hero"><div class="wrap"><h1>Merci !</h1><p>Votre paiement a bien été pris en compte. On revient vers vous très vite.</p>
         <div class="hero-cta"><a class="btn btn--primary btn--lg" href="../">Retour à l'accueil</a></div></div></section>""")
     pages["paiement-annule/index.html"] = page(1, "paiement-annule/", f"Paiement annulé — {NAME}",
         "Le paiement a été annulé.",
         f"""<section class="page-hero"><div class="wrap"><h1>Paiement annulé</h1><p>Aucun montant n'a été débité. Vous pouvez réessayer, ou nous contacter si vous avez une question.</p>
-        <div class="hero-cta"><a class="btn btn--primary btn--lg" href="../abonnement/">Voir les formules</a><a class="btn btn--ghost btn--lg" href="../contact/">Nous contacter</a></div></div></section>""")
+        <div class="hero-cta"><a class="btn btn--primary btn--lg" href="../abonnement/">Voir les formules</a><a class="btn btn--outline btn--lg" href="../contact/">Nous contacter</a></div></div></section>""")
 
     for a in ad.A:
         pages[f"aide/{a['slug']}/index.html"] = aide_page(a)

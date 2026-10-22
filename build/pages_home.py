@@ -1,245 +1,254 @@
 # -*- coding: utf-8 -*-
-from base import (page, SERVICES, SERVICE_ICON, IC, contact_form, cta_band,
-                  localbusiness_jsonld, PHONE_DISPLAY, PHONE_LINK, root)
+"""Accueil DHB Pro (entreprises) : B2B, sérieux, orienté demande de devis."""
+from base import (page, SERVICES, SERVICE_ICON, IC, VILLES, faq_jsonld, localbusiness_jsonld,
+                  PHONE_DISPLAY, PHONE_LINK)
 import blog_data
 import problems_data as pd
+import marque
+
+CHECK = marque.ICONES["check"]
+ARROW = marque.ICONES["arrow"]
+PRIORITAIRES = {"depannage-informatique-saint-denis", "depannage-informatique-saint-ouen",
+                "depannage-informatique-aubervilliers", "depannage-informatique-epinay-sur-seine",
+                "depannage-informatique-pantin"}
+
+FAQ = [
+    ("Travaillez-vous avec les petites entreprises ?",
+     "Oui, c'est notre cœur de métier : TPE, PME, indépendants, cabinets, commerces et associations. Pas besoin d'avoir un service informatique : nous jouons ce rôle pour vous."),
+    ("Faut-il signer un contrat pour être dépanné ?",
+     "Non. Vous pouvez faire appel à nous ponctuellement, sans engagement. Si vous souhaitez ensuite une maintenance régulière, nous vous proposons une formule adaptée, clairement chiffrée."),
+    ("Combien coûtent vos services ?",
+     "Chaque entreprise est différente : nous établissons un devis gratuit et détaillé avant toute intervention facturée. Pas de frais cachés, pas d'engagement imposé."),
+    ("Intervenez-vous à distance ?",
+     "Oui, partout en France, avec des outils de prise en main sécurisés et votre accord à chaque session. Nous nous déplaçons sur site en Île-de-France quand une présence physique est nécessaire."),
+    ("Que se passe-t-il en cas d'urgence ?",
+     "Les incidents bloquants sont traités en priorité. Notre engagement : une réponse à toute demande sous 24 h ouvrées, et une intervention à distance dès que possible pour rétablir votre activité."),
+]
+
+
+def formulaire_hero():
+    return f"""
+    <div class="hero-card" id="devis">
+      <h2>Décrivez votre besoin</h2>
+      <p class="sub">Réponse sous 24 h ouvrées · Devis gratuit · Sans engagement</p>
+      <form data-demo-form data-type="devis" novalidate>
+        <div class="form-ok">Merci, votre demande est bien reçue. Nous vous recontactons sous 24 h ouvrées. Urgence : <a href="tel:{PHONE_LINK}">{PHONE_DISPLAY}</a>.</div>
+        <div class="form-grid">
+          <div class="form-row"><label for="h-nom">Nom</label><input id="h-nom" name="nom" autocomplete="name" required></div>
+          <div class="form-row"><label for="h-ent">Entreprise</label><input id="h-ent" name="entreprise" autocomplete="organization"></div>
+        </div>
+        <div class="form-grid">
+          <div class="form-row"><label for="h-mail">Email professionnel</label><input id="h-mail" name="email" type="email" autocomplete="email" required></div>
+          <div class="form-row"><label for="h-tel">Téléphone</label><input id="h-tel" name="telephone" type="tel" autocomplete="tel"></div>
+        </div>
+        <div class="form-row"><label for="h-msg">Votre besoin</label><textarea id="h-msg" name="message" rows="3" placeholder="Ex. 8 postes, sauvegarde à fiabiliser, Wi-Fi instable…"></textarea></div>
+        <div class="form-row consent"><input id="h-rgpd" type="checkbox" required><label for="h-rgpd" style="font-weight:400;margin:0">J'accepte d'être recontacté(e) au sujet de ma demande. <a href="politique-confidentialite/">Confidentialité</a></label></div>
+        <button class="btn btn--primary btn--lg btn--block" type="submit">Recevoir mon devis gratuit</button>
+      </form>
+    </div>"""
 
 
 def build():
-    r = ""  # depth 0
-
-    service_cards = ""
-    for slug, name, desc in SERVICES:
-        ic = IC[SERVICE_ICON[slug]]
-        service_cards += f"""
-        <div class="card reveal">
-          <div class="icon-box">{ic}</div>
-          <h3>{name}</h3>
+    # Services : l'infogérance globale en carte large, puis les six services.
+    ordre = ["infogerance-globale"] + [s for s, _, _ in SERVICES if s != "infogerance-globale"]
+    services = {s: (n, d) for s, n, d in SERVICES}
+    cartes = ""
+    for i, slug in enumerate(ordre):
+        nom, desc = services[slug]
+        if i == 0:
+            cartes += f"""
+        <a class="card card--feature span-2" href="services/{slug}/">
+          <div class="icon-box">{IC[SERVICE_ICON[slug]]}</div>
+          <h3>{nom} : votre service informatique externalisé</h3>
+          <p>Maintenance, supervision, sécurité, sauvegarde et support réunis dans une formule mensuelle claire, avec un interlocuteur unique qui connaît votre installation.</p>
+          <span class="card-link">Découvrir l'infogérance</span>
+        </a>"""
+        else:
+            cartes += f"""
+        <a class="card" href="services/{slug}/">
+          <div class="icon-box">{IC[SERVICE_ICON[slug]]}</div>
+          <h3>{nom}</h3>
           <p>{desc}</p>
-          <a class="card-link" href="services/{slug}/">En savoir plus</a>
-        </div>"""
-
-    problems = [
-        ("« Nos ordinateurs rament, on perd un temps fou »",
-         "On diagnostique la vraie cause (disque saturé, mémoire, logiciels, virus) et on remet vos postes à niveau — sans discours technique."),
-        ("« On a peur de perdre nos fichiers »",
-         "On met en place une sauvegarde automatique et vérifiée, avec un test de restauration régulier. Vous dormez tranquille."),
-        ("« Plus d'accès à Internet / au serveur, tout est bloqué »",
-         "Intervention prioritaire, sur site en Île-de-France ou à distance partout en France, pour rétablir l'activité au plus vite."),
-        ("« On reçoit des mails douteux, on craint le piratage »",
-         "Antivirus, pare-feu, filtrage des mails et sensibilisation de vos équipes : on réduit concrètement le risque."),
-        ("« Notre messagerie pro tombe en panne au mauvais moment »",
-         "On fiabilise votre Microsoft 365 ou Google Workspace, vos adresses et vos boîtes, avec un interlocuteur qui répond vraiment."),
-        ("« On n'a personne pour s'occuper de l'informatique »",
-         "On devient votre service informatique externalisé : un interlocuteur unique qui connaît votre entreprise et anticipe les problèmes."),
-    ]
-    ps = ""
-    for prob, sol in problems:
-        ps += f"""
-        <div class="ps-row reveal">
-          <div class="ps-prob"><span class="tag">Votre problème</span><p><strong>{prob}</strong></p></div>
-          <div class="ps-sol"><span class="tag">Notre solution</span><p>{sol}</p></div>
-        </div>"""
-
-    engagements = [
-        ("user", "Un interlocuteur unique qui vous connaît", "Pas de standard anonyme ni de numéro de ticket qui tourne en rond. Vous parlez à quelqu'un qui connaît votre installation."),
-        ("clock", "Entreprise à taille humaine et réactive", "Nous sommes une structure récente et disponible. Votre demande ne se perd pas dans une file : réponse sous 24h ouvrées."),
-        ("chat", "Un langage clair, sans jargon", "On vous explique ce qui se passe et ce qu'on propose avec des mots simples. Vous décidez en connaissance de cause."),
-        ("eyeopen", "Transparence totale", "Pas de prix caché, pas d'engagement piège. Vous savez ce qui est fait, pourquoi, et ce que ça vous apporte."),
-        ("map", "Sur site en Île-de-France, à distance partout en France", "On se déplace dans vos locaux en IdF et on intervient à distance dans toute la France, selon ce qui est le plus rapide pour vous."),
-        ("bolt", "Une approche moderne et préventive", "On ne se contente pas de réparer : on supervise et on anticipe pour que les pannes n'arrivent pas au pire moment."),
-    ]
-    eng = ""
-    for ic, t, d in engagements:
-        eng += f'<div class="engagement reveal"><div class="ic">{IC[ic]}</div><div><h3>{t}</h3><p>{d}</p></div></div>'
-
-    steps = [
-        ("Audit gratuit", "On fait le point sur votre installation, vos usages et vos risques. Gratuit et sans engagement."),
-        ("Plan clair", "Vous recevez un plan de recommandations priorisées, en langage simple, avec les bénéfices concrets."),
-        ("Mise en place", "On déploie les solutions retenues proprement, en limitant au maximum l'interruption de votre activité."),
-        ("Suivi", "On supervise, on maintient et on reste joignable. Vous avez enfin un informatique qui tient dans la durée."),
-    ]
-    steps_html = ""
-    for i, (t, d) in enumerate(steps, 1):
-        steps_html += f'<div class="step reveal"><div class="num">{i}</div><h3>{t}</h3><p>{d}</p></div>'
-
-    popular_slugs = ["ordinateur-de-bureau-trop-lent", "plus-dinternet-au-bureau",
-                     "imprimante-hors-ligne", "ecran-bleu-windows",
-                     "fichiers-chiffres-rancon-ransomware", "messagerie-pro-nenvoie-plus"]
-    pb_popular = ""
-    for s in popular_slugs:
-        pr = pd.get(s)
-        if pr:
-            pb_popular += f"""
-        <a class="card reveal" href="pannes-frequentes/{pr['slug']}/" style="color:inherit">
-          <span class="article-tag" style="margin-bottom:10px">{pd.CATEGORIES[pr['cat']]}</span>
-          <h3 style="font-size:1.08rem">{pr['q']}</h3>
-          <span class="card-link">Causes et solutions</span>
+          <span class="card-link">En savoir plus</span>
         </a>"""
 
-    posts = blog_data.ARTICLES[:3]
-    post_cards = ""
-    colors = ["#0B2A4A", "#134377", "#0b8fc6"]
-    for i, a in enumerate(posts):
-        post_cards += f"""
-        <div class="card post-card reveal">
-          <div class="thumb" style="background:linear-gradient(135deg,{colors[i%3]},#2EC4FF)">{a['theme']}</div>
-          <h3>{a['title']}</h3>
-          <p class="excerpt">{a['excerpt']}</p>
-          <a class="card-link" href="blog/{a['slug']}/">Lire l'article</a>
-        </div>"""
+    problemes = [
+        ("Nos ordinateurs rament, on perd un temps fou.",
+         "Diagnostic de la vraie cause (disque, mémoire, logiciels, virus) et remise à niveau des postes, sans jargon."),
+        ("On a peur de perdre nos fichiers.",
+         "Sauvegarde automatique et vérifiée, avec un test de restauration régulier."),
+        ("Plus d'Internet ou de serveur : tout est bloqué.",
+         "Intervention prioritaire à distance, ou sur site en Île-de-France, pour rétablir l'activité au plus vite."),
+        ("On reçoit des mails douteux, on craint le piratage.",
+         "Antivirus, pare-feu, filtrage des mails et sensibilisation des équipes pour réduire concrètement le risque."),
+        ("Notre messagerie tombe en panne au mauvais moment.",
+         "Microsoft 365 ou Google Workspace fiabilisés : adresses, boîtes, partages et accès."),
+        ("Personne ne s'occupe vraiment de l'informatique.",
+         "Un prestataire qui connaît votre entreprise, documente votre parc et anticipe les problèmes."),
+    ]
+    ps = "".join(f'<div class="ps-item"><q>{p}</q><p>{s}</p></div>' for p, s in problemes)
+
+    engagements = [
+        ("user", "Un interlocuteur unique", "Pas de standard anonyme : vous parlez à quelqu'un qui connaît votre installation."),
+        ("clock", "Réponse sous 24 h ouvrées", "Une structure à taille humaine, disponible : votre demande ne se perd pas dans une file."),
+        ("chat", "Un langage clair", "Nous expliquons ce qui se passe et ce que nous proposons. Vous décidez en connaissance de cause."),
+        ("eyeopen", "Transparence", "Devis détaillé avant toute intervention facturée. Vos accès et votre documentation restent les vôtres."),
+    ]
+    eng = "".join(f'<div class="engagement"><div class="ic">{IC[ic]}</div><div><h3>{t}</h3><p>{d}</p></div></div>' for ic, t, d in engagements)
+
+    steps = [
+        ("Premier échange", "Vous décrivez votre situation. Nous posons les bonnes questions, gratuitement."),
+        ("Audit & devis", "Nous faisons le point sur votre installation et vous remettons un plan priorisé et chiffré."),
+        ("Mise en place", "Nous déployons les solutions retenues en limitant l'impact sur votre activité."),
+        ("Suivi", "Maintenance, supervision et support : nous restons joignables et anticipons les pannes."),
+    ]
+    steps_html = "".join(f'<div class="step"><div class="num">{i}</div><h3>{t}</h3><p>{d}</p></div>' for i, (t, d) in enumerate(steps, 1))
+
+    villes = "".join(
+        f'<a class="chip{" chip--prio" if slug in PRIORITAIRES else ""}" href="zones/{slug}/">{nom}</a>' for slug, nom in VILLES)
+
+    populaires = ["ordinateur-de-bureau-trop-lent", "plus-dinternet-au-bureau", "imprimante-hors-ligne",
+                  "ecran-bleu-windows", "fichiers-chiffres-rancon-ransomware", "messagerie-pro-nenvoie-plus"]
+    pannes = ""
+    for s in populaires:
+        pr = pd.get(s)
+        if pr:
+            pannes += f'<a class="pb-card" href="pannes-frequentes/{pr["slug"]}/"><span class="pb-cat">{pd.CATEGORIES[pr["cat"]]}</span><h3>{pr["q"]}</h3><span class="pb-link">Causes et solutions →</span></a>'
+
+    articles = "".join(
+        f'<a class="card post-card" href="blog/{a["slug"]}/"><span class="article-tag" style="align-self:flex-start;margin-bottom:12px">{blog_data.THEMES[a["theme"]]}</span><h3>{a["title"]}</h3><p class="excerpt">{a["excerpt"]}</p><span class="card-link">Lire l\'article</span></a>'
+        for a in blog_data.ARTICLES[:3])
+
+    faq = "".join(f'<details class="faq-item"><summary>{q}</summary><div class="faq-body"><p>{a}</p></div></details>' for q, a in FAQ)
 
     body = f"""
 <section class="hero">
   <div class="wrap hero-inner">
-    <div class="reveal">
-      <h1>Votre informatique qui marche, sans y penser.</h1>
-      <p class="lead">Dépannage, maintenance et sécurité informatique pour les entreprises. Sur site en Île-de-France, à distance partout en France.</p>
-      <ul class="reassurance">
-        <li>{IC['check']} Réponse sous 24h ouvrées</li>
-        <li>{IC['check']} Sans engagement</li>
-        <li>{IC['check']} Interlocuteur unique</li>
+    <div>
+      <span class="eyebrow">Infogérance & cybersécurité · TPE et PME</span>
+      <h1>L'informatique de votre entreprise, entre de bonnes mains.</h1>
+      <p class="lead">Maintenance, dépannage, sécurité et sauvegarde pour les entreprises du nord de Paris et d'Île-de-France. À distance partout en France.</p>
+      <ul class="hero-points">
+        <li>{CHECK} Réponse sous 24 h ouvrées</li>
+        <li>{CHECK} Devis gratuit et détaillé</li>
+        <li>{CHECK} Un interlocuteur unique</li>
       </ul>
       <div class="hero-cta">
-        <a class="btn btn--primary btn--lg" href="contact/">Demander un audit gratuit</a>
-        <a class="btn btn--ghost btn--lg" href="tel:{PHONE_LINK}">{IC['phone']} Être rappelé(e)</a>
+        <a class="btn btn--primary btn--lg" href="#devis">Demander un devis</a>
+        <a class="btn btn--outline btn--lg" href="tel:{PHONE_LINK}">{IC['phone']} {PHONE_DISPLAY}</a>
       </div>
     </div>
-    <div class="hero-visual reveal" aria-hidden="true">
-      <h3>{IC['shield']} Supervision DHB</h3>
-      <div class="status-row"><span>Postes de travail</span><span class="badge-ok"><span class="dot"></span>Opérationnels</span></div>
-      <div class="status-row"><span>Serveur de fichiers</span><span class="badge-ok"><span class="dot"></span>En ligne</span></div>
-      <div class="status-row"><span>Sauvegarde (cette nuit)</span><span class="badge-ok"><span class="dot"></span>Réussie</span></div>
-      <div class="status-row"><span>Antivirus & pare-feu</span><span class="badge-ok"><span class="dot"></span>À jour</span></div>
-      <div class="status-row"><span>Espace disque serveur</span><span class="badge-watch"><span class="dot"></span>À surveiller</span></div>
-      <p style="color:#9fb6cd;font-size:.8rem;margin:16px 0 0">Illustration de notre tableau de supervision. Les pannes sont détectées avant qu'elles ne vous bloquent.</p>
+    {formulaire_hero()}
+  </div>
+</section>
+
+<section class="section section--tight">
+  <div class="wrap">
+    <div class="pillars">
+      <div class="pillar"><span class="num-label">Prévenir</span><h3>Moins de pannes, moins d'imprévus</h3><p>Maintenance et supervision régulières : on traite les signaux faibles avant qu'ils ne bloquent vos équipes.</p></div>
+      <div class="pillar"><span class="num-label">Protéger</span><h3>Vos données à l'abri</h3><p>Sauvegardes testées, postes à jour, messagerie filtrée : des protections concrètes, adaptées à votre taille.</p></div>
+      <div class="pillar"><span class="num-label">Accompagner</span><h3>Un partenaire qui vous connaît</h3><p>Un seul interlocuteur, qui documente votre parc et vous conseille sur la durée.</p></div>
     </div>
   </div>
 </section>
 
-<section class="section">
+<section class="section section--soft">
   <div class="wrap">
-    <div class="center" style="max-width:720px;margin:0 auto 46px">
-      <span class="eyebrow">Vous reconnaissez votre quotidien ?</span>
-      <h2>Votre problème, notre solution</h2>
-      <p class="lead">Vous n'avez pas besoin de connaître le mot « infogérance ». Vous avez besoin que ça marche. On parle le même langage que vous.</p>
-    </div>
-    {ps}
-  </div>
-</section>
-
-<section class="section section--gris">
-  <div class="wrap">
-    <div class="center" style="max-width:720px;margin:0 auto 46px">
-      <span class="eyebrow">Nos services</span>
+    <div class="section-head">
+      <span class="eyebrow">Services</span>
       <h2>Tout votre informatique, pris en main</h2>
-      <p class="lead">Du dépannage ponctuel à la gestion complète de votre parc : choisissez ce dont vous avez besoin aujourd'hui, ajoutez le reste quand vous voulez.</p>
+      <p>Du dépannage ponctuel à l'infogérance complète : commencez par ce dont vous avez besoin aujourd'hui.</p>
     </div>
-    <div class="grid grid-3">{service_cards}</div>
-  </div>
-</section>
-
-<section class="section section--nuit">
-  <div class="wrap">
-    <div class="center" style="max-width:720px;margin:0 auto 46px">
-      <span class="eyebrow">Pourquoi DHB</span>
-      <h2>Une nouvelle génération de prestataire informatique</h2>
-      <p class="lead" style="color:#c3d4e6">Nous sommes une entreprise récente, et c'est une force : disponibles, impliqués, modernes, et nous prenons le temps qu'il faut pour vous.</p>
-    </div>
-    <div class="grid grid-2">{eng}</div>
+    <div class="grid grid-4">{cartes}</div>
   </div>
 </section>
 
 <section class="section">
   <div class="wrap">
-    <div class="center" style="max-width:720px;margin:0 auto 46px">
-      <span class="eyebrow">Comment ça se passe</span>
-      <h2>Confier son informatique, sans stress</h2>
-      <p class="lead">Un parcours simple et rassurant, en quatre étapes. Vous gardez la main à chaque moment.</p>
+    <div class="grid grid-2" style="gap:56px;align-items:start">
+      <div>
+        <span class="eyebrow">Pourquoi DHB Pro</span>
+        <h2>Une structure récente, entièrement disponible pour vous</h2>
+        <p class="lead">Nous ne vous montrerons ni faux avis ni chiffres inventés. Voici sur quoi nous nous engageons, concrètement.</p>
+        <div class="avis-vide" style="margin-top:24px;text-align:left">
+          <strong style="color:var(--ink)">Témoignages clients</strong>
+          <p style="margin:6px 0 0">Les retours de nos premiers clients seront publiés ici, tels qu'ils les auront écrits. <span class="a-completer">[À COMPLÉTER PAR LE PROPRIÉTAIRE]</span></p>
+        </div>
+      </div>
+      <div>{eng}</div>
+    </div>
+  </div>
+</section>
+
+<section class="section section--soft">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Méthode</span>
+      <h2>Comment ça se passe</h2>
+      <p>Un parcours simple, où vous gardez la main à chaque étape.</p>
     </div>
     <div class="steps">{steps_html}</div>
   </div>
 </section>
 
-<section class="section section--gris">
+<section class="section">
   <div class="wrap">
-    <div class="center" style="max-width:720px;margin:0 auto 46px">
-      <span class="eyebrow">Confiance</span>
-      <h2>Des engagements, pas des promesses en l'air</h2>
-      <p class="lead">Nous sommes une entreprise nouvelle : nous ne vous raconterons pas de faux témoignages ni de chiffres inventés. Voici ce sur quoi nous nous engageons.</p>
+    <div class="section-head">
+      <span class="eyebrow">Problèmes résolus</span>
+      <h2>Vous reconnaissez votre quotidien ?</h2>
+      <p>Pas besoin de connaître le mot « infogérance » : il suffit que ça marche.</p>
     </div>
-    <div class="grid grid-2" style="align-items:start">
-      <div class="card reveal">
-        <h3>Nos engagements</h3>
-        <ul class="check-list">
-          <li>Réponse à toute demande sous 24h ouvrées.</li>
-          <li>Un interlocuteur unique qui suit votre dossier.</li>
-          <li>Un devis gratuit, détaillé et sans engagement avant toute intervention facturée.</li>
-          <li>Des explications en langage clair, jamais de jargon pour impressionner.</li>
-          <li>Une sauvegarde testée : on vérifie qu'elle se restaure vraiment.</li>
-          <li>Vos données et vos accès restent les vôtres, documentés et réversibles.</li>
-        </ul>
-      </div>
-      <div class="reveal">
-        <div class="avis-vide" style="margin-bottom:20px">
-          {IC['star']}
-          <h3 style="margin-bottom:6px">Vos premiers retours clients apparaîtront ici</h3>
-          <p style="margin:0">Nous préférons une page honnête à de faux avis. Les témoignages de nos premiers clients seront publiés ici, tels qu'ils les auront écrits.</p>
-        </div>
-        <div class="card">
-          <h3>Certifications & partenaires</h3>
-          <p style="margin-bottom:10px">Nos qualifications officielles et partenaires technologiques seront affichés ici.</p>
-          <p class="a-completer">[À COMPLÉTER PAR LE PROPRIÉTAIRE : certifications réelles, agréments, partenaires Microsoft/Google, etc.]</p>
-        </div>
-      </div>
+    <div class="ps-grid">{ps}</div>
+    <div style="margin-top:44px">
+      <h3>Les pannes les plus fréquentes</h3>
+      <p>Plus de {len(pd.P)} situations expliquées, avec causes et solutions.</p>
+      <div class="pb-grid" style="margin-top:16px">{pannes}</div>
+      <p style="margin-top:20px"><a class="text-link" href="pannes-frequentes/">Voir toutes les pannes fréquentes {ARROW}</a></p>
+    </div>
+  </div>
+</section>
+
+<section class="section section--soft">
+  <div class="wrap zone">
+    <div>
+      <span class="eyebrow">Zone d'intervention</span>
+      <h2>Au plus près de vous</h2>
+      <div class="zone-box"><h3>{marque.ICONES['pin']} Sur site en Île-de-France</h3><p>Priorité au nord de Paris et à la Plaine Commune : Saint-Denis, Saint-Ouen, Aubervilliers, Épinay-sur-Seine, Pantin.</p></div>
+      <div class="zone-box"><h3>{IC['chat']} À distance partout en France</h3><p>La plupart des incidents se règlent à distance, de façon sécurisée, sans attendre un déplacement.</p></div>
+    </div>
+    <div>
+      <h3 style="margin-top:6px">Nos pages locales</h3>
+      <div class="chips">{villes}</div>
     </div>
   </div>
 </section>
 
 <section class="section">
   <div class="wrap">
-    <div class="center" style="max-width:720px;margin:0 auto 40px">
-      <span class="eyebrow">Base de pannes</span>
-      <h2>Un problème précis ? Trouvez-le ici</h2>
-      <p class="lead">Plus de {len(pd.P)} pannes informatiques courantes, avec leurs causes et des solutions concrètes. Cherchez la vôtre.</p>
+    <div class="section-head" style="display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap;max-width:none">
+      <div><span class="eyebrow">Conseils</span><h2 class="mb-0">Comprendre et décider</h2></div>
+      <a class="text-link" href="blog/">Tous les articles {ARROW}</a>
     </div>
-    <div class="grid grid-3">{pb_popular}</div>
-    <div class="center" style="margin-top:30px"><a class="btn btn--dark btn--lg" href="pannes-frequentes/">Voir toutes les pannes fréquentes</a></div>
+    <div class="grid grid-3">{articles}</div>
   </div>
 </section>
 
-<section class="section section--gris">
+<section class="section section--soft">
   <div class="wrap">
-    <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px;margin-bottom:40px">
-      <div><span class="eyebrow">Le blog</span><h2 class="mb-0">Comprendre et résoudre vos soucis informatiques</h2></div>
-      <a class="btn btn--dark" href="blog/">Voir tous les articles</a>
-    </div>
-    <div class="grid grid-3">{post_cards}</div>
+    <div class="section-head center"><span class="eyebrow">Questions fréquentes</span><h2>Vos questions, nos réponses</h2></div>
+    <div class="faq-list">{faq}</div>
   </div>
 </section>
 
-<section class="section">
-  <div class="wrap">
-    <div class="grid grid-2" style="align-items:center;gap:48px">
-      <div class="reveal">
-        <span class="eyebrow">Parlons-en</span>
-        <h2>Prêt à ne plus subir votre informatique ?</h2>
-        <p class="lead">Expliquez-nous votre situation en quelques lignes. On vous rappelle sous 24h ouvrées avec un premier regard — gratuit et sans engagement.</p>
-        <p>Vous préférez le téléphone ? Appelez directement le <a href="tel:{PHONE_LINK}"><strong>{PHONE_DISPLAY}</strong></a>.</p>
-        <ul class="check-list" style="margin-top:20px">
-          <li>Audit de votre installation offert</li>
-          <li>Plan d'action clair et priorisé</li>
-          <li>Aucun engagement, aucune pression</li>
-        </ul>
-      </div>
-      <div class="reveal">{contact_form(0)}</div>
-    </div>
-  </div>
-</section>
+<section class="section section--tight"><div class="wrap"><div class="cta-band">
+  <div><h2>Parlons de votre informatique</h2><p>Un premier échange gratuit pour faire le point. Vous repartez avec un plan clair, que vous travailliez avec nous ou non.</p></div>
+  <div class="hero-cta"><a class="btn btn--primary btn--lg" href="contact/">Demander un devis</a><a class="btn btn--ghost btn--lg" href="tel:{PHONE_LINK}">{IC['phone']} {PHONE_DISPLAY}</a></div>
+</div></div></section>
 
+{faq_jsonld(FAQ)}
 {localbusiness_jsonld()}
 """
-    title = "Maintenance & dépannage informatique pour entreprises — Île-de-France & France | DHB"
-    desc = ("DHB : maintenance, dépannage, support et sécurité informatique pour les entreprises. "
-            "Sur site en Île-de-France, à distance partout en France. Audit gratuit, sans engagement, réponse sous 24h.")
+    title = "DHB Pro — infogérance, maintenance et cybersécurité pour entreprises (Île-de-France)"
+    desc = ("DHB Pro : maintenance, dépannage, cybersécurité, sauvegarde et infogérance pour TPE et PME. "
+            "Sur site en Île-de-France (nord de Paris), à distance partout en France. Devis gratuit, réponse sous 24 h.")
     return {"index.html": page(0, "", title, desc, body)}

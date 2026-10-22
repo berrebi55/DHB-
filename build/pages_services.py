@@ -249,7 +249,7 @@ def build():
 <section class="page-hero">
   {breadcrumb(depth, [("services/", "Services"), (None, name)])}
   <div class="wrap">
-    <div class="icon-box" style="background:rgba(46,196,255,.18);color:#2EC4FF">{IC[SERVICE_ICON[slug]]}</div>
+    <div class="icon-box">{IC[SERVICE_ICON[slug]]}</div>
     <h1>{c['h1']}</h1>
     <p>{c['lead']}</p>
     <div class="hero-cta">
