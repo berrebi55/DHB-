@@ -1,94 +1,51 @@
-import { Refine, Authenticated } from "@refinedev/core";
-import {
-  ThemedLayoutV2,
-  ErrorComponent,
-  useNotificationProvider,
-  ThemedTitleV2,
-} from "@refinedev/antd";
+import { Authenticated, Refine } from "@refinedev/core";
+import { useNotificationProvider } from "@refinedev/antd";
 import "@refinedev/antd/dist/reset.css";
-import "./styles.css";
 import { dataProvider, liveProvider } from "@refinedev/supabase";
-import routerProvider, {
-  NavigateToResource,
-  CatchAllNavigate,
-} from "@refinedev/react-router-v6";
-import { Routes, Route, Outlet } from "react-router-dom";
-import { ConfigProvider, App as AntdApp, theme as antdTheme } from "antd";
+import routerProvider, { CatchAllNavigate, NavigateToResource } from "@refinedev/react-router-v6";
+import { Outlet, Route, Routes } from "react-router-dom";
+import { App as AntdApp, ConfigProvider } from "antd";
 import frFR from "antd/locale/fr_FR";
-
-// Thème « cyber sombre néon » — accents cyan + violet, surfaces en verre sombre.
-const CYBER_THEME = {
-  algorithm: antdTheme.darkAlgorithm,
-  token: {
-    colorPrimary: "#22d3ee",
-    colorInfo: "#22d3ee",
-    colorSuccess: "#34d399",
-    colorWarning: "#fbbf24",
-    colorError: "#fb7185",
-    colorBgBase: "#0a0f1e",
-    colorBgContainer: "rgba(18,26,46,0.72)",
-    colorBgElevated: "#111a30",
-    colorBorder: "rgba(120,160,255,0.16)",
-    colorBorderSecondary: "rgba(120,160,255,0.10)",
-    colorText: "#e6eefb",
-    colorTextSecondary: "#9fb3d1",
-    borderRadius: 12,
-    fontFamily:
-      "'Space Grotesk','IBM Plex Sans',system-ui,-apple-system,sans-serif",
-    wireframe: false,
-  },
-  components: {
-    Layout: {
-      headerBg: "rgba(10,15,30,0.85)",
-      siderBg: "rgba(10,15,30,0.92)",
-      bodyBg: "transparent",
-      triggerBg: "rgba(18,26,46,0.9)",
-    },
-    Menu: {
-      itemBg: "transparent",
-      itemSelectedBg: "rgba(34,211,238,0.14)",
-      itemSelectedColor: "#22d3ee",
-      itemHoverColor: "#22d3ee",
-    },
-    Card: { colorBgContainer: "rgba(18,26,46,0.72)" },
-    Table: { headerBg: "rgba(34,211,238,0.07)", rowHoverBg: "rgba(34,211,238,0.06)" },
-    Statistic: { contentFontSize: 28 },
-  },
-};
-import {
-  DashboardOutlined,
-  InboxOutlined,
-  TeamOutlined,
-  FileTextOutlined,
-  EuroOutlined,
-  SyncOutlined,
-  CustomerServiceOutlined,
-  SettingOutlined,
-} from "@ant-design/icons";
+import "./styles.css";
 
 import { supabaseClient } from "./supabaseClient";
 import { authProvider } from "./providers/authProvider";
 import { accessControlProvider } from "./providers/accessControlProvider";
+import { themeConfig } from "./theme";
+import { AppLayout } from "./components/layout/AppLayout";
 
-import { DashboardPage } from "./pages/dashboard";
 import { LoginPage } from "./pages/login";
+import { NotFound } from "./pages/NotFound";
+import { DashboardPage } from "./pages/dashboard";
 import { LeadsList } from "./pages/leads/list";
+import { LeadShow } from "./pages/leads/show";
 import { ClientsList } from "./pages/clients/list";
-import { ClientCreate } from "./pages/clients/create";
-import { ClientEdit } from "./pages/clients/edit";
+import { ClientShow } from "./pages/clients/show";
 import { DevisList } from "./pages/devis/list";
-import { DevisCreate } from "./pages/devis/create";
-import { DevisEdit } from "./pages/devis/edit";
+import { DevisShow } from "./pages/devis/show";
+import { DocumentEditor } from "./pages/documents/DocumentEditor";
+import { PrestationsList } from "./pages/prestations";
 import { FacturesList } from "./pages/factures/list";
-import { FactureCreate } from "./pages/factures/create";
-import { AbonnementsList } from "./pages/abonnements/list";
-import { AbonnementCreate } from "./pages/abonnements/create";
+import { FactureShow } from "./pages/factures/show";
+import { PaiementsList } from "./pages/paiements";
+import { AbonnementsList } from "./pages/abonnements";
 import { TicketsList } from "./pages/tickets/list";
-import { SettingsPage } from "./pages/settings";
+import { TicketShow } from "./pages/tickets/show";
+import { StatsOverview, StatsCA, StatsRecurrent, StatsCommercial } from "./pages/pilotage";
+import { PrixPage } from "./pages/contenu/prix";
+import { UtilisateursPage } from "./pages/systeme/utilisateurs";
+import { ParametresPage } from "./pages/systeme/parametres";
+import { SecuritePage } from "./pages/systeme/securite";
+import { JournalPage } from "./pages/systeme/journal";
+
+const RESOURCES = [
+  "dashboard", "leads", "clients", "clients_vue", "devis", "prestations", "factures", "factures_vue",
+  "paiements", "abonnements", "tickets", "notes", "activites", "profiles", "settings", "entreprise",
+].map((name) => ({ name, list: name === "dashboard" ? "/" : undefined }));
 
 export default function App() {
   return (
-    <ConfigProvider theme={CYBER_THEME} locale={frFR}>
+    <ConfigProvider theme={themeConfig} locale={frFR}>
       <AntdApp>
         <Refine
           dataProvider={dataProvider(supabaseClient)}
@@ -97,98 +54,46 @@ export default function App() {
           accessControlProvider={accessControlProvider}
           routerProvider={routerProvider}
           notificationProvider={useNotificationProvider}
-          options={{
-            syncWithLocation: true,
-            warnWhenUnsavedChanges: true,
-            liveMode: "auto",
-            disableTelemetry: true,
-          }}
-          resources={[
-            {
-              name: "dashboard",
-              list: "/",
-              meta: { label: "Tableau de bord", icon: <DashboardOutlined /> },
-            },
-            {
-              name: "leads",
-              list: "/leads",
-              meta: { label: "Demandes", icon: <InboxOutlined /> },
-            },
-            {
-              name: "clients",
-              list: "/clients",
-              create: "/clients/create",
-              edit: "/clients/edit/:id",
-              meta: { label: "Clients", icon: <TeamOutlined />, canDelete: true },
-            },
-            {
-              name: "devis",
-              list: "/devis",
-              create: "/devis/create",
-              edit: "/devis/edit/:id",
-              meta: { label: "Devis", icon: <FileTextOutlined />, canDelete: true },
-            },
-            {
-              name: "factures",
-              list: "/factures",
-              create: "/factures/create",
-              meta: { label: "Factures", icon: <EuroOutlined />, canDelete: true },
-            },
-            {
-              name: "abonnements",
-              list: "/abonnements",
-              create: "/abonnements/create",
-              meta: { label: "Abonnements", icon: <SyncOutlined />, canDelete: true },
-            },
-            {
-              name: "tickets",
-              list: "/tickets",
-              meta: { label: "Tickets", icon: <CustomerServiceOutlined /> },
-            },
-            {
-              name: "settings",
-              list: "/settings",
-              meta: { label: "Paramètres", icon: <SettingOutlined /> },
-            },
-          ]}
+          resources={RESOURCES}
+          options={{ syncWithLocation: false, warnWhenUnsavedChanges: false, liveMode: "off", disableTelemetry: true, reactQuery: { clientConfig: { defaultOptions: { queries: { refetchOnWindowFocus: false } } } } }}
         >
           <Routes>
             <Route
               element={
-                <Authenticated key="auth" fallback={<CatchAllNavigate to="/login" />}>
-                  <ThemedLayoutV2
-                    Title={({ collapsed }) => (
-                      <ThemedTitleV2 collapsed={collapsed} text="DHB Admin" />
-                    )}
-                  >
-                    <Outlet />
-                  </ThemedLayoutV2>
+                <Authenticated key="app" fallback={<CatchAllNavigate to="/login" />}>
+                  <AppLayout />
                 </Authenticated>
               }
             >
               <Route index element={<DashboardPage />} />
-              <Route path="/leads" element={<LeadsList />} />
-              <Route path="/clients">
-                <Route index element={<ClientsList />} />
-                <Route path="create" element={<ClientCreate />} />
-                <Route path="edit/:id" element={<ClientEdit />} />
-              </Route>
-              <Route path="/devis">
-                <Route index element={<DevisList />} />
-                <Route path="create" element={<DevisCreate />} />
-                <Route path="edit/:id" element={<DevisEdit />} />
-              </Route>
-              <Route path="/factures">
-                <Route index element={<FacturesList />} />
-                <Route path="create" element={<FactureCreate />} />
-              </Route>
-              <Route path="/abonnements">
-                <Route index element={<AbonnementsList />} />
-                <Route path="create" element={<AbonnementCreate />} />
-              </Route>
+              <Route path="/leads" element={<LeadsList mode="devis" />} />
+              <Route path="/leads/:id" element={<LeadShow />} />
+              <Route path="/support/questions" element={<LeadsList mode="question" />} />
+              <Route path="/clients" element={<ClientsList />} />
+              <Route path="/clients/:id" element={<ClientShow />} />
+              <Route path="/devis" element={<DevisList />} />
+              <Route path="/devis/nouveau" element={<DocumentEditor kind="devis" />} />
+              <Route path="/devis/:id" element={<DevisShow />} />
+              <Route path="/devis/:id/modifier" element={<DocumentEditor kind="devis" />} />
+              <Route path="/prestations" element={<PrestationsList />} />
+              <Route path="/factures" element={<FacturesList />} />
+              <Route path="/factures/nouvelle" element={<DocumentEditor kind="facture" />} />
+              <Route path="/factures/:id" element={<FactureShow />} />
+              <Route path="/factures/:id/modifier" element={<DocumentEditor kind="facture" />} />
+              <Route path="/paiements" element={<PaiementsList />} />
+              <Route path="/abonnements" element={<AbonnementsList />} />
               <Route path="/tickets" element={<TicketsList />} />
-              <Route path="/settings" element={<SettingsPage />} />
-              <Route path="*" element={<ErrorComponent />} />
+              <Route path="/tickets/:id" element={<TicketShow />} />
+              <Route path="/pilotage/statistiques" element={<StatsOverview />} />
+              <Route path="/pilotage/chiffre-affaires" element={<StatsCA />} />
+              <Route path="/pilotage/recurrent" element={<StatsRecurrent />} />
+              <Route path="/pilotage/commercial" element={<StatsCommercial />} />
+              <Route path="/contenu/prix" element={<PrixPage />} />
+              <Route path="/systeme/utilisateurs" element={<UtilisateursPage />} />
+              <Route path="/systeme/parametres" element={<ParametresPage />} />
+              <Route path="/systeme/securite" element={<SecuritePage />} />
+              <Route path="/systeme/journal" element={<JournalPage />} />
+              <Route path="*" element={<NotFound />} />
             </Route>
             <Route
               element={

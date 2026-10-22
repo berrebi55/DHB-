@@ -30,14 +30,20 @@ Deno.serve(async (req) => {
     const { data, error } = await sb
       .from("devis")
       .select(
-        "numero, entity, client_nom, client_adresse, date_devis, validite_jours, lignes, tva_taux, total_ht, total_ttc, statut, signed_at, signature_nom",
+        "numero, entity, client_nom, client_adresse, date_devis, validite_jours, lignes, tva_taux, total_ht, total_ttc, statut, signed_at, signature_nom, conditions",
       )
       .eq("public_token", token)
       .maybeSingle();
 
     if (error) return json({ error: error.message }, 200);
     if (!data) return json({ error: "introuvable" }, 200);
-    return json({ ok: true, devis: data }, 200);
+    // Coordonnées publiques de l'émetteur (jamais l'IBAN ni les notes internes).
+    const { data: ent } = await sb
+      .from("entreprise")
+      .select("raison_sociale, forme_juridique, siret, adresse, code_postal, ville, email, telephone")
+      .eq("id", 1)
+      .maybeSingle();
+    return json({ ok: true, devis: data, emetteur: ent ?? null }, 200);
   } catch (e) {
     return json({ error: (e as Error).message }, 200);
   }

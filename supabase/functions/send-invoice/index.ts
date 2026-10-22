@@ -1,60 +1,70 @@
 // =====================================================================
-//  DHB — Fonction Edge : envoyer une facture par email (« voici votre facture »).
-//  Scaffolding : s'active avec une clé Resend. Pour les factures LÉGALES et
-//  l'e-invoicing 2026, privilégiez une application de facturation agréée.
+//  DHB — Edge Function : envoyer une facture par email au client.
 //
-//  Secrets (Edge Functions → send-invoice → Secrets) :
-//    RESEND_API_KEY = clé Resend
-//    NOTIFY_FROM    = expéditeur vérifié (ex. factures@votre-domaine.fr)
+//  Sécurité : utilisateur connecté obligatoire. La fonction relit la facture
+//  en base et n'écrit QU'À l'email du client de cette facture : impossible de
+//  s'en servir pour envoyer un message arbitraire.
 //
-//  Déploiement : supabase functions deploy send-invoice
-//  Appel (POST) : { to, nom, numero, total, date, libelle, entity }
+//  Secrets : RESEND_API_KEY, NOTIFY_FROM (expéditeur vérifié chez Resend).
+//  Appel (POST, jeton utilisateur) : { "facture_id": "<uuid>" }
+//  Déploiement : supabase functions deploy send-invoice --no-verify-jwt
+//  (l'authentification est vérifiée dans la fonction elle-même)
 // =====================================================================
-
-const cors = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+import {
+  adminClient, cors, envoyerEmail, erreur, esc, eur, HttpError, json, marque, requireUser,
+} from "../_shared/securite.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   try {
-    const KEY = Deno.env.get("RESEND_API_KEY");
-    const FROM = Deno.env.get("NOTIFY_FROM") ?? "onboarding@resend.dev";
-    if (!KEY) return json({ error: "resend_not_configured" }, 200);
+    const sb = adminClient();
+    await requireUser(req, sb);
 
-    const { to, nom, numero, total, date, libelle, entity } = await req.json();
-    if (!to) return json({ error: "email_manquant" }, 200);
+    const { facture_id } = await req.json().catch(() => ({}));
+    if (!facture_id) throw new HttpError(400, "facture_id_manquant");
 
-    const marque = entity === "particuliers" ? "DHB Particuliers" : "DHB";
-    const subject = `Votre facture ${numero ?? ""} — ${marque}`;
+    const { data: f } = await sb.from("factures").select("*").eq("id", facture_id).maybeSingle();
+    if (!f) throw new HttpError(404, "facture_introuvable");
+    if (f.status === "annulee") throw new HttpError(409, "facture_annulee");
+    if (!f.client_email) throw new HttpError(422, "email_client_manquant");
+
+    const { data: ent } = await sb.from("entreprise").select("*").eq("id", 1).maybeSingle();
+    const societe = ent?.raison_sociale || marque(f.entity);
+    const lignes = Array.isArray(f.lignes) && f.lignes.length
+      ? f.lignes
+      : [{ libelle: f.libelle, qte: f.quantite, pu: f.prix_unitaire }];
+    const rows = lignes.map((l: { libelle?: string; qte?: number; pu?: number }) =>
+      `<tr><td style="padding:6px 10px;border-bottom:1px solid #eee">${esc(l.libelle)}</td>` +
+      `<td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:right">${esc(l.qte)}</td>` +
+      `<td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:right">${eur((Number(l.qte) || 0) * (Number(l.pu) || 0))}</td></tr>`
+    ).join("");
+    const tvaMention = Number(f.tva_taux) > 0 ? "" : "<p style=\"color:#667085;font-size:12px\">TVA non applicable, art. 293 B du CGI.</p>";
+    const echeance = f.date_echeance ?? f.date_facture;
+
     const html = `
-      <p>Bonjour ${nom ?? ""},</p>
-      <p>Veuillez trouver ci-dessous le récapitulatif de votre facture.</p>
-      <table style="border-collapse:collapse;margin:14px 0">
-        <tr><td style="padding:4px 10px"><b>N° de facture</b></td><td style="padding:4px 10px">${numero ?? "—"}</td></tr>
-        <tr><td style="padding:4px 10px"><b>Date</b></td><td style="padding:4px 10px">${date ?? "—"}</td></tr>
-        <tr><td style="padding:4px 10px"><b>Prestation</b></td><td style="padding:4px 10px">${libelle ?? "—"}</td></tr>
-        <tr><td style="padding:4px 10px"><b>Montant</b></td><td style="padding:4px 10px"><b>${total ?? "—"}</b></td></tr>
-      </table>
-      <p>Nous restons à votre disposition pour toute question.</p>
-      <p>Cordialement,<br>${marque}</p>
-      <hr><p style="color:#64748b;font-size:12px">Ce message a été envoyé automatiquement. TVA non applicable, art. 293 B du CGI (le cas échéant).</p>`;
+      <div style="font-family:Arial,sans-serif;color:#101828;max-width:560px">
+        <p>Bonjour ${esc(f.client_nom)},</p>
+        <p>Veuillez trouver ci-dessous le récapitulatif de votre facture.</p>
+        <table style="border-collapse:collapse;margin:12px 0">
+          <tr><td style="padding:3px 10px 3px 0"><b>Facture</b></td><td>${esc(f.numero)}</td></tr>
+          <tr><td style="padding:3px 10px 3px 0"><b>Date</b></td><td>${esc(f.date_facture)}</td></tr>
+          <tr><td style="padding:3px 10px 3px 0"><b>Échéance</b></td><td>${esc(echeance)}</td></tr>
+        </table>
+        <table style="border-collapse:collapse;width:100%;margin:12px 0">${rows}</table>
+        <p style="font-size:16px"><b>Total : ${eur(f.total_ttc)}</b></p>
+        ${tvaMention}
+        <p>Nous restons à votre disposition pour toute question.</p>
+        <p>Cordialement,<br>${esc(societe)}</p>
+      </div>`;
 
-    const r = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { "Authorization": `Bearer ${KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: FROM, to: [to], subject, html }),
-    });
-    const data = await r.json();
-    if (!r.ok) return json({ error: data?.message ?? "resend_error" }, 200);
-    return json({ ok: true }, 200);
+    const err = await envoyerEmail(f.client_email, `Votre facture ${f.numero ?? ""} — ${societe}`, html);
+    if (err) return json({ error: err }, err === "resend_not_configured" ? 503 : 502);
+
+    if (f.status === "brouillon") {
+      await sb.from("factures").update({ status: "envoyee" }).eq("id", f.id);
+    }
+    return json({ ok: true });
   } catch (e) {
-    return json({ error: (e as Error).message }, 200);
+    return erreur(e);
   }
 });
-
-function json(obj: unknown, status: number) {
-  return new Response(JSON.stringify(obj), { status, headers: { ...cors, "Content-Type": "application/json" } });
-}

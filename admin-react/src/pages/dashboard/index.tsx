@@ -1,264 +1,194 @@
-import { useEffect, useState } from "react";
-import { Row, Col, Card, Statistic, Typography, Spin, Empty, Button, Space } from "antd";
-import { SyncOutlined, BellOutlined } from "@ant-design/icons";
-import { useNotification } from "@refinedev/core";
+import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Alert, App, Button } from "antd";
 import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-  PieChart,
-  Pie,
-  Cell,
-  Legend,
-  LineChart,
-  Line,
-} from "recharts";
-import { supabaseClient } from "../../supabaseClient";
-import { ENTITY, LEAD_STATUS } from "../../constants";
-import { eur } from "../../utils/format";
+  BarChartOutlined,
+  CalendarOutlined,
+  CheckCircleOutlined,
+  EuroOutlined,
+  ExclamationCircleOutlined,
+  RightOutlined,
+  RiseOutlined,
+} from "@ant-design/icons";
+import dayjs from "dayjs";
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { EmptyState, Kpi, PageHeader, Panel } from "../../components/ui";
+import { ActivityFeed } from "../../components/activity/ActivityFeed";
+import { eur, eur0, num, variation } from "../../lib/format";
+import { kpis, serieMensuelle, taches, useDonnees } from "../../lib/metrics";
+import { useIdentite } from "../../lib/hooks";
+import { appelerFonction } from "../../lib/functions";
+import { COULEURS } from "../../theme";
 
-const COLORS = ["#22d3ee", "#a855f7", "#34d399", "#fbbf24", "#fb7185", "#60a5fa"];
-const monthKey = (d: string) => (d || "").slice(0, 7); // YYYY-MM
+const TON: Record<string, { bg: string; fg: string }> = {
+  primary: { bg: "#EEF3FF", fg: "#1D40AB" },
+  info: { bg: "#EFF8FF", fg: "#0369A1" },
+  success: { bg: "#ECFDF3", fg: "#15803D" },
+  warning: { bg: "#FFF7E8", fg: "#B45309" },
+  danger: { bg: "#FEF1F1", fg: "#C02B2B" },
+};
 
-export const DashboardPage = () => {
-  const [loading, setLoading] = useState(true);
-  const [leads, setLeads] = useState<any[]>([]);
-  const [factures, setFactures] = useState<any[]>([]);
-  const [abos, setAbos] = useState<any[]>([]);
-  const [busy, setBusy] = useState<string | null>(null);
-  const { open } = useNotification();
-
-  const callFn = async (name: string, label: string) => {
-    setBusy(name);
-    try {
-      const r = await fetch(import.meta.env.VITE_SUPABASE_URL + "/functions/v1/" + name, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer " + import.meta.env.VITE_SUPABASE_ANON_KEY,
-          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-        },
-        body: "{}",
-      });
-      const d = await r.json();
-      if (d?.ok) {
-        const detail =
-          name === "generate-recurring-invoices"
-            ? `${d.generees} facture(s) générée(s)`
-            : `${d.relancesDevis} devis + ${d.relancesFactures} facture(s) relancés`;
-        open?.({ type: "success", message: label, description: detail });
-      } else {
-        open?.({ type: "error", message: "Erreur : " + (d?.error || "fonction non déployée") });
-      }
-    } catch (e: any) {
-      open?.({ type: "error", message: "Erreur : " + e.message });
-    }
-    setBusy(null);
-  };
-
-  useEffect(() => {
-    (async () => {
-      const [l, f, a] = await Promise.all([
-        supabaseClient.from("leads").select("*"),
-        supabaseClient.from("factures").select("*"),
-        supabaseClient.from("abonnements").select("*"),
-      ]);
-      setLeads(l.data || []);
-      setFactures(f.data || []);
-      setAbos(a.data || []);
-      setLoading(false);
-    })();
-  }, []);
-
-  if (loading) {
-    return (
-      <div style={{ textAlign: "center", padding: 80 }}>
-        <Spin size="large" />
-      </div>
-    );
-  }
-
-  const today = new Date().toISOString().slice(0, 10);
-  const nouveaux = leads.filter((l) => l.status === "nouveau").length;
-  const gagnes = leads.filter((l) => l.status === "gagne").length;
-  const relances = leads.filter(
-    (l) =>
-      l.relance_at &&
-      l.relance_at <= today &&
-      !["gagne", "perdu", "archive"].includes(l.status),
-  ).length;
-  const conversion = leads.length ? Math.round((gagnes / leads.length) * 100) : 0;
-  const mrr = abos
-    .filter((a) => a.statut === "actif")
-    .reduce((s, a) => s + (Number(a.montant_mensuel) || 0), 0);
-  const caPayes = factures
-    .filter((f) => f.status === "payee")
-    .reduce((s, f) => s + (Number(f.total_ttc) || 0), 0);
-
-  // CA payé par mois (12 derniers mois)
-  const months: string[] = [];
-  const now = new Date();
-  for (let i = 11; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    months.push(d.toISOString().slice(0, 7));
-  }
-  const caParMois = months.map((m) => {
-    const total = factures
-      .filter((f) => f.status === "payee" && monthKey(f.date_facture) === m)
-      .reduce((s, f) => s + (Number(f.total_ttc) || 0), 0);
-    return { mois: m.slice(5) + "/" + m.slice(2, 4), ca: Math.round(total) };
-  });
-
-  // Demandes par statut (pie)
-  const parStatut = Object.keys(LEAD_STATUS)
-    .map((k) => ({ name: LEAD_STATUS[k], value: leads.filter((l) => l.status === k).length }))
-    .filter((x) => x.value > 0);
-
-  // CA facturé par filiale
-  const parFiliale = Object.keys(ENTITY)
-    .map((k) => ({
-      name: ENTITY[k],
-      ca: Math.round(
-        factures
-          .filter((f) => f.entity === k && f.status === "payee")
-          .reduce((s, f) => s + (Number(f.total_ttc) || 0), 0),
-      ),
-    }))
-    .filter((x) => x.ca > 0);
-
-  const stat = (title: string, value: any, color?: string) => (
-    <Col xs={12} md={6}>
-      <Card>
-        <Statistic title={title} value={value} valueStyle={color ? { color } : {}} />
-      </Card>
-    </Col>
-  );
-
+export function TooltipEur({ active, payload, label }: any) {
+  if (!active || !payload?.length) return null;
   return (
-    <div>
-      <Row justify="space-between" align="middle" style={{ marginBottom: 8 }}>
-        <Typography.Title level={3} style={{ marginTop: 0 }}>
-          Tableau de bord
-        </Typography.Title>
-        <Space wrap>
-          <Button
-            icon={<SyncOutlined />}
-            loading={busy === "generate-recurring-invoices"}
-            onClick={() =>
-              callFn("generate-recurring-invoices", "Facturation récurrente")
-            }
-          >
-            Générer les factures du mois
-          </Button>
-          <Button
-            icon={<BellOutlined />}
-            loading={busy === "send-reminders"}
-            onClick={() => callFn("send-reminders", "Relances envoyées")}
-          >
-            Lancer les relances
-          </Button>
-        </Space>
-      </Row>
-
-      <Row gutter={[16, 16]}>
-        {stat("Demandes nouvelles", nouveaux, "#2563eb")}
-        {stat("Relances à faire", relances, relances ? "#dc2626" : undefined)}
-        {stat("MRR (récurrent / mois)", eur(mrr), "#16a34a")}
-        {stat("Factures payées (total)", eur(caPayes), "#16a34a")}
-      </Row>
-
-      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
-        {stat("Taux de conversion", conversion + " %", "#a855f7")}
-        {stat("Affaires gagnées", gagnes, "#16a34a")}
-        {stat("Abonnements actifs", abos.filter((a) => a.statut === "actif").length)}
-        {stat("ARR (projection / an)", eur(mrr * 12), "#16a34a")}
-      </Row>
-
-      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
-        <Col xs={24} lg={16}>
-          <Card title="Chiffre d'affaires encaissé — 12 derniers mois">
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={caParMois}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="mois" />
-                <YAxis />
-                <Tooltip formatter={(v: any) => eur(v)} />
-                <Bar dataKey="ca" fill="#22d3ee" radius={[4, 4, 0, 0]} name="CA encaissé" />
-              </BarChart>
-            </ResponsiveContainer>
-          </Card>
-        </Col>
-        <Col xs={24} lg={8}>
-          <Card title="Demandes par statut">
-            {parStatut.length ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={parStatut}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={90}
-                    label
-                  >
-                    {parStatut.map((_, i) => (
-                      <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Legend />
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <Empty description="Aucune demande" />
-            )}
-          </Card>
-        </Col>
-      </Row>
-
-      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
-        <Col xs={24} lg={12}>
-          <Card title="CA encaissé par filiale">
-            {parFiliale.length ? (
-              <ResponsiveContainer width="100%" height={260}>
-                <BarChart data={parFiliale} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                  <XAxis type="number" />
-                  <YAxis type="category" dataKey="name" width={90} />
-                  <Tooltip formatter={(v: any) => eur(v)} />
-                  <Bar dataKey="ca" fill="#34d399" radius={[0, 4, 4, 0]} name="CA" />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <Empty description="Aucune facture payée" />
-            )}
-          </Card>
-        </Col>
-        <Col xs={24} lg={12}>
-          <Card title="Cumul du CA encaissé (progression)">
-            <ResponsiveContainer width="100%" height={260}>
-              <LineChart
-                data={caParMois.reduce((acc: any[], cur, i) => {
-                  const prev = i > 0 ? acc[i - 1].cumul : 0;
-                  acc.push({ mois: cur.mois, cumul: prev + cur.ca });
-                  return acc;
-                }, [])}
-              >
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="mois" />
-                <YAxis />
-                <Tooltip formatter={(v: any) => eur(v)} />
-                <Line type="monotone" dataKey="cumul" stroke="#a855f7" strokeWidth={2} dot={{ r: 2 }} name="Cumul" />
-              </LineChart>
-            </ResponsiveContainer>
-          </Card>
-        </Col>
-      </Row>
+    <div style={{ background: "#fff", border: "1px solid #E3E7ED", borderRadius: 8, padding: "8px 12px", boxShadow: "0 8px 24px rgba(16,24,40,.08)", fontSize: 13 }}>
+      <div style={{ fontWeight: 600, marginBottom: 4, textTransform: "capitalize" }}>{label}</div>
+      {payload.map((p: any) => (
+        <div key={p.dataKey} style={{ display: "flex", gap: 12, justifyContent: "space-between" }}>
+          <span style={{ color: "#5B6576" }}><i style={{ display: "inline-block", width: 8, height: 8, borderRadius: 2, background: p.color, marginRight: 6 }} />{p.name}</span>
+          <b className="tabular">{eur(p.value)}</b>
+        </div>
+      ))}
     </div>
   );
-};
+}
+
+export function DashboardPage() {
+  const navigate = useNavigate();
+  const { message } = App.useApp();
+  const { data: user } = useIdentite();
+  const { data, erreur, loading, recharger } = useDonnees();
+  const [generation, setGeneration] = useState(false);
+
+  const k = useMemo(() => (data ? kpis(data) : null), [data]);
+  const todo = useMemo(() => (data ? taches(data) : []), [data]);
+  const serie = useMemo(() => (data ? serieMensuelle(data.factures) : []), [data]);
+  const aDuCA = serie.some((s) => s.encaisse > 0);
+
+  const prenom = (user?.name ?? "").split(/[\s@]/)[0];
+  const moisNom = dayjs().format("MMMM");
+
+  const generer = async () => {
+    setGeneration(true);
+    const r = await appelerFonction<{ generees: number }>("generate-recurring-invoices");
+    setGeneration(false);
+    if (r.ok) {
+      message.success(r.data?.generees ? `${r.data.generees} facture(s) créée(s) en brouillon` : "Aucune facture à générer aujourd'hui");
+      recharger();
+    } else message.error(r.message);
+  };
+
+  return (
+    <>
+      <PageHeader
+        title={prenom ? `Bonjour ${prenom}` : "Tableau de bord"}
+        subtitle={`Situation au ${dayjs().format("dddd D MMMM YYYY")}`}
+      />
+      {erreur && <Alert type="warning" showIcon message={erreur} style={{ marginBottom: 16 }} />}
+
+      <div className="kpi-grid" style={{ marginBottom: 20 }}>
+        <Kpi
+          label={`Encaissé en ${moisNom}`}
+          icon={<EuroOutlined />}
+          loading={loading}
+          value={k ? eur0(k.caMois) : "—"}
+          delta={k ? variation(k.caMois, k.caMoisPrec) : null}
+          foot={k && variation(k.caMois, k.caMoisPrec) == null ? "Pas de comparaison avec le mois dernier" : "vs mois précédent"}
+          to="/pilotage/chiffre-affaires"
+        />
+        <Kpi
+          label={`Encaissé en ${dayjs().year()}`}
+          icon={<CalendarOutlined />}
+          loading={loading}
+          value={k ? eur0(k.caAnnee) : "—"}
+          delta={k ? variation(k.caAnnee, k.caAnneePrec) : null}
+          foot={k && variation(k.caAnnee, k.caAnneePrec) == null ? `Total encaissé : ${eur0(k.caTotal)}` : "vs même période l'an dernier"}
+          to="/pilotage/chiffre-affaires"
+        />
+        <Kpi
+          label="Revenu récurrent (MRR)"
+          icon={<RiseOutlined />}
+          loading={loading}
+          value={k ? eur0(k.mrr) : "—"}
+          foot={k ? `${num(k.abosActifs)} abonnement${k.abosActifs > 1 ? "s" : ""} actif${k.abosActifs > 1 ? "s" : ""} · ARR ${eur0(k.arr)}` : ""}
+          to="/pilotage/recurrent"
+        />
+        <Kpi
+          label="À encaisser"
+          icon={<ExclamationCircleOutlined />}
+          loading={loading}
+          value={k ? eur0(k.impayeesMontant) : "—"}
+          foot={k ? (k.impayeesNb === 0 ? "Aucune facture en attente" : `${k.impayeesNb} facture${k.impayeesNb > 1 ? "s" : ""}${k.enRetardNb ? ` · ${k.enRetardNb} en retard` : ""}`) : ""}
+          to={k && k.enRetardNb ? "/factures?etat=en_retard" : "/factures?statut=envoyee"}
+        />
+      </div>
+
+      <div className="split" style={{ marginBottom: 20 }}>
+        <Panel title="À faire aujourd'hui" hint="Cliquez sur une ligne pour ouvrir la liste correspondante." flush>
+          {loading ? (
+            <div style={{ padding: 18 }}><div className="skel" style={{ height: 40, marginBottom: 10 }} /><div className="skel" style={{ height: 40, marginBottom: 10 }} /><div className="skel" style={{ height: 40 }} /></div>
+          ) : todo.length === 0 ? (
+            <EmptyState icon={<CheckCircleOutlined />} title="Rien d'urgent aujourd'hui"
+              description="Aucune demande en attente, aucune facture en retard, aucun ticket urgent. Les nouvelles tâches apparaîtront ici automatiquement." />
+          ) : (
+            <div className="todo-list">
+              {todo.map((t) => (
+                <div key={t.cle} className="todo-row">
+                  <button type="button" className="todo" onClick={() => navigate(t.to)}>
+                    <span className="count" style={{ background: TON[t.ton].bg, color: TON[t.ton].fg }}>{t.nombre}</span>
+                    <span className="txt"><b>{t.titre.charAt(0).toUpperCase() + t.titre.slice(1)}</b>{t.detail && <div>{t.detail}</div>}</span>
+                    {t.action !== "generer" && <RightOutlined className="chev" />}
+                  </button>
+                  {t.action === "generer" && (
+                    <Button size="small" loading={generation} onClick={generer}>Générer</Button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </Panel>
+        <Panel title="Activité récente" extra={<Button type="link" size="small" onClick={() => navigate("/systeme/journal")}>Tout le journal</Button>} flush>
+          <ActivityFeed limit={9} />
+        </Panel>
+      </div>
+
+      <div className="panel" style={{ marginBottom: 20 }}>
+        <div className="mini-stats">
+          {[
+            { v: k ? num(k.clientsActifs) : "—", l: "Clients actifs", to: "/clients?statut=client" },
+            { v: k ? num(k.prospects30) : "—", l: "Prospects sur 30 jours", to: "/leads?statut=toutes" },
+            { v: k ? eur0(k.devisAttenteMontant) : "—", l: k ? `${k.devisAttenteNb} devis en attente` : "Devis en attente", to: "/devis?statut=envoye" },
+            { v: k ? num(k.abosActifs) : "—", l: "Abonnements actifs", to: "/abonnements" },
+            { v: k ? num(k.ticketsOuverts) : "—", l: k?.ticketsUrgents ? `Tickets ouverts, dont ${k.ticketsUrgents} urgent${k.ticketsUrgents > 1 ? "s" : ""}` : "Tickets ouverts", to: "/tickets" },
+            { v: k ? eur0(k.enRetardMontant) : "—", l: "En retard de paiement", to: "/factures?etat=en_retard" },
+          ].map((s) => (
+            <button type="button" key={s.to} className="mini-stat" onClick={() => navigate(s.to)}>
+              <div className="v tabular">{s.v}</div>
+              <div className="l">{s.l}</div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <Panel title="Chiffre d'affaires — 12 derniers mois" hint="Encaissé (factures payées) et facturé (envoyées ou payées), en euros."
+        extra={<Button type="link" size="small" onClick={() => navigate("/pilotage/chiffre-affaires")}>Analyse détaillée</Button>}>
+        {loading ? (
+          <div className="skel" style={{ height: 260 }} />
+        ) : !aDuCA && !serie.some((s) => s.facture > 0) ? (
+          <EmptyState icon={<BarChartOutlined />} title="Pas encore de chiffre d'affaires"
+            description="Le graphique se remplira dès vos premières factures envoyées ou payées."
+            action={<Button type="primary" onClick={() => navigate("/factures/nouvelle")}>Créer une facture</Button>} />
+        ) : (
+          <>
+            <div className="legend-inline" style={{ marginBottom: 8 }}>
+              <span><i style={{ background: COULEURS.series[0] }} />Encaissé</span>
+              <span><i style={{ background: "#C7D2FE" }} />Facturé</span>
+            </div>
+            <div className="chart-box">
+              <ResponsiveContainer>
+                <BarChart data={serie} margin={{ top: 8, right: 8, left: 8, bottom: 0 }} barGap={2}>
+                  <CartesianGrid vertical={false} stroke="#EEF0F3" />
+                  <XAxis dataKey="mois" tickLine={false} axisLine={false} tick={{ fill: "#8A93A3", fontSize: 12 }} />
+                  <YAxis tickLine={false} axisLine={false} width={64} tick={{ fill: "#8A93A3", fontSize: 12 }} tickFormatter={(v) => eur0(v)} />
+                  <Tooltip content={<TooltipEur />} cursor={{ fill: "#F2F4F7" }} />
+                  <Bar isAnimationActive={false} dataKey="facture" name="Facturé" fill="#C7D2FE" radius={[4, 4, 0, 0]} maxBarSize={22} />
+                  <Bar isAnimationActive={false} dataKey="encaisse" name="Encaissé" fill={COULEURS.series[0]} radius={[4, 4, 0, 0]} maxBarSize={22} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </>
+        )}
+      </Panel>
+    </>
+  );
+}

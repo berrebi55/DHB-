@@ -1,68 +1,65 @@
 // =====================================================================
-//  DHB — Fonction Edge : notification email à chaque nouvelle demande.
-//  Déclenchée par un "Database Webhook" Supabase sur INSERT de public.leads.
+//  DHB — Edge Function : notification email à chaque nouvelle demande.
+//  Déclenchée par un « Database Webhook » Supabase sur INSERT de public.leads.
 //
-//  ⚠️ La clé secrète n'est JAMAIS dans ce fichier : elle est lue depuis
-//     les variables d'environnement de Supabase (voir README).
+//  Sécurité :
+//   - le texte saisi par le visiteur est échappé avant d'être mis dans l'email ;
+//   - si WEBHOOK_SECRET est défini, l'appel doit porter l'en-tête
+//     x-webhook-secret avec cette valeur (à ajouter dans le webhook Supabase).
 //
-//  Variables d'environnement à définir dans Supabase
-//  (Edge Functions → notify-new-lead → Settings → Secrets) :
-//    RESEND_API_KEY   = clé API Resend (service d'envoi d'emails, offre gratuite)
-//    NOTIFY_TO        = adresse qui reçoit les alertes (ex. contact@dhb-...)
-//    NOTIFY_FROM      = expéditeur vérifié chez Resend (ex. site@votre-domaine.fr)
-//
-//  Déploiement : supabase functions deploy notify-new-lead
-//  Puis créer un Database Webhook (Database → Webhooks) :
-//    Table public.leads · Event INSERT · Type "Supabase Edge Functions"
-//    · Function notify-new-lead.
+//  Secrets : RESEND_API_KEY, NOTIFY_TO (destinataire des alertes), NOTIFY_FROM,
+//            WEBHOOK_SECRET (recommandé), ADMIN_URL (lien vers le back-office).
+//  Déploiement : supabase functions deploy notify-new-lead --no-verify-jwt
+//  Webhook : Database → Webhooks → table public.leads · INSERT ·
+//            Supabase Edge Functions · notify-new-lead · en-tête x-webhook-secret.
 // =====================================================================
+import { envoyerEmail, esc } from "../_shared/securite.ts";
+
+const SITES: Record<string, string> = {
+  infogerance: "DHB Pro",
+  particuliers: "DHB Assistance",
+  groupe: "DHB Groupe",
+};
 
 Deno.serve(async (req) => {
   try {
-    const payload = await req.json();
-    const lead = payload.record ?? payload; // webhook met la ligne dans "record"
-
-    const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-    const NOTIFY_TO = Deno.env.get("NOTIFY_TO");
-    const NOTIFY_FROM = Deno.env.get("NOTIFY_FROM") ?? "onboarding@resend.dev";
-
-    if (!RESEND_API_KEY || !NOTIFY_TO) {
-      return new Response("Configuration email manquante", { status: 200 });
+    const secret = Deno.env.get("WEBHOOK_SECRET");
+    if (secret && req.headers.get("x-webhook-secret") !== secret) {
+      return new Response("Non autorisé", { status: 401 });
     }
+    const to = Deno.env.get("NOTIFY_TO");
+    if (!to) return new Response("Configuration email manquante", { status: 200 });
+
+    const payload = await req.json();
+    const lead = payload.record ?? payload;
 
     const typeLabel = lead.type === "question" ? "Question" : "Demande de devis";
-    const subject = `🔔 DHB — ${typeLabel} de ${lead.nom || lead.email || "un visiteur"}`;
+    const site = SITES[lead.entity] ?? "site DHB";
+    const adminUrl = Deno.env.get("ADMIN_URL");
+    const subject = `${typeLabel} — ${String(lead.nom || lead.email || "un visiteur").slice(0, 80)} (${site})`;
     const html = `
-      <h2>Nouvelle ${typeLabel.toLowerCase()}</h2>
-      <ul>
-        <li><b>Nom :</b> ${lead.nom || "—"}</li>
-        <li><b>Entreprise :</b> ${lead.entreprise || "—"}</li>
-        <li><b>Email :</b> ${lead.email || "—"}</li>
-        <li><b>Téléphone :</b> ${lead.telephone || "—"}</li>
-        <li><b>Service :</b> ${lead.service || "—"}</li>
-        <li><b>Page :</b> ${lead.source_url || "—"}</li>
-      </ul>
-      <p><b>Message :</b><br>${(lead.message || "—").replace(/\n/g, "<br>")}</p>
-      <hr>
-      <p>Connectez-vous à l'espace admin pour traiter cette demande.</p>`;
+      <div style="font-family:Arial,sans-serif;color:#101828">
+        <h2 style="margin:0 0 12px">${esc(typeLabel)} reçue sur ${esc(site)}</h2>
+        <table style="border-collapse:collapse">
+          <tr><td style="padding:3px 12px 3px 0"><b>Nom</b></td><td>${esc(lead.nom) || "—"}</td></tr>
+          <tr><td style="padding:3px 12px 3px 0"><b>Entreprise</b></td><td>${esc(lead.entreprise) || "—"}</td></tr>
+          <tr><td style="padding:3px 12px 3px 0"><b>Email</b></td><td>${esc(lead.email) || "—"}</td></tr>
+          <tr><td style="padding:3px 12px 3px 0"><b>Téléphone</b></td><td>${esc(lead.telephone) || "—"}</td></tr>
+          <tr><td style="padding:3px 12px 3px 0"><b>Service</b></td><td>${esc(lead.service) || "—"}</td></tr>
+          <tr><td style="padding:3px 12px 3px 0"><b>Page</b></td><td>${esc(lead.source_url) || "—"}</td></tr>
+        </table>
+        <p style="margin-top:14px"><b>Message :</b><br>${esc(lead.message || "—").replace(/\n/g, "<br>")}</p>
+        ${adminUrl ? `<p><a href="${esc(adminUrl)}/leads/${esc(lead.id)}">Ouvrir la demande dans le back-office</a></p>` : ""}
+      </div>`;
 
-    const r = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${RESEND_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ from: NOTIFY_FROM, to: [NOTIFY_TO], subject, html }),
-    });
-
-    if (!r.ok) {
-      const t = await r.text();
-      console.error("Resend error:", t);
-      return new Response("Email non envoyé: " + t, { status: 200 });
+    const err = await envoyerEmail(to, subject, html);
+    if (err) {
+      console.error("Envoi email :", err);
+      return new Response("Erreur d'envoi", { status: 500 });
     }
-    return new Response("ok", { status: 200 });
+    return new Response("OK", { status: 200 });
   } catch (e) {
     console.error(e);
-    return new Response("Erreur: " + (e as Error).message, { status: 200 });
+    return new Response("Erreur", { status: 500 });
   }
 });
