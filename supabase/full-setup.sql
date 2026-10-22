@@ -1056,3 +1056,59 @@ end; $$;
 drop trigger if exists trg_clients_proteger_suppression on public.clients;
 create trigger trg_clients_proteger_suppression before delete on public.clients
   for each row execute function public.clients_proteger_suppression();
+
+-- =====================================================================
+-- 18) LOT 6 — DOCUMENTS PDF (idempotent)
+-- =====================================================================
+-- Les PDF de devis et de factures sont produits côté serveur (Edge Function
+-- render-pdf) et rangés dans un espace de stockage PRIVÉ (« documents ») :
+-- aucun accès direct depuis le navigateur, tout passe par la fonction, qui
+-- vérifie que l'appelant fait partie de l'équipe.
+-- Une facture émise (envoyée, payée, annulée) est archivée UNE fois : son PDF
+-- n'est plus jamais régénéré ni remplacé (le document envoyé reste identique).
+create table if not exists public.documents (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  type text not null check (type in ('devis','facture')),
+  devis_id uuid references public.devis(id) on delete set null,
+  facture_id uuid references public.factures(id) on delete restrict,
+  client_id uuid references public.clients(id) on delete set null,
+  numero text,
+  nom_fichier text not null,
+  chemin text not null unique,          -- emplacement dans le stockage « documents »
+  taille_octets bigint,
+  empreinte_sha256 text,
+  cree_par uuid
+);
+create unique index if not exists documents_facture_unique on public.documents (facture_id) where type = 'facture';
+create unique index if not exists documents_devis_unique on public.documents (devis_id) where type = 'devis';
+create index if not exists documents_client_idx on public.documents (client_id, created_at desc);
+alter table public.documents enable row level security;
+drop policy if exists "documents read" on public.documents;
+create policy "documents read" on public.documents for select to authenticated using (public.is_staff());
+-- (aucune politique d'écriture : seule la fonction render-pdf, avec la clé serveur, écrit ici)
+revoke insert, update, delete, truncate on public.documents from anon, authenticated;
+
+-- Archive d'une facture émise : ni modification ni suppression, même par la clé serveur.
+create or replace function public.documents_proteger_factures()
+returns trigger language plpgsql as $$
+begin
+  if old.type = 'facture' then
+    raise exception 'Le PDF archivé d''une facture émise ne peut être ni modifié ni supprimé.' using errcode = '42501';
+  end if;
+  return case when tg_op = 'DELETE' then old else new end;
+end; $$;
+drop trigger if exists trg_documents_proteger on public.documents;
+create trigger trg_documents_proteger before update or delete on public.documents
+  for each row execute function public.documents_proteger_factures();
+
+-- Espace de stockage privé (uniquement sur un vrai projet Supabase, où le
+-- schéma « storage » existe). Aucune politique sur storage.objects : seul le
+-- serveur (clé service role) lit et écrit ces fichiers.
+do $$ begin
+  if exists (select 1 from information_schema.tables where table_schema = 'storage' and table_name = 'buckets') then
+    insert into storage.buckets (id, name, public) values ('documents', 'documents', false)
+      on conflict (id) do update set public = false;
+  end if;
+end $$;
