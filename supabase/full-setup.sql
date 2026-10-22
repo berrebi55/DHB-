@@ -1112,3 +1112,136 @@ do $$ begin
       on conflict (id) do update set public = false;
   end if;
 end $$;
+
+-- =====================================================================
+-- 19) LOT 7 — PAIEMENTS EN LIGNE STRIPE (idempotent)
+-- =====================================================================
+-- La fonction stripe-webhook (signature Stripe vérifiée) transmet chaque
+-- événement à stripe_traiter_evenement(), qui fait TOUT en une seule
+-- transaction : client retrouvé (email) ou créé, facture numérotée, paiement
+-- (la facture passe « payée » via paiements_solder_facture), abonnement.
+-- Un même événement ou un même paiement n'est jamais enregistré deux fois
+-- (Stripe renvoie un événement tant qu'il n'a pas reçu de réponse « 200 »).
+
+alter table public.abonnements add column if not exists stripe_subscription_id text;
+alter table public.abonnements add column if not exists stripe_customer_id text;
+create unique index if not exists abonnements_stripe_unique on public.abonnements (stripe_subscription_id) where stripe_subscription_id is not null;
+create unique index if not exists paiements_stripe_reference_unique on public.paiements (reference) where moyen = 'stripe' and reference is not null;
+
+-- Journal des événements reçus de Stripe (anti-doublon + suivi).
+create table if not exists public.stripe_evenements (
+  id text primary key,                 -- identifiant de l'événement Stripe (evt_…)
+  type text not null,
+  recu_le timestamptz not null default now(),
+  traite_le timestamptz,
+  statut text not null default 'en_cours' check (statut in ('en_cours','traite','ignore','erreur')),
+  resultat text,                       -- ex. « Facture 2026-0012 payée »
+  erreur text
+);
+create index if not exists stripe_evenements_recu_idx on public.stripe_evenements (recu_le desc);
+alter table public.stripe_evenements enable row level security;
+drop policy if exists "stripe_evenements read" on public.stripe_evenements;
+create policy "stripe_evenements read" on public.stripe_evenements for select to authenticated using (public.is_staff());
+revoke insert, update, delete, truncate on public.stripe_evenements from anon, authenticated;
+
+-- p_type : « paiement » (paiement reçu), « abonnement_statut », « ignore ».
+-- p_d    : données déjà extraites et contrôlées par la fonction stripe-webhook.
+create or replace function public.stripe_traiter_evenement(p_id text, p_type_stripe text, p_type text, p_d jsonb)
+returns text language plpgsql security definer set search_path = public as $$
+declare
+  v_st text; v_montant numeric; v_ref text; v_email text; v_cid uuid; v_cnom text; v_fid uuid; v_num text;
+  v_aid uuid; v_jour date; v_lib text; v_mois int; v_resultat text; v_n int;
+begin
+  if p_id is null or p_id !~ '^evt_[A-Za-z0-9_]+$' then
+    raise exception 'Identifiant d''événement Stripe invalide.' using errcode = '22023';
+  end if;
+  -- Anti-doublon : un événement déjà traité (ou ignoré) n'est jamais rejoué.
+  insert into public.stripe_evenements (id, type, statut) values (p_id, coalesce(p_type_stripe, '?'), 'en_cours')
+    on conflict (id) do nothing;
+  if not found then
+    select statut into v_st from public.stripe_evenements where id = p_id for update;
+    if v_st in ('traite', 'ignore') then return 'deja_traite'; end if;
+  end if;
+
+  if p_type = 'paiement' then
+    v_montant := round((p_d->>'montant')::numeric, 2);
+    v_ref := nullif(trim(p_d->>'reference'), '');
+    if v_montant is null or v_montant <= 0 or v_ref is null then
+      update public.stripe_evenements set statut = 'ignore', traite_le = now(), resultat = 'Montant nul ou référence absente' where id = p_id;
+      return 'ignore';
+    end if;
+    -- Même paiement déjà enregistré (ex. session de paiement + facture Stripe du même abonnement).
+    if exists (select 1 from public.paiements where moyen = 'stripe' and reference = v_ref) then
+      update public.stripe_evenements set statut = 'traite', traite_le = now(), resultat = 'Paiement déjà enregistré' where id = p_id;
+      return 'deja_traite';
+    end if;
+    v_jour := coalesce(nullif(p_d->>'date', '')::date, current_date);
+    v_lib := left(coalesce(nullif(trim(p_d->>'libelle'), ''), 'Paiement en ligne'), 300);
+    v_email := nullif(lower(trim(p_d->>'email')), '');
+
+    -- Abonnement déjà connu : son client est réutilisé.
+    if nullif(p_d->>'subscription_id', '') is not null then
+      select id, client_id into v_aid, v_cid from public.abonnements where stripe_subscription_id = p_d->>'subscription_id';
+    end if;
+    -- Sinon : client retrouvé par son email (fiche non archivée), ou créé.
+    if v_cid is null and v_email is not null then
+      select id into v_cid from public.clients where lower(email) = v_email and archived_at is null order by created_at limit 1;
+    end if;
+    if v_cid is null then
+      insert into public.clients (type, entity, statut, nom, email, telephone, adresse, code_postal, ville, notes)
+      values ('particulier', coalesce(nullif(p_d->>'entity', ''), 'particuliers'), 'client',
+              coalesce(nullif(left(trim(p_d->>'nom'), 120), ''), v_email, 'Client Stripe'), v_email,
+              nullif(left(trim(p_d->>'telephone'), 40), ''), nullif(left(trim(p_d->>'adresse'), 300), ''),
+              nullif(left(trim(p_d->>'code_postal'), 20), ''), nullif(left(trim(p_d->>'ville'), 120), ''),
+              'Fiche créée automatiquement lors d''un paiement en ligne (Stripe).')
+      returning id into v_cid;
+    else
+      update public.clients set statut = 'client' where id = v_cid and statut = 'prospect';
+    end if;
+    select coalesce(nullif(entreprise, ''), nom) into v_cnom from public.clients where id = v_cid;
+
+    -- Nouvel abonnement Stripe.
+    if v_aid is null and nullif(p_d->>'subscription_id', '') is not null then
+      v_mois := greatest(coalesce(nullif(p_d->>'intervalle_mois', '')::int, 1), 1);
+      insert into public.abonnements (entity, client_id, client_nom, libelle, montant_mensuel, date_debut, statut,
+                                      jour_facturation, derniere_facture_le, stripe_subscription_id, stripe_customer_id, notes)
+      values (coalesce(nullif(p_d->>'entity', ''), 'particuliers'), v_cid, v_cnom, v_lib, round(v_montant / v_mois, 2), v_jour, 'actif',
+              extract(day from v_jour)::int, v_jour, p_d->>'subscription_id', nullif(p_d->>'customer_id', ''),
+              'Prélevé automatiquement par Stripe : les factures sont créées à chaque paiement reçu.')
+      returning id into v_aid;
+    elsif v_aid is not null then
+      update public.abonnements set derniere_facture_le = v_jour, statut = 'actif' where id = v_aid;
+    end if;
+
+    v_num := public.next_facture_numero();
+    insert into public.factures (entity, numero, date_facture, date_echeance, client_id, client_nom, client_email, client_adresse,
+                                 abonnement_id, libelle, quantite, prix_unitaire, lignes, tva_taux, total_ht, total_ttc, status, conditions)
+    values (coalesce(nullif(p_d->>'entity', ''), 'particuliers'), v_num, v_jour, v_jour, v_cid, v_cnom, v_email,
+            nullif(concat_ws(', ', nullif(trim(p_d->>'adresse'), ''), nullif(trim(concat_ws(' ', p_d->>'code_postal', p_d->>'ville')), '')), ''),
+            v_aid, v_lib, 1, v_montant, jsonb_build_array(jsonb_build_object('libelle', v_lib, 'qte', 1, 'pu', v_montant)),
+            0, v_montant, v_montant, 'envoyee', 'Réglée en ligne par carte bancaire (Stripe).')
+    returning id into v_fid;
+    insert into public.paiements (facture_id, client_id, montant, date_paiement, moyen, reference, notes)
+    values (v_fid, v_cid, v_montant, v_jour, 'stripe', v_ref, 'Paiement en ligne Stripe');
+    v_resultat := 'Facture ' || v_num || ' payée (' || replace(to_char(v_montant, 'FM999999990.00'), '.', ',') || ' €)';
+
+  elsif p_type = 'abonnement_statut' then
+    update public.abonnements set statut = p_d->>'statut'
+      where stripe_subscription_id = p_d->>'subscription_id' and p_d->>'statut' in ('actif', 'suspendu', 'resilie');
+    get diagnostics v_n = row_count;
+    if v_n = 0 then
+      update public.stripe_evenements set statut = 'ignore', traite_le = now(), resultat = 'Abonnement inconnu' where id = p_id;
+      return 'ignore';
+    end if;
+    v_resultat := 'Abonnement : ' || public.libelle_statut(p_d->>'statut');
+
+  else
+    update public.stripe_evenements set statut = 'ignore', traite_le = now(), resultat = left(coalesce(p_d->>'raison', 'Événement non utilisé'), 200) where id = p_id;
+    return 'ignore';
+  end if;
+
+  update public.stripe_evenements set statut = 'traite', traite_le = now(), resultat = v_resultat, erreur = null where id = p_id;
+  return 'traite';
+end; $$;
+revoke execute on function public.stripe_traiter_evenement(text, text, text, jsonb) from public, anon, authenticated;
+grant execute on function public.stripe_traiter_evenement(text, text, text, jsonb) to service_role;
