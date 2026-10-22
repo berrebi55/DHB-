@@ -31,4 +31,4 @@ Edge Functions, secrets, planifications).
 
 ## 5. Sauvegardes
 Le plan gratuit de Supabase ne fournit pas de sauvegarde téléchargeable : voir
-la stratégie prévue dans [`../docs/PLAN-REFERENCE.md`](../docs/PLAN-REFERENCE.md) (§3.5).
+la stratégie prévue dans [`../docs/PLAN-REFERENCE.md`](../docs/PLAN-REFERENCE.md) (problème C3, lot 2).
