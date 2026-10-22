@@ -1,7 +1,7 @@
 # DHB — Google : mise en service et dictionnaire des événements GA4
 
 Ce document décrit la connexion du **compte Google** à DHB (Google Analytics 4,
-puis Search Console et Google Drive aux lots suivants) et la **liste des
+Google Drive et Search Console) et la **liste des
 événements** mesurés sur les sites et envoyés depuis le serveur.
 
 > Rien ne fonctionne avant cette mise en service : le back-office l'indique dans
@@ -82,7 +82,35 @@ est supprimé dans Drive, il est recréé au prochain envoi (ou par « Mettre à
 jour » sur la fiche client). Une panne de Google n'empêche pas d'utiliser DHB :
 la copie est réessayée automatiquement et l'erreur s'affiche sur la fiche.
 
-## 4. Dictionnaire des événements
+## 4. Google Search Console (lot 12)
+
+Prérequis : les domaines sont **achetés et vérifiés** dans
+<https://search.google.com/search-console> avec le **même compte Google** que
+celui connecté à DHB (ou ce compte y est ajouté comme utilisateur).
+
+1. Déployer : `supabase functions deploy seo-sync --no-verify-jwt`.
+2. Système → Intégrations → carte *Google Search Console* : saisir les
+   propriétés **exactement comme dans Search Console**, une par ligne
+   (ex. `sc-domain:exemple.fr` pour une propriété « Domaine »,
+   `https://www.exemple.fr/` pour une propriété « Préfixe d'URL »), Enregistrer.
+3. Cliquer **« Copier maintenant »** pour un premier essai, puis planifier la
+   copie quotidienne (SQL Editor) :
+   ```sql
+   select cron.schedule('dhb-seo', '45 6 * * *', $$
+     select net.http_post(
+       url := 'https://<PROJECT>.supabase.co/functions/v1/seo-sync',
+       headers := '{"Content-Type":"application/json","x-cron-secret":"<CRON_SECRET>"}'::jsonb,
+       body := '{}'::jsonb);
+   $$);
+   ```
+
+Ce qui est copié, par propriété : clics, impressions et position **par jour sur
+30 jours**, les **100 premières requêtes** et les **100 premières pages** des
+28 derniers jours. Google publie ces chiffres avec **2 à 3 jours de retard**.
+Ils s'affichent dans **Pilotage → SEO** (position moyenne pondérée par les
+impressions, comme dans Search Console).
+
+## 5. Dictionnaire des événements
 
 ### Envoyés par les sites (navigateur, seulement après « Accepter »)
 
@@ -113,7 +141,7 @@ Il n'est envoyé **que** si le visiteur avait accepté la mesure d'audience
 `generate_lead` n'est **pas** renvoyé par le serveur (il est déjà mesuré par le
 site : pas de double comptage).
 
-## 5. En cas de problème
+## 6. En cas de problème
 
 | Message dans DHB | Que faire |
 |---|---|
@@ -121,3 +149,5 @@ site : pas de double comptage).
 | « Accès Google expiré : reconnectez » | application Google restée en mode Test, ou accès retiré : publier l'application, puis Reconnecter |
 | « Google n'a pas donné d'accès durable » | compte Google → Sécurité → Applications tierces → retirer « DHB », puis Reconnecter |
 | « Google Analytics refuse la demande (permission_denied) » | le compte connecté n'a pas accès à la propriété GA4, ou mauvais ID de propriété |
+| « Le compte Google connecté n'a pas accès à cette propriété » | ajouter ce compte dans Search Console (Paramètres → Utilisateurs), ou Reconnecter Google en acceptant l'autorisation Search Console |
+| « Propriété inconnue de Search Console » | recopier l'adresse exacte de la propriété (`sc-domain:` ou `https://…/` avec la barre finale) |

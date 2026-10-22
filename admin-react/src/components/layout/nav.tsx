@@ -17,6 +17,7 @@ import {
   RobotOutlined,
   ApiOutlined,
   FundOutlined,
+  GlobalOutlined,
   RiseOutlined,
   SafetyOutlined,
   SettingOutlined,
@@ -84,6 +85,7 @@ export const NAV: NavGroup[] = [
       { key: "recurrent", label: "Récurrent (MRR/ARR)", path: "/pilotage/recurrent", icon: <RiseOutlined /> },
       { key: "commercial", label: "Performance", path: "/pilotage/commercial", icon: <AimOutlined /> },
       { key: "acquisition", label: "Acquisition", path: "/pilotage/acquisition", icon: <FundOutlined /> },
+      { key: "seo", label: "SEO", path: "/pilotage/seo", icon: <GlobalOutlined /> },
     ],
   },
   {

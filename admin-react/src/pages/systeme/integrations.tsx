@@ -56,6 +56,9 @@ export function IntegrationsPage() {
   const google = integ.data?.data.find((i) => i.cle === "google");
   const ga4 = integ.data?.data.find((i) => i.cle === "ga4");
   const drive = integ.data?.data.find((i) => i.cle === "drive") as (Integration & { details: { actif?: boolean; sous_dossiers?: string[] } }) | undefined;
+  const sc = integ.data?.data.find((i) => i.cle === "search_console") as (Integration & { details: { sites?: string[] } }) | undefined;
+  const [proprietes, setProprietes] = useState("");
+  useEffect(() => { if (sc) setProprietes((sc.details?.sites ?? []).join("\n")); }, [sc]);
   const [sous, setSous] = useState<string[]>([]);
   const [driveActif, setDriveActif] = useState(false);
   useEffect(() => { if (drive) { setSous(drive.details?.sous_dossiers ?? []); setDriveActif(!!drive.details?.actif); } }, [drive]);
@@ -113,6 +116,21 @@ export function IntegrationsPage() {
     const { error } = await supabaseClient.from("integrations").update({ details: { ...(drive?.details ?? {}), actif: driveActif, sous_dossiers: noms } }).eq("cle", "drive");
     if (error) message.error(/sous-dossier/i.test(error.message) ? error.message : messageErreurBase(error));
     else { message.success("Réglages Google Drive enregistrés"); recharger(); }
+  };
+  const enregistrerSc = async () => {
+    const sites = proprietes.split(/\s+/).map((x) => x.trim()).filter(Boolean);
+    const { error } = await supabaseClient.from("integrations").update({ details: { ...(sc?.details ?? {}), sites } }).eq("cle", "search_console");
+    if (error) message.error(/Search Console/.test(error.message) ? error.message : messageErreurBase(error));
+    else { message.success("Propriétés Search Console enregistrées"); recharger(); }
+  };
+  const copierSc = async () => {
+    setEnCours("copier-sc");
+    const r = await appelerFonction<{ sites: { site: string; erreur?: string }[]; error?: string }>("seo-sync");
+    setEnCours(null);
+    const ok = (r.data?.sites ?? []).filter((x) => !x.erreur).length;
+    if (r.ok) message.success(`Chiffres copiés pour ${ok} propriété(s).`);
+    else message.error(r.data?.error === "search_console_aucune_propriete" ? "Déclarez d'abord au moins une propriété." : CODES_GOOGLE[r.data?.error ?? ""] ?? "Aucune propriété n'a pu être copiée : voir le message de la carte.");
+    recharger();
   };
   const rattraper = async () => {
     setEnCours("rattraper");
@@ -191,6 +209,22 @@ export function IntegrationsPage() {
           )}
           <p className="faint" style={{ fontSize: 12.5, marginTop: 12, marginBottom: 0 }}>Accès limité aux dossiers créés par DHB : le reste de votre Drive n'est jamais lu. Les dossiers existants ne sont pas renommés.</p>
         </Panel>
+        <Panel title="Google Search Console" hint="Clics et positions dans Google, copiés chaque jour." extra={<StatutIntegration i={sc} />}>
+          <Form layout="vertical" component="div" disabled={!isAdmin}>
+            <Form.Item label="Propriétés vérifiées (une par ligne)" htmlFor="sc-proprietes" extra="Ex. sc-domain:dhb-groupe.fr (domaine) ou https://pro.dhb-groupe.fr/ (préfixe d'URL)." style={{ marginBottom: 8 }}>
+              <Input.TextArea id="sc-proprietes" value={proprietes} onChange={(e) => setProprietes(e.target.value)} autoSize={{ minRows: 2, maxRows: 6 }} />
+            </Form.Item>
+          </Form>
+          <dl className="kv" style={{ marginTop: 8 }}>
+            <dt>Dernière copie</dt><dd>{sc?.derniere_synchro ? <span title={dateTimeFR(sc.derniere_synchro)}>{fromNow(sc.derniere_synchro)}</span> : <span className="faint">Jamais</span>}</dd>
+          </dl>
+          {sc?.erreur && <Alert type="warning" showIcon style={{ marginTop: 12 }} message={sc.erreur} />}
+          <Space wrap style={{ marginTop: 12 }}>
+            {isAdmin && <Button onClick={enregistrerSc}>Enregistrer</Button>}
+            <Button icon={<CloudSyncOutlined />} loading={enCours === "copier-sc"} disabled={google?.statut !== "connecte" || !(sc?.details?.sites ?? []).length} onClick={copierSc}>Copier maintenant</Button>
+            <Link className="lien" to="/pilotage/seo">Voir le SEO</Link>
+          </Space>
+        </Panel>
         <Panel title="Emails (Resend)" extra={<Etat ok={secrets?.emails} />}>
           <dl className="kv">
             <dt>Mode test</dt><dd>{secrets?.emails_mode_test ? <>Actif : tout part vers {secrets.emails_mode_test_adresse}</> : secrets ? "Inactif" : "…"}</dd>
@@ -222,7 +256,7 @@ export function IntegrationsPage() {
             <div className="m-list">
               {(logs.data?.data ?? []).map((l) => (
                 <div key={l.id} className="m-item" style={{ cursor: "default" }}>
-                  <div className="m-row"><span className="m-title">{l.cle === "google" ? "Google" : l.cle === "ga4" ? "Google Analytics" : l.cle === "drive" ? "Google Drive" : l.cle} · {l.action}</span>
+                  <div className="m-row"><span className="m-title">{l.cle === "google" ? "Google" : l.cle === "ga4" ? "Google Analytics" : l.cle === "drive" ? "Google Drive" : l.cle === "search_console" ? "Search Console" : l.cle} · {l.action}</span>
                     <span className={`st ${l.statut === "ok" ? "tone-success" : l.statut === "erreur" ? "tone-danger" : "tone-neutral"}`}>{l.statut === "ok" ? "OK" : l.statut === "erreur" ? "Erreur" : "Ignoré"}</span></div>
                   <div className="m-sub" title={dateTimeFR(l.created_at)}>{fromNow(l.created_at)}{l.message ? ` · ${l.message}` : ""}</div>
                 </div>
