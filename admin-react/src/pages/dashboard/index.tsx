@@ -21,7 +21,7 @@ import { supabaseClient } from "../../supabaseClient";
 import { ENTITY, LEAD_STATUS } from "../../constants";
 import { eur } from "../../utils/format";
 
-const COLORS = ["#2563eb", "#16a34a", "#f59e0b", "#a855f7", "#ef4444", "#64748b"];
+const COLORS = ["#22d3ee", "#a855f7", "#34d399", "#fbbf24", "#fb7185", "#60a5fa"];
 const monthKey = (d: string) => (d || "").slice(0, 7); // YYYY-MM
 
 export const DashboardPage = () => {
@@ -187,7 +187,7 @@ export const DashboardPage = () => {
                 <XAxis dataKey="mois" />
                 <YAxis />
                 <Tooltip formatter={(v: any) => eur(v)} />
-                <Bar dataKey="ca" fill="#2563eb" radius={[4, 4, 0, 0]} name="CA encaissé" />
+                <Bar dataKey="ca" fill="#22d3ee" radius={[4, 4, 0, 0]} name="CA encaissé" />
               </BarChart>
             </ResponsiveContainer>
           </Card>
@@ -231,7 +231,7 @@ export const DashboardPage = () => {
                   <XAxis type="number" />
                   <YAxis type="category" dataKey="name" width={90} />
                   <Tooltip formatter={(v: any) => eur(v)} />
-                  <Bar dataKey="ca" fill="#16a34a" radius={[0, 4, 4, 0]} name="CA" />
+                  <Bar dataKey="ca" fill="#34d399" radius={[0, 4, 4, 0]} name="CA" />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
@@ -253,7 +253,7 @@ export const DashboardPage = () => {
                 <XAxis dataKey="mois" />
                 <YAxis />
                 <Tooltip formatter={(v: any) => eur(v)} />
-                <Line type="monotone" dataKey="cumul" stroke="#a855f7" strokeWidth={2} name="Cumul" />
+                <Line type="monotone" dataKey="cumul" stroke="#a855f7" strokeWidth={2} dot={{ r: 2 }} name="Cumul" />
               </LineChart>
             </ResponsiveContainer>
           </Card>

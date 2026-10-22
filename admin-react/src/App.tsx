@@ -3,18 +3,58 @@ import {
   ThemedLayoutV2,
   ErrorComponent,
   useNotificationProvider,
-  RefineThemes,
   ThemedTitleV2,
 } from "@refinedev/antd";
 import "@refinedev/antd/dist/reset.css";
+import "./styles.css";
 import { dataProvider, liveProvider } from "@refinedev/supabase";
 import routerProvider, {
   NavigateToResource,
   CatchAllNavigate,
 } from "@refinedev/react-router-v6";
 import { Routes, Route, Outlet } from "react-router-dom";
-import { ConfigProvider, App as AntdApp } from "antd";
+import { ConfigProvider, App as AntdApp, theme as antdTheme } from "antd";
 import frFR from "antd/locale/fr_FR";
+
+// Thème « cyber sombre néon » — accents cyan + violet, surfaces en verre sombre.
+const CYBER_THEME = {
+  algorithm: antdTheme.darkAlgorithm,
+  token: {
+    colorPrimary: "#22d3ee",
+    colorInfo: "#22d3ee",
+    colorSuccess: "#34d399",
+    colorWarning: "#fbbf24",
+    colorError: "#fb7185",
+    colorBgBase: "#0a0f1e",
+    colorBgContainer: "rgba(18,26,46,0.72)",
+    colorBgElevated: "#111a30",
+    colorBorder: "rgba(120,160,255,0.16)",
+    colorBorderSecondary: "rgba(120,160,255,0.10)",
+    colorText: "#e6eefb",
+    colorTextSecondary: "#9fb3d1",
+    borderRadius: 12,
+    fontFamily:
+      "'Space Grotesk','IBM Plex Sans',system-ui,-apple-system,sans-serif",
+    wireframe: false,
+  },
+  components: {
+    Layout: {
+      headerBg: "rgba(10,15,30,0.85)",
+      siderBg: "rgba(10,15,30,0.92)",
+      bodyBg: "transparent",
+      triggerBg: "rgba(18,26,46,0.9)",
+    },
+    Menu: {
+      itemBg: "transparent",
+      itemSelectedBg: "rgba(34,211,238,0.14)",
+      itemSelectedColor: "#22d3ee",
+      itemHoverColor: "#22d3ee",
+    },
+    Card: { colorBgContainer: "rgba(18,26,46,0.72)" },
+    Table: { headerBg: "rgba(34,211,238,0.07)", rowHoverBg: "rgba(34,211,238,0.06)" },
+    Statistic: { contentFontSize: 28 },
+  },
+};
 import {
   DashboardOutlined,
   InboxOutlined,
@@ -48,7 +88,7 @@ import { SettingsPage } from "./pages/settings";
 
 export default function App() {
   return (
-    <ConfigProvider theme={RefineThemes.Blue} locale={frFR}>
+    <ConfigProvider theme={CYBER_THEME} locale={frFR}>
       <AntdApp>
         <Refine
           dataProvider={dataProvider(supabaseClient)}
