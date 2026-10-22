@@ -14,6 +14,8 @@ interface Doc {
   numero: string | null;
   nom_fichier: string;
   taille_octets: number | null;
+  drive_file_id?: string | null;
+  drive_erreur?: string | null;
 }
 
 const taille = (n: number | null) => (n == null ? "" : n < 1024 ? `${n} o` : `${Math.round(n / 1024)} Ko`);
@@ -52,6 +54,7 @@ export function DocumentsClient({ clientId }: { clientId: string }) {
           <div className="m-sub">
             {d.type === "facture" ? `Archivé le ${dateTimeFR(d.created_at)}` : `Version du ${dateTimeFR(d.updated_at)}`}
             {d.taille_octets ? ` · ${taille(d.taille_octets)}` : ""}
+            {d.drive_file_id ? " · copié dans Google Drive" : d.drive_erreur ? ` · copie Drive en erreur : ${d.drive_erreur}` : ""}
           </div>
         </div>
       ))}

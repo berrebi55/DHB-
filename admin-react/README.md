@@ -56,7 +56,7 @@ l'utilisateur connecté ou le secret de cron, d'où `--no-verify-jwt` :
 
 ```bash
 for f in get-devis-public sign-devis send-devis send-invoice invite-user \
-         generate-recurring-invoices send-reminders notify-new-lead create-checkout          render-pdf stripe-webhook email-send worker google-oauth google-sync \n         integration-test; do
+         generate-recurring-invoices send-reminders notify-new-lead create-checkout          render-pdf stripe-webhook email-send worker google-oauth google-sync \n         integration-test drive-sync; do
   supabase functions deploy $f --no-verify-jwt
 done
 ```

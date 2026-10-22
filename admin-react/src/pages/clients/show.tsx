@@ -21,6 +21,7 @@ import { useDelete, useList, useOne, useUpdate } from "@refinedev/core";
 import { EmptyState, PageHeader, Panel, StatusTag, ErrorState } from "../../components/ui";
 import { NotesPanel } from "../../components/activity/NotesPanel";
 import { DocumentsClient } from "../../components/documents/DocumentsClient";
+import { DossierDrive } from "../../components/documents/DossierDrive";
 import { EmailDrawer } from "../../components/communication/EmailDrawer";
 import { ClientTimeline } from "../../components/activity/ClientTimeline";
 import { ActivityFeed } from "../../components/activity/ActivityFeed";
@@ -152,6 +153,7 @@ export function ClientShow() {
                         <dt>Adresse</dt><dd>{adresseComplete(c) || "—"}</dd>
                         {c.type === "entreprise" && <><dt>SIRET</dt><dd>{c.siret || "—"}</dd></>}
                         <dt>Activité</dt><dd>{label("entite", c.entity)}</dd>
+                        <DossierDrive client={c} />
                         {c.notes && <><dt>Infos utiles</dt><dd style={{ whiteSpace: "pre-wrap" }}>{c.notes}</dd></>}
                       </dl>
                       <Button size="small" icon={<EditOutlined />} style={{ marginTop: 12 }} onClick={() => setEdit(true)}>Modifier</Button>

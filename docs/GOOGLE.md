@@ -63,7 +63,26 @@ canal, 30 derniers jours) s'affichent dans **Pilotage → Acquisition** et dans 
 bloc *Acquisition* du tableau de bord. Ils ne concernent que les visiteurs qui
 ont **accepté** la mesure d'audience.
 
-## 3. Dictionnaire des événements
+## 3. Google Drive (lot 11)
+
+1. Le compte Google doit être connecté (étape 1) ; déployer `drive-sync` :
+   `supabase functions deploy drive-sync --no-verify-jwt` (et redéployer `worker`).
+2. Système → Intégrations → carte *Google Drive* : relire les **sous-dossiers**
+   proposés (le 1er reçoit les devis, le 2e les factures ; 2 à 8 dossiers),
+   les modifier si besoin, **activer**, Enregistrer.
+3. Cliquer **« Créer les dossiers des clients existants »** (par lots de 25 :
+   relancer tant qu'il en reste).
+4. Ensuite, tout est automatique : nouveau client → son dossier ; nouveau PDF
+   de devis ou de facture → copié dans son sous-dossier (nouvelle version d'un
+   devis : le fichier Drive est remplacé ; facture : copie unique).
+
+DHB n'a accès qu'aux dossiers et fichiers **qu'il a créés** (autorisation
+`drive.file`) : le reste de votre Drive n'est jamais lu. Si un dossier client
+est supprimé dans Drive, il est recréé au prochain envoi (ou par « Mettre à
+jour » sur la fiche client). Une panne de Google n'empêche pas d'utiliser DHB :
+la copie est réessayée automatiquement et l'erreur s'affiche sur la fiche.
+
+## 4. Dictionnaire des événements
 
 ### Envoyés par les sites (navigateur, seulement après « Accepter »)
 
@@ -94,7 +113,7 @@ Il n'est envoyé **que** si le visiteur avait accepté la mesure d'audience
 `generate_lead` n'est **pas** renvoyé par le serveur (il est déjà mesuré par le
 site : pas de double comptage).
 
-## 4. En cas de problème
+## 5. En cas de problème
 
 | Message dans DHB | Que faire |
 |---|---|

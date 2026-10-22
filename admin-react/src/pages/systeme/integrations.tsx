@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { App, Alert, Button, Form, Input, Space } from "antd";
-import { ApiOutlined, CloudSyncOutlined, DisconnectOutlined, GoogleOutlined, LinkOutlined, SafetyCertificateOutlined } from "@ant-design/icons";
+import { App, Alert, Button, Form, Input, Space, Switch } from "antd";
+import { ApiOutlined, CloudSyncOutlined, DeleteOutlined, DisconnectOutlined, FolderOpenOutlined, GoogleOutlined, LinkOutlined, PlusOutlined, SafetyCertificateOutlined } from "@ant-design/icons";
 import { useInvalidate, useList } from "@refinedev/core";
 import { supabaseClient } from "../../supabaseClient";
 import { EmptyState, ListSkeleton, PageHeader, Panel } from "../../components/ui";
@@ -55,6 +55,10 @@ export function IntegrationsPage() {
   const email = useList<{ id: string; created_at: string; statut: string; erreur: string | null }>({ resource: "emails", sorters: [{ field: "created_at", order: "desc" }], pagination: { current: 1, pageSize: 1, mode: "server" }, queryOptions: { retry: false } });
   const google = integ.data?.data.find((i) => i.cle === "google");
   const ga4 = integ.data?.data.find((i) => i.cle === "ga4");
+  const drive = integ.data?.data.find((i) => i.cle === "drive") as (Integration & { details: { actif?: boolean; sous_dossiers?: string[] } }) | undefined;
+  const [sous, setSous] = useState<string[]>([]);
+  const [driveActif, setDriveActif] = useState(false);
+  useEffect(() => { if (drive) { setSous(drive.details?.sous_dossiers ?? []); setDriveActif(!!drive.details?.actif); } }, [drive]);
   const recharger = () => ["integrations", "integration_logs"].forEach((r) => invalider({ resource: r, invalidates: ["list"] }));
 
   useEffect(() => { void appelerFonction<{ secrets: Secrets }>("integration-test").then((r) => { if (r.ok && r.data) setSecrets(r.data.secrets); }); }, []);
@@ -103,6 +107,22 @@ export function IntegrationsPage() {
     else { message.success("Réglages Google Analytics enregistrés"); recharger(); }
   };
 
+  const enregistrerDrive = async () => {
+    const noms = sous.map((x) => x.trim()).filter(Boolean);
+    if (noms.length < 2 || noms.length > 8) { message.error("Indiquez entre 2 et 8 sous-dossiers."); return; }
+    const { error } = await supabaseClient.from("integrations").update({ details: { ...(drive?.details ?? {}), actif: driveActif, sous_dossiers: noms } }).eq("cle", "drive");
+    if (error) message.error(/sous-dossier/i.test(error.message) ? error.message : messageErreurBase(error));
+    else { message.success("Réglages Google Drive enregistrés"); recharger(); }
+  };
+  const rattraper = async () => {
+    setEnCours("rattraper");
+    const r = await appelerFonction<{ dossiers: number; copies: number; erreurs: number; restants: number; error?: string }>("drive-sync", { tous: true });
+    setEnCours(null);
+    if (r.ok && r.data) message.success(`${r.data.dossiers} dossier(s) créé(s), ${r.data.copies} PDF copié(s)${r.data.erreurs ? `, ${r.data.erreurs} erreur(s)` : ""}${r.data.restants ? ` — ${r.data.restants} restant(s) : relancez` : ""}.`);
+    else message.error(CODES_GOOGLE[(r.data as { error?: string } | undefined)?.error ?? ""] ?? (r.data?.error === "drive_desactive" ? "Activez d'abord Google Drive et enregistrez." : r.message));
+    recharger();
+  };
+
   return (
     <>
       <PageHeader title="Intégrations" subtitle="Services connectés à DHB. Une intégration en panne n'empêche jamais d'utiliser le CRM : l'erreur s'affiche ici."
@@ -148,6 +168,29 @@ export function IntegrationsPage() {
           </Space>
           <p className="faint" style={{ fontSize: 12.5, marginTop: 12, marginBottom: 0 }}>Le même identifiant de mesure doit être renseigné dans les sites (fichier suivi.js, GA_ID) pour la mesure d'audience des visiteurs.</p>
         </Panel>
+        <Panel title="Google Drive" hint="Un dossier par client, copie des PDF de devis et de factures." extra={drive?.details?.actif ? <span className="st tone-success">Activé</span> : <span className="st tone-neutral">Désactivé</span>}>
+          <Space size={8} style={{ marginBottom: 12 }}>
+            <Switch checked={driveActif} disabled={!isAdmin || google?.statut !== "connecte"} onChange={setDriveActif} aria-label="Activer Google Drive" />
+            <span>{google?.statut === "connecte" ? "Créer les dossiers et copier les PDF automatiquement" : "Connectez d'abord le compte Google"}</span>
+          </Space>
+          <div className="faint" style={{ fontSize: 12.5, marginBottom: 6 }}>Sous-dossiers de chaque client (2 à 8) — le 1er reçoit les devis, le 2e les factures :</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {sous.map((nom, i) => (
+              <Space.Compact key={i} style={{ width: "100%" }}>
+                <Input value={nom} maxLength={60} disabled={!isAdmin} aria-label={`Sous-dossier ${i + 1}`} onChange={(e) => setSous(sous.map((x, j) => (j === i ? e.target.value : x)))} />
+                {isAdmin && <Button icon={<DeleteOutlined />} aria-label={`Retirer le sous-dossier ${i + 1}`} disabled={sous.length <= 2} onClick={() => setSous(sous.filter((_, j) => j !== i))} />}
+              </Space.Compact>
+            ))}
+          </div>
+          {isAdmin && (
+            <Space wrap style={{ marginTop: 12 }}>
+              <Button icon={<PlusOutlined />} disabled={sous.length >= 8} onClick={() => setSous([...sous, ""])}>Ajouter</Button>
+              <Button type="primary" onClick={enregistrerDrive}>Enregistrer</Button>
+              <Button icon={<FolderOpenOutlined />} loading={enCours === "rattraper"} disabled={!drive?.details?.actif} onClick={rattraper}>Créer les dossiers des clients existants</Button>
+            </Space>
+          )}
+          <p className="faint" style={{ fontSize: 12.5, marginTop: 12, marginBottom: 0 }}>Accès limité aux dossiers créés par DHB : le reste de votre Drive n'est jamais lu. Les dossiers existants ne sont pas renommés.</p>
+        </Panel>
         <Panel title="Emails (Resend)" extra={<Etat ok={secrets?.emails} />}>
           <dl className="kv">
             <dt>Mode test</dt><dd>{secrets?.emails_mode_test ? <>Actif : tout part vers {secrets.emails_mode_test_adresse}</> : secrets ? "Inactif" : "…"}</dd>
@@ -179,7 +222,7 @@ export function IntegrationsPage() {
             <div className="m-list">
               {(logs.data?.data ?? []).map((l) => (
                 <div key={l.id} className="m-item" style={{ cursor: "default" }}>
-                  <div className="m-row"><span className="m-title">{l.cle === "google" ? "Google" : l.cle === "ga4" ? "Google Analytics" : l.cle} · {l.action}</span>
+                  <div className="m-row"><span className="m-title">{l.cle === "google" ? "Google" : l.cle === "ga4" ? "Google Analytics" : l.cle === "drive" ? "Google Drive" : l.cle} · {l.action}</span>
                     <span className={`st ${l.statut === "ok" ? "tone-success" : l.statut === "erreur" ? "tone-danger" : "tone-neutral"}`}>{l.statut === "ok" ? "OK" : l.statut === "erreur" ? "Erreur" : "Ignoré"}</span></div>
                   <div className="m-sub" title={dateTimeFR(l.created_at)}>{fromNow(l.created_at)}{l.message ? ` · ${l.message}` : ""}</div>
                 </div>
