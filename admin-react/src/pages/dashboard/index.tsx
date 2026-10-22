@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabaseClient } from "../../supabaseClient";
 import { useNavigate } from "react-router-dom";
 import { Alert, App, Button } from "antd";
 import {
@@ -86,6 +88,17 @@ export function DashboardPage() {
   const k = useMemo(() => (data ? kpis(data) : null), [data]);
   const todo = useMemo(() => (data ? taches(data) : []), [data]);
   const b = useMemo(() => (data ? blocsTableau(data) : null), [data]);
+  // Visites des 30 derniers jours (copie Google Analytics, lot 10) : affichées seulement si disponibles.
+  const visites = useQuery({
+    queryKey: ["dhb", "visites-30j"],
+    staleTime: 60_000,
+    retry: false,
+    queryFn: async () => {
+      const { data: v, error } = await supabaseClient.from("analytics_quotidien").select("sessions").gte("jour", dayjs().subtract(30, "day").format("YYYY-MM-DD")).limit(5000);
+      if (error || !v?.length) return null;
+      return v.reduce((s, x: { sessions: number }) => s + (Number(x.sessions) || 0), 0);
+    },
+  });
   const serie = useMemo(() => (data ? serieMensuelle(data.factures) : []), [data]);
   const aDuCA = serie.some((s) => s.encaisse > 0);
 
@@ -201,13 +214,16 @@ export function DashboardPage() {
           { l: "Abonnements à facturer", v: num(b.finance.aboAFacturer), to: "/abonnements?alerte=facture" },
         ] : []} />
         <Bloc titre="Acquisition" hint="Origine des demandes, 30 derniers jours" loading={loading}
-          vide={b && b.acquisition.total30 === 0 ? "Aucune demande ces 30 derniers jours." : undefined}
-          lignes={b ? b.acquisition.origines.map((o) => ({
+          vide={b && b.acquisition.total30 === 0 && !visites.data ? "Aucune demande ces 30 derniers jours." : undefined}
+          lignes={b ? [...(visites.data ? [{
+            l: "Visites (Google Analytics)", v: num(visites.data),
+            sous: `${b.acquisition.total30} demande(s), soit ${((b.acquisition.total30 / visites.data) * 100).toFixed(1).replace(".", ",")} %`, to: "/pilotage/acquisition",
+          }] : []), ...b.acquisition.origines.map((o) => ({
             l: o.source ? label("source", o.source) : "Non renseignée",
             v: num(o.nombre),
             sous: `${Math.round((o.nombre / Math.max(b.acquisition.total30, 1)) * 100)} %`,
             to: `/leads?statut=toutes&source=${o.source ?? "inconnue"}`,
-          })) : []} />
+          }))] : []} />
       </div>
 
       <Panel title="Chiffre d'affaires — 12 derniers mois" hint="Encaissé (factures payées) et facturé (envoyées ou payées), en euros."
