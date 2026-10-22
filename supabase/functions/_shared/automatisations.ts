@@ -14,7 +14,8 @@ import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.45.4
 import type { Appelant } from "./securite.ts";
 import { envoyerEtJournaliser } from "./email.ts";
 import { contexte, remplir, texteEnHtml, type TypeCible } from "./modeles.ts";
-import { envoyerConversion, journal as journalIntegration } from "./google.ts";
+import { envoyerConversion, jetonAcces, journal as journalIntegration } from "./google.ts";
+import { assurerDossierClient, copierDocument, ErreurDrive, reglagesDrive, type ReglagesDrive } from "./drive.ts";
 
 export interface Regle { cle: string; nom: string; declencheur: string; actif: boolean; delai_jours: number; modele_cle: string | null }
 type Issue = { statut: "envoye" | "echec" | "ignore"; detail: string; email_id?: string; temporaire?: boolean };
@@ -79,6 +80,31 @@ async function journaliser(sb: SupabaseClient, r: Regle, type: string, id: strin
 export async function traiterFile(sb: SupabaseClient, maxi = 50) {
   const bilan = { traites: 0, ignores: 0, reportes: 0, erreurs: 0 };
   const toutes = await regles(sb);
+
+  // Google Drive (lot 11) : dossier client et copie des PDF, si activé et Google connecté.
+  let drive: ReglagesDrive | null | undefined;
+  let jeton: string | undefined;
+  const driveActif = async () => {
+    if (drive !== undefined) return drive;
+    const r = await reglagesDrive(sb);
+    const { data: cred } = await sb.from("integration_credentials").select("cle").eq("cle", "google").maybeSingle();
+    drive = r.actif && cred ? r : null;
+    return drive;
+  };
+  const effetDrive = async (ev: { type: string; objet_id: string }): Promise<string | null> => {
+    const r = await driveActif();
+    if (!r) return null;
+    try { jeton ??= await jetonAcces(sb); } catch { return "Google non joignable ou accès expiré"; }
+    try {
+      if (ev.type === "client_cree") await assurerDossierClient(sb, jeton, ev.objet_id, r);
+      else await copierDocument(sb, jeton, ev.objet_id, r);
+      return null;
+    } catch (e) {
+      if (e instanceof ErreurDrive && e.temporaire) return e.message;
+      await journalIntegration(sb, "drive", "copie", "erreur", (e as Error).message);
+      return null;   // erreur définitive : visible sur la fiche, pas de nouvel essai automatique
+    }
+  };
   const maintenant = new Date().toISOString();
   const { data: evs } = await sb.from("evenements").select("*").eq("statut", "en_attente").lte("prochaine_tentative", maintenant)
     .order("created_at", { ascending: true }).limit(maxi);
@@ -90,17 +116,21 @@ export async function traiterFile(sb: SupabaseClient, maxi = 50) {
 
     const actives = toutes.filter((r) => r.actif && r.declencheur === ev.type);
     const conversion = ev.type === "lead_gagne";
-    if (!actives.length && !conversion) {
+    const versDrive = ["client_cree", "document_cree", "document_maj"].includes(ev.type) && !!(await driveActif());
+    if (!actives.length && !conversion && !versDrive) {
       await sb.from("evenements").update({ statut: "ignore", traite_le: new Date().toISOString(), erreur: null }).eq("id", ev.id);
       bilan.ignores++; continue;
     }
     // Délai : on attend la date prévue (l'événement reste en attente jusque-là).
     const echeance = Math.max(0, ...actives.map((r) => new Date(ev.created_at).getTime() + r.delai_jours * 86400000));
     if (echeance > Date.now()) {
+      // Le dossier Drive n'attend pas le délai d'un email (il sera vérifié de nouveau à l'échéance).
+      if (versDrive) await effetDrive(ev);
       await sb.from("evenements").update({ prochaine_tentative: new Date(echeance).toISOString() }).eq("id", ev.id);
       bilan.reportes++; continue;
     }
     let temporaire: string | null = null;
+    if (versDrive) temporaire = await effetDrive(ev);
     if (conversion) {
       const c = await conversionGa4(sb, ev.objet_id);
       if (c.statut === "temporaire") temporaire = c.message;
