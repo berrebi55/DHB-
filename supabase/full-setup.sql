@@ -650,7 +650,11 @@ do $$ declare t text; begin
 end $$;
 
 -- ---------- 11) VUES D'AGRÉGATS (respectent la RLS : security_invoker) ----------
-create or replace view public.clients_vue with (security_invoker = on) as
+-- Recréées à chaque passage (« c.* » / « f.* » : une colonne ajoutée à la table
+-- ne doit pas faire échouer le script). Aucune autre vue n'en dépend.
+drop view if exists public.clients_vue;
+drop view if exists public.factures_vue;
+create view public.clients_vue with (security_invoker = on) as
 select c.*,
   coalesce((select sum(f.total_ttc) from public.factures f where f.client_id = c.id and f.status = 'payee'), 0) as ca_encaisse,
   coalesce((select sum(f.total_ttc) from public.factures f where f.client_id = c.id and f.status in ('envoyee','payee')), 0) as ca_facture,
@@ -660,7 +664,7 @@ select c.*,
   greatest(c.updated_at, (select max(a.created_at) from public.activites a where a.client_id = c.id)) as derniere_activite
 from public.clients c;
 
-create or replace view public.factures_vue with (security_invoker = on) as
+create view public.factures_vue with (security_invoker = on) as
 select f.*,
   coalesce(f.date_echeance, f.date_facture) as echeance_effective,
   coalesce((select sum(p.montant) from public.paiements p where p.facture_id = f.id), 0) as montant_paye,
@@ -1096,7 +1100,9 @@ revoke insert, update, delete, truncate on public.documents from anon, authentic
 create or replace function public.documents_proteger_factures()
 returns trigger language plpgsql as $$
 begin
-  if old.type = 'facture' then
+  -- Seules les informations de copie vers Google Drive (lot 11) peuvent évoluer.
+  if old.type = 'facture' and (tg_op = 'DELETE'
+      or (to_jsonb(new) - array['drive_file_id','drive_copie_le','drive_erreur']) is distinct from (to_jsonb(old) - array['drive_file_id','drive_copie_le','drive_erreur'])) then
     raise exception 'Le PDF archivé d''une facture émise ne peut être ni modifié ni supprimé.' using errcode = '42501';
   end if;
   return case when tg_op = 'DELETE' then old else new end;
@@ -1350,9 +1356,12 @@ returns trigger language plpgsql security definer set search_path = public as $$
 declare t text; o text; n jsonb; a jsonb; champ text;
 begin
   o := case tg_table_name when 'clients' then 'client' when 'leads' then 'lead' when 'devis' then 'devis'
-                          when 'factures' then 'facture' when 'tickets' then 'ticket' end;
+                          when 'factures' then 'facture' when 'tickets' then 'ticket' when 'documents' then 'document' end;
   if tg_op = 'INSERT' then
-    t := case tg_table_name when 'clients' then 'client_cree' when 'leads' then 'lead_cree' end;
+    t := case tg_table_name when 'clients' then 'client_cree' when 'leads' then 'lead_cree' when 'documents' then 'document_cree' end;
+  elsif tg_table_name = 'documents' then
+    -- Nouvelle version du PDF (devis) : à recopier vers Google Drive.
+    if (to_jsonb(new)->>'empreinte_sha256') is distinct from (to_jsonb(old)->>'empreinte_sha256') then t := 'document_maj'; end if;
   else
     -- Lecture en JSON : la colonne d'état s'appelle « statut » (devis) ou « status » (factures, tickets).
     n := to_jsonb(new); a := to_jsonb(old);
@@ -1550,3 +1559,83 @@ revoke insert, update, delete, truncate on public.analytics_quotidien from anon,
 drop trigger if exists trg_leads_evenement_maj on public.leads;
 create trigger trg_leads_evenement_maj after update on public.leads
   for each row execute function public.emettre_evenement();
+
+-- =====================================================================
+-- 23) LOT 11 — GOOGLE DRIVE : DOSSIER PAR CLIENT, COPIE DES PDF (idempotent)
+-- =====================================================================
+-- Avec le compte Google connecté (lot 10), DHB crée un dossier par client
+-- (et ses sous-dossiers) dans « DHB — Clients », puis y copie les PDF des devis
+-- et des factures. Tout passe par la file d'événements du robot (lot 9) :
+-- une panne de Google n'empêche jamais d'utiliser le CRM ; l'état est visible
+-- sur la fiche client et l'opération peut être relancée.
+
+alter table public.integrations drop constraint if exists integrations_cle_check;
+alter table public.integrations add constraint integrations_cle_check check (cle in ('google','ga4','drive','search_console'));
+-- Sous-dossiers proposés par défaut (modifiables par un administrateur dans
+-- Système → Intégrations ; à valider par le propriétaire).
+insert into public.integrations (cle, details) values
+  ('drive', '{"actif": false, "sous_dossiers": ["01 - Devis", "02 - Factures", "03 - Contrats et abonnements", "04 - Parc informatique", "05 - Interventions", "06 - Échanges", "07 - Documents du client", "08 - Divers"]}'),
+  ('search_console', '{}')
+on conflict (cle) do nothing;
+
+-- Réglages Drive : sous-dossiers contrôlés (8 au plus, noms simples).
+create or replace function public.integrations_controler_drive()
+returns trigger language plpgsql as $$
+declare d text;
+begin
+  if new.cle = 'drive' and coalesce(auth.jwt()->>'role', '') = 'authenticated' then
+    if jsonb_typeof(new.details->'sous_dossiers') <> 'array' or jsonb_array_length(new.details->'sous_dossiers') not between 2 and 8 then
+      raise exception 'Indiquez entre 2 et 8 sous-dossiers.' using errcode = '22023';
+    end if;
+    for d in select jsonb_array_elements_text(new.details->'sous_dossiers') loop
+      if d !~ '^[^/\\<>:"|?*]{1,60}$' then
+        raise exception 'Nom de sous-dossier invalide : « % » (60 caractères au plus, sans / \ < > : " | ? *).', d using errcode = '22023';
+      end if;
+    end loop;
+  end if;
+  return new;
+end; $$;
+drop trigger if exists trg_integrations_controler_drive on public.integrations;
+create trigger trg_integrations_controler_drive before update on public.integrations
+  for each row execute function public.integrations_controler_drive();
+
+-- Dossier Drive de chaque client.
+alter table public.clients add column if not exists drive_folder_id text;
+alter table public.clients add column if not exists drive_folder_url text;
+alter table public.clients add column if not exists drive_sync_statut text;
+alter table public.clients add column if not exists drive_cree_le timestamptz;
+alter table public.clients add column if not exists drive_erreur text;
+do $$ begin
+  if not exists (select 1 from pg_constraint where conname = 'clients_drive_statut_check') then
+    alter table public.clients add constraint clients_drive_statut_check check (drive_sync_statut is null or drive_sync_statut in ('en_attente','a_jour','erreur'));
+  end if;
+end $$;
+
+-- Copie de chaque PDF.
+alter table public.documents add column if not exists drive_file_id text;
+alter table public.documents add column if not exists drive_copie_le timestamptz;
+alter table public.documents add column if not exists drive_erreur text;
+
+-- Événements « document créé / nouvelle version » (file du lot 9).
+drop trigger if exists trg_documents_evenement on public.documents;
+create trigger trg_documents_evenement after insert or update on public.documents
+  for each row execute function public.emettre_evenement();
+
+-- Les informations Drive d'un client sont gérées par le serveur uniquement
+-- (un utilisateur ne peut pas y mettre un lien arbitraire).
+create or replace function public.clients_drive_serveur()
+returns trigger language plpgsql as $$
+begin
+  if coalesce(auth.jwt()->>'role', '') in ('authenticated', 'anon') then
+    if tg_op = 'INSERT' then
+      new.drive_folder_id := null; new.drive_folder_url := null; new.drive_sync_statut := null; new.drive_cree_le := null; new.drive_erreur := null;
+    else
+      new.drive_folder_id := old.drive_folder_id; new.drive_folder_url := old.drive_folder_url;
+      new.drive_sync_statut := old.drive_sync_statut; new.drive_cree_le := old.drive_cree_le; new.drive_erreur := old.drive_erreur;
+    end if;
+  end if;
+  return new;
+end; $$;
+drop trigger if exists trg_clients_drive_serveur on public.clients;
+create trigger trg_clients_drive_serveur before insert or update on public.clients
+  for each row execute function public.clients_drive_serveur();
