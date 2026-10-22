@@ -1639,3 +1639,69 @@ end; $$;
 drop trigger if exists trg_clients_drive_serveur on public.clients;
 create trigger trg_clients_drive_serveur before insert or update on public.clients
   for each row execute function public.clients_drive_serveur();
+
+-- =====================================================================
+-- 24) LOT 12 — SEARCH CONSOLE (idempotent)
+-- =====================================================================
+-- Copie quotidienne des chiffres de recherche Google (clics, impressions,
+-- taux de clic, position) des propriétés vérifiées, déclarées par un
+-- administrateur dans Système → Intégrations. Données Google disponibles avec
+-- 2 à 3 jours de décalage. Lecture : équipe ; écriture : serveur.
+
+-- Propriétés : « sc-domain:exemple.fr » (domaine) ou « https://www.exemple.fr/ » (préfixe d'URL).
+create or replace function public.integrations_controler_search_console()
+returns trigger language plpgsql as $$
+declare s text;
+begin
+  if new.cle = 'search_console' and coalesce(auth.jwt()->>'role', '') = 'authenticated' and new.details ? 'sites' then
+    if jsonb_typeof(new.details->'sites') <> 'array' or jsonb_array_length(new.details->'sites') > 10 then
+      raise exception 'Indiquez au plus 10 propriétés Search Console.' using errcode = '22023';
+    end if;
+    for s in select jsonb_array_elements_text(new.details->'sites') loop
+      if s !~ '^(sc-domain:[a-z0-9]([a-z0-9.-]{0,251}[a-z0-9])?|https?://[a-z0-9.-]+(:[0-9]+)?/([^ ]*)?)$' then
+        raise exception 'Propriété Search Console invalide : « % » (ex. sc-domain:exemple.fr ou https://www.exemple.fr/).', s using errcode = '22023';
+      end if;
+    end loop;
+  end if;
+  return new;
+end; $$;
+drop trigger if exists trg_integrations_controler_search_console on public.integrations;
+create trigger trg_integrations_controler_search_console before update on public.integrations
+  for each row execute function public.integrations_controler_search_console();
+
+create table if not exists public.seo_quotidien (
+  site text not null,
+  jour date not null,
+  clics int not null default 0,
+  impressions int not null default 0,
+  position numeric(6,2),                 -- position moyenne
+  copie_le timestamptz not null default now(),
+  primary key (site, jour)
+);
+-- Requêtes et pages les plus vues sur les 28 derniers jours disponibles.
+create table if not exists public.seo_requetes (
+  site text not null,
+  requete text not null,
+  clics int not null default 0,
+  impressions int not null default 0,
+  position numeric(6,2),
+  periode_fin date not null,
+  primary key (site, requete)
+);
+create table if not exists public.seo_pages (
+  site text not null,
+  page text not null,
+  clics int not null default 0,
+  impressions int not null default 0,
+  position numeric(6,2),
+  periode_fin date not null,
+  primary key (site, page)
+);
+do $$ declare t text; begin
+  foreach t in array array['seo_quotidien','seo_requetes','seo_pages'] loop
+    execute format('alter table public.%I enable row level security', t);
+    execute format('drop policy if exists "%s read" on public.%I', t, t);
+    execute format('create policy "%s read" on public.%I for select to authenticated using (public.is_staff())', t, t);
+    execute format('revoke insert, update, delete, truncate on public.%I from anon, authenticated', t);
+  end loop;
+end $$;
