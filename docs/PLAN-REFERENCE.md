@@ -161,7 +161,7 @@ Ordre adapté à l'audit : la **sécurité critique** (C1, C2) et la **sauvegard
 | **10** ✅ | **Intégrations + Google Analytics** : page Système → Intégrations, connexion Google OAuth, dictionnaire d'événements, conversions serveur, copie quotidienne des chiffres, Pilotage → Acquisition | — | consentement, formulaires, sites | Projet Google Cloud, GA4, secret Measurement Protocol |
 | **11** ✅ | **Google Drive** : dossier client + 8 sous-dossiers, copie des PDF, statut et reprise | — | clients, documents | même connexion Google |
 | **12** ✅ | **Search Console** : synchronisation, Pilotage → SEO | — | — | domaines achetés + propriétés vérifiées |
-| **13** | **SEO technique** : titres/descriptions, `og:image`, 404, fils d'Ariane, `noindex` paiement, polices auto-hébergées | I11, I12, A7 | 170 pages, sitemap, liens, GA | — |
+| **13** ✅ | **SEO technique** : titres/descriptions, `og:image`, 404, fils d'Ariane, `noindex` paiement, polices auto-hébergées | I11, I12, A7 | 170 pages, sitemap, liens, GA | — |
 | **14** | **SEO local + contenu** : pages utiles et distinctes (intention, mot-clé, FAQ, maillage) | — | sitemap, maillage | validation du contenu par le propriétaire |
 | **15** | **Performance + dépendances** : mesure, Vite à jour, ESLint, agrégats SQL si nécessaire | A1, A2, A6 | build, tous les écrans | — |
 | **16** | **Conversion** : lead magnets, outils interactifs | — | formulaires, GA | — |
@@ -607,5 +607,37 @@ Ordre adapté à l'audit : la **sécurité critique** (C1, C2) et la **sauvegard
 
 **À faire plus tard (mise en production)** : `supabase/full-setup.sql` ; déployer `seo-sync` ; déclarer les propriétés, « Copier maintenant », planifier `dhb-seo` (`docs/GOOGLE.md` §4).
 
+### Lot 13 — SEO technique ✅ VALIDÉ (environnement de test)
+
+**Modifié** (une seule fois, dans les générateurs : `build/marque.py` sert les 3 sites)
+- **Titres** : raccourcis **sans rien inventer ni couper une phrase** — on retire, dans l'ordre, la marque si elle ne tient pas, les précisions entre parenthèses, le complément générique « — causes et solutions », la fin après « : » ou « , ». **144 → 29 titres de plus de 60 caractères** ; les 29 restants (61 à 79) sont des questions complètes : leur réécriture est du contenu (lot 14, validation du propriétaire). Titres « À propos » et « Contact » de Pro réécrits à la main.
+- **Descriptions** : ≤ 160 caractères, coupées en **fin de phrase** (6 seulement finissent par « … ») ; les fiches d'aide ne sont plus coupées au milieu d'un mot.
+- **Partage** (Facebook, LinkedIn, X…) : image **PNG 1200 × 630** propre à chaque site (aux couleurs et polices du site, accroches déjà présentes sur les sites), dimensions et texte alternatif, carte « grande image ». L'ancienne image SVG (refusée par les réseaux) est supprimée. Générateur : `build/og/generer_og.mjs`.
+- **404** : nouvelle page sur Groupe et Assistance ; les trois sont **hors index** et fonctionnent à n'importe quelle adresse (`<base href="/">` : avant, la 404 de Pro perdait sa mise en page hors de la racine).
+- **Retours de paiement** (Assistance) : **hors index** et retirés du sitemap.
+- **Fil d'Ariane structuré** (BreadcrumbList) sur toutes les pages d'Assistance et de Groupe qui en affichent un (le dernier élément est toujours la page affichée).
+- **Polices hébergées sur chaque site** (Inter, Newsreader, Nunito — licence libre OFL, jointe) : plus **aucune requête vers Google** (ni blocage de l'affichage, ni transfert d'adresse IP). Même chose pour le **back-office** (paquet `@fontsource-variable/inter`, version fixée).
+- **Sitemap** : la date de modification d'une page ne change que si la page change (avant : toutes les dates changeaient à chaque génération, Google finit par les ignorer) ; régénérer deux fois ne modifie plus aucun fichier.
+- Caractères « & » désormais échappés dans les titres et descriptions.
+
+**Fichiers**
+`build/marque.py` · `build/base.py` · `build/build.py` · `build/build_all.py` · `build/pages_misc.py` · `build/groupe/build_groupe.py` · `build/particuliers/build_particuliers.py` · `build/og/generer_og.mjs` (nouveau) · `build/polices/` (nouveau : polices + licences + LISEZMOI) · `sites/**` (régénérés ; `og.png` ×3 ; `404.html` Groupe et Assistance ; `assets/fonts/`) · `admin-react/index.html` · `src/main.tsx` · `src/theme.ts` · `src/styles.css` · `package.json` · `DOCUMENTATION.md`.
+
+**Tests**
+- **Contrôles statiques : 16 / 16** — sur les **173 pages** : un titre (non coupé, « & » échappé), description 20–160, canonical = adresse exacte et `index` pour les pages indexables, `noindex` sans canonical pour 404 / paiement / devis, Open Graph et carte X, polices locales présentes, aucun Google Fonts, JSON-LD valide, fil d'Ariane (positions, liens existants), sitemap (toutes les adresses existent, pages hors index absentes, dates valides) ; images 1200 × 630 ; fonctions de titre / description / sitemap testées à part ; **régénération reproductible**.
+- **Liens internes : 14 488 vérifiés, 0 cassé.**
+- **Navigateur : 54 / 54** — chaque site servi sur sa propre adresse comme en production : polices chargées depuis le site, **aucune requête vers Google** (consentement refusé), image de partage servie ; **404 à une adresse profonde** : statut 404, page mise en forme, « Retour à l'accueil » vers la racine, aucune ressource manquante ; retour de paiement `noindex` ; axe-core sans défaut et aucun débordement (bureau et mobile) ; 0 erreur JS.
+- **Back-office : 3 / 3** — police Inter chargée depuis l'application, aucune requête Google.
+- Non-régression : audit d'accessibilité des 52 vues (inchangé), navigateur lots 4 à 12 (40, 49, 31, 10, 59, 18, 37, 26, 21 : tous conformes), TypeScript 0 erreur, `npm run build` OK.
+
+**Résultat** : ✅ **VALIDÉ** sur l'environnement de test.
+
+**Risques / points à surveiller**
+- **29 titres encore longs** (phrases complètes) et **6 descriptions** finissant par « … » : à réécrire avec le propriétaire au lot 14.
+- La 404 suppose que chaque site est servi **à la racine de son domaine** (cas de la production) ; ouverte en local sous `/sites/…/404.html`, elle perd sa mise en page.
+- Images de partage : à vérifier une fois en ligne avec l'outil de débogage de Facebook / l'inspecteur de LinkedIn.
+
+**À faire plus tard (mise en production)** : rien de spécifique (fichiers statiques déjà générés) ; après mise en ligne, soumettre les sitemaps dans Search Console (lot 12).
+
 ### Problèmes connus restants
-Voir §3 : I11, I12, A1–A3, A6, A7 (C1, C2, I1, I2, I3, I4 traités au lot 1 ; C3 au lot 2, actif après configuration ; I6, I7, A4, A5 au lot 3 ; I5, I10 au lot 4 ; I9 au lot 6 ; I8 au lot 7). Points mineurs relevés au lot 3 : onglets Ant Design et colonnes « Actions » sans texte.
+Voir §3 : A1–A3, A6 (C1, C2, I1, I2, I3, I4 traités au lot 1 ; C3 au lot 2, actif après configuration ; I6, I7, A4, A5 au lot 3 ; I5, I10 au lot 4 ; I9 au lot 6 ; I8 au lot 7 ; I11, I12, A7 au lot 13). Points mineurs relevés au lot 3 : onglets Ant Design et colonnes « Actions » sans texte.

@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@ant-design/icons": "^5.6.1",
+    "@fontsource-variable/inter": "5.3.0",
     "@refinedev/core": "^4.57.0",
     "@refinedev/react-router-v6": "^4.6.0",
     "@refinedev/supabase": "^5.9.0",

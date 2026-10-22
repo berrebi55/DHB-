@@ -37,7 +37,7 @@ export const themeConfig: ThemeConfig = {
     colorBgContainer: "#FFFFFF",
     colorFillAlter: "#F9FAFB",
     fontFamily:
-      "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+      "'Inter Variable', Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
     fontSize: 14,
     borderRadius: 8,
     borderRadiusLG: 12,
