@@ -119,7 +119,7 @@ def footer(site, depth, description, colonnes, contact, legal_extra=""):
     </div>
     <div class="footer-bottom">
       <span>© 2026 {SITES[site]['nom']} <span class="a-completer">[SIRET, forme juridique : À COMPLÉTER PAR LE PROPRIÉTAIRE]</span>{legal_extra}</span>
-      <span>Le groupe DHB : {autres}</span>
+      <span><a href="#" data-cookie-reset>Gérer mes cookies</a> · Le groupe DHB : {autres}</span>
     </div>
   </div>
 </footer>"""
@@ -145,5 +145,6 @@ def cookies():
 def scripts(depth, extra=""):
     r = root(depth)
     return f"""<script src="{r}assets/js/supabase-config.js"></script>
+<script src="{r}assets/js/suivi.js" defer></script>
 <script src="{r}assets/js/main.js" defer></script>
 {extra}"""

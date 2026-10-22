@@ -173,3 +173,22 @@ Tous les emplacements `[À COMPLÉTER PAR LE PROPRIÉTAIRE]` / `[EXEMPLE]` :
 téléphone, emails, SIRET, forme juridique, hébergeur, histoire du groupe,
 avis clients vérifiés, frais de déplacement, fiche entreprise (Système →
 Paramètres : IBAN, mentions de facture, pénalités de retard).
+
+## 6. Mesure d'audience (Google Analytics 4)
+
+Fichier `sites/infogerance/assets/js/suivi.js` (copié dans les 3 sites par
+`build/build_all.py`). **Rien n'est chargé tant que le visiteur n'a pas cliqué
+« Accepter »** (bandeau) ; « Gérer mes cookies » en pied de page permet de
+retirer son accord. IP anonymisées, aucune donnée publicitaire.
+
+À faire : créer la propriété GA4 (analytics.google.com), copier l'identifiant
+de mesure `G-XXXXXXXXXX` dans `GA_ID` en haut de `suivi.js`, relancer
+`python3 build/build_all.py`, puis lier Search Console à la propriété.
+
+Événements envoyés : `click_phone` (emplacement), `click_email`, `click_cta`,
+`begin_checkout` (offre), `click_autre_site_dhb`, `form_start`,
+`generate_lead` (conversion : demande envoyée, avec type et service),
+`faq_ouverte`, `scroll_profondeur` (25/50/75/90 %). Dans GA4 → Admin →
+Événements clés, marquer `generate_lead` et `click_phone` comme conversions.
+Les paramètres UTM/gclid de la session sont ajoutés à `source_url` des
+demandes (visibles dans le back-office) : on relie ainsi campagne → demande.

@@ -97,7 +97,7 @@
         telephone: get('telephone'),
         message: get('message'),
         service: form.getAttribute('data-service') || null,
-        source_url: location.pathname
+        source_url: location.pathname + (window.DHBSuivi ? window.DHBSuivi.utm() : '')
       };
 
       var sb = getSupabase();
@@ -112,6 +112,7 @@
           showError(form, "Une erreur est survenue. Appelez-nous ou réessayez dans un instant.");
           return;
         }
+        if (window.DHBSuivi) window.DHBSuivi.lead(payload.type, payload.service);
         showConfirmation(form);
       }).catch(function () {
         if (btn) { btn.disabled = false; btn.textContent = btn.dataset.label || 'Envoyer'; }
@@ -132,11 +133,21 @@
     function decide(value) {
       try { localStorage.setItem(KEY, value); } catch (e) {}
       banner.classList.remove('show');
+      document.dispatchEvent(new CustomEvent('dhb:consent', { detail: value }));
     }
     var acc = banner.querySelector('[data-cookie="accept"]');
     var ref = banner.querySelector('[data-cookie="refuse"]');
     if (acc) acc.addEventListener('click', function () { decide('accepted'); });
     if (ref) ref.addEventListener('click', function () { decide('refused'); });
+    // « Gérer mes cookies » : réaffiche le choix, et retire tout suivi tant qu'il n'est pas refait
+    document.querySelectorAll('[data-cookie-reset]').forEach(function (l) {
+      l.addEventListener('click', function (e) {
+        e.preventDefault();
+        try { localStorage.removeItem(KEY); } catch (err) {}
+        document.dispatchEvent(new CustomEvent('dhb:consent', { detail: 'refused' }));
+        banner.classList.add('show');
+      });
+    });
   }
 
   // Paramètres éditables (prix…) : lus depuis Supabase, injectés dans [data-setting].

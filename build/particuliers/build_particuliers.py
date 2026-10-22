@@ -472,7 +472,7 @@ def build():
             '<h2>Données personnelles</h2><p>Voir la <a href="../politique-confidentialite/">politique de confidentialité</a>.</p>'),
         "politique-confidentialite/index.html": legal("politique-confidentialite/", "Politique de confidentialité", "Politique de confidentialité (RGPD)",
             '<p>DHB Assistance collecte via le formulaire uniquement les informations nécessaires pour vous recontacter et vous aider (nom, email, téléphone, message). Elles ne sont jamais revendues.</p>'
-            f'<h2>Vos droits</h2><p>Conformément au RGPD : accès, rectification, suppression. Contact : <a href="mailto:{EMAIL}">{EMAIL}</a>.</p><p class="a-completer">[À COMPLÉTER : durées de conservation, mesure d\'audience.]</p>'),
+            f'<h2>Vos droits</h2><p>Conformément au RGPD : accès, rectification, suppression. Contact : <a href="mailto:{EMAIL}">{EMAIL}</a>.</p><p class="a-completer">[À COMPLÉTER : durées de conservation des demandes.]</p><h2>Mesure d\'audience (Google Analytics)</h2><p>Avec votre accord uniquement, nous utilisons Google Analytics 4 pour comprendre comment le site est utilisé (pages vues, clics, envoi de formulaires) et l\'améliorer. Les adresses IP sont anonymisées, aucune donnée publicitaire n\'est activée. Sans accord, rien n\'est chargé ni envoyé. Vous pouvez changer d\'avis à tout moment via « Gérer mes cookies » en bas de page. <span class="a-completer">[À COMPLÉTER : durée de conservation GA4 choisie, ex. 14 mois]</span></p>'),
     }
     # Pages de retour paiement (Stripe)
     pages["paiement-reussi/index.html"] = page(1, "paiement-reussi/", f"Merci — {NAME}",

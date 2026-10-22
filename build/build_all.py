@@ -15,7 +15,7 @@ for script in ("build.py", "groupe/build_groupe.py", "particuliers/build_particu
     subprocess.run([sys.executable, os.path.join(HERE, script)], check=True)
 
 for site in ("groupe", "particuliers"):
-    for rel in ("css/style.css", "js/main.js"):
+    for rel in ("css/style.css", "js/main.js", "js/suivi.js"):
         dest = os.path.join(REPO, "sites", site, "assets", rel)
         os.makedirs(os.path.dirname(dest), exist_ok=True)
         shutil.copyfile(os.path.join(SOURCE, rel), dest)
