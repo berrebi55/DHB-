@@ -1361,7 +1361,7 @@ begin
       t := case tg_table_name || ':' || (n->>champ)
              when 'devis:envoye' then 'devis_envoye' when 'devis:accepte' then 'devis_accepte'
              when 'factures:envoyee' then 'facture_envoyee' when 'factures:payee' then 'facture_payee'
-             when 'tickets:resolu' then 'ticket_resolu' end;
+             when 'tickets:resolu' then 'ticket_resolu' when 'leads:gagne' then 'lead_gagne' end;
     end if;
   end if;
   if t is not null then
@@ -1454,3 +1454,99 @@ alter table public.automatisation_runs enable row level security;
 drop policy if exists "automatisation_runs read" on public.automatisation_runs;
 create policy "automatisation_runs read" on public.automatisation_runs for select to authenticated using (public.is_staff());
 revoke insert, update, delete, truncate on public.automatisation_runs from anon, authenticated;
+
+-- =====================================================================
+-- 22) LOT 10 — INTÉGRATIONS ET GOOGLE ANALYTICS (idempotent)
+-- =====================================================================
+
+-- ---------- 22.1 État des intégrations (non secret) ----------
+-- Lecture : équipe ; réglages non secrets (identifiants GA4…) : administrateurs.
+-- Le statut, la dernière synchronisation et l'erreur sont écrits par le serveur.
+create table if not exists public.integrations (
+  cle text primary key check (cle in ('google','ga4')),
+  statut text not null default 'non_configure' check (statut in ('non_configure','connecte','erreur')),
+  compte text,                            -- ex. compte Google connecté
+  details jsonb not null default '{}',    -- ex. {"ga4_property_id":"123","ga4_measurement_id":"G-…"}
+  derniere_synchro timestamptz,
+  erreur text,
+  updated_at timestamptz not null default now()
+);
+insert into public.integrations (cle) values ('google'), ('ga4') on conflict (cle) do nothing;
+alter table public.integrations enable row level security;
+drop policy if exists "integrations read" on public.integrations;
+drop policy if exists "integrations admin update" on public.integrations;
+create policy "integrations read" on public.integrations for select to authenticated using (public.is_staff());
+create policy "integrations admin update" on public.integrations for update to authenticated using (public.is_admin()) with check (public.is_admin());
+revoke insert, delete, truncate on public.integrations from anon, authenticated;
+-- Un administrateur ne règle que les détails non secrets : statut, compte et
+-- erreurs restent sous le contrôle du serveur.
+create or replace function public.integrations_proteger()
+returns trigger language plpgsql as $$
+begin
+  if coalesce(auth.jwt()->>'role', '') = 'authenticated' then
+    new.statut := old.statut; new.compte := old.compte; new.derniere_synchro := old.derniere_synchro; new.erreur := old.erreur;
+    if new.details ?| array['refresh_token','access_token','client_secret','api_secret'] then
+      raise exception 'Aucun secret dans les réglages : les secrets vont dans Supabase → Edge Functions → Secrets.' using errcode = '22023';
+    end if;
+    if (new.details->>'ga4_property_id') is not null and (new.details->>'ga4_property_id') !~ '^[0-9]{5,15}$' then
+      raise exception 'Identifiant de propriété GA4 invalide (chiffres uniquement, ex. 123456789).' using errcode = '22023';
+    end if;
+    if (new.details->>'ga4_measurement_id') is not null and (new.details->>'ga4_measurement_id') !~ '^G-[A-Z0-9]{4,15}$' then
+      raise exception 'Identifiant de mesure GA4 invalide (forme G-XXXXXXXXXX).' using errcode = '22023';
+    end if;
+  end if;
+  new.updated_at := now();
+  return new;
+end; $$;
+drop trigger if exists trg_integrations_proteger on public.integrations;
+create trigger trg_integrations_proteger before update on public.integrations
+  for each row execute function public.integrations_proteger();
+
+-- ---------- 22.2 Identifiants Google (serveur uniquement) ----------
+-- Jeton de renouvellement OAuth : aucune politique RLS et aucun droit pour
+-- anon / authenticated → illisible depuis l'API, même pour un administrateur.
+create table if not exists public.integration_credentials (
+  cle text primary key references public.integrations(cle),
+  refresh_token text not null,
+  scopes text,
+  updated_at timestamptz not null default now()
+);
+alter table public.integration_credentials enable row level security;
+revoke all on public.integration_credentials from anon, authenticated;
+
+-- ---------- 22.3 Journal des intégrations ----------
+create table if not exists public.integration_logs (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now(),
+  cle text not null,
+  action text not null,                  -- connexion, deconnexion, synchro, conversion…
+  statut text not null check (statut in ('ok','erreur','ignore')),
+  message text
+);
+create index if not exists integration_logs_created_idx on public.integration_logs (created_at desc);
+alter table public.integration_logs enable row level security;
+drop policy if exists "integration_logs read" on public.integration_logs;
+create policy "integration_logs read" on public.integration_logs for select to authenticated using (public.is_staff());
+revoke insert, update, delete, truncate on public.integration_logs from anon, authenticated;
+
+-- ---------- 22.4 Copie quotidienne des chiffres GA4 ----------
+create table if not exists public.analytics_quotidien (
+  jour date not null,
+  canal text not null,                   -- regroupement de canaux GA4 (Organic Search, Direct…)
+  sessions int not null default 0,
+  utilisateurs int not null default 0,
+  conversions int not null default 0,    -- « événements clés » GA4
+  copie_le timestamptz not null default now(),
+  primary key (jour, canal)
+);
+alter table public.analytics_quotidien enable row level security;
+drop policy if exists "analytics_quotidien read" on public.analytics_quotidien;
+create policy "analytics_quotidien read" on public.analytics_quotidien for select to authenticated using (public.is_staff());
+revoke insert, update, delete, truncate on public.analytics_quotidien from anon, authenticated;
+
+-- ---------- 22.5 Événement « demande gagnée » (conversion côté serveur) ----------
+-- La file du lot 9 reçoit aussi le passage d'une demande à « gagné » : le robot
+-- peut alors envoyer la conversion à GA4 (Measurement Protocol).
+drop trigger if exists trg_leads_evenement_maj on public.leads;
+create trigger trg_leads_evenement_maj after update on public.leads
+  for each row execute function public.emettre_evenement();
