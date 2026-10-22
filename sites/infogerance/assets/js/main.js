@@ -61,7 +61,13 @@
       signal: ctrl ? ctrl.signal : undefined
     }).then(function (res) {
       if (minuteur) clearTimeout(minuteur);
-      if (!res.ok) throw new Error('HTTP ' + res.status);
+      if (!res.ok) {
+        return res.json().catch(function () { return {}; }).then(function (d) {
+          var e = new Error((d && d.message) || ('HTTP ' + res.status));
+          e.status = res.status;
+          throw e;
+        });
+      }
       return res.status === 204 || res.status === 201 ? null : res.json();
     }, function (err) {
       if (minuteur) clearTimeout(minuteur);
@@ -94,9 +100,27 @@
     box.style.display = 'block';
   }
 
+  // Anti-robot (sans gêner un vrai visiteur) :
+  //  - champ piège invisible : un humain ne le voit pas, un robot le remplit ;
+  //  - délai minimal de 3 s entre l'affichage du formulaire et l'envoi.
+  // Dans ces deux cas, on affiche la confirmation sans rien envoyer.
+  // La base applique en plus ses propres limites (valeurs imposées, débit).
+  var DEBUT_PAGE = Date.now();
+  function ajouterPiege(form) {
+    if (form.querySelector('[name="site_web"]')) return;
+    var piege = document.createElement('div');
+    piege.setAttribute('aria-hidden', 'true');
+    piege.style.cssText = 'position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden';
+    piege.innerHTML = '<label>Ne pas remplir<input type="text" name="site_web" tabindex="-1" autocomplete="off"></label>';
+    form.appendChild(piege);
+  }
+
   document.querySelectorAll('form[data-demo-form]').forEach(function (form) {
+    ajouterPiege(form);
     form.addEventListener('submit', function (ev) {
       ev.preventDefault();
+      var piege = form.querySelector('[name="site_web"]');
+      if ((piege && piege.value) || Date.now() - DEBUT_PAGE < 3000) { showConfirmation(form); return; }
       var btn = form.querySelector('button[type="submit"]');
       var get = function (name) {
         var el = form.querySelector('[name="' + name + '"]');
@@ -121,9 +145,12 @@
         if (btn) { btn.disabled = false; btn.textContent = btn.dataset.label || 'Envoyer'; }
         if (window.DHBSuivi) window.DHBSuivi.lead(payload.type, payload.service);
         showConfirmation(form);
-      }).catch(function () {
+      }).catch(function (err) {
         if (btn) { btn.disabled = false; btn.textContent = btn.dataset.label || 'Envoyer'; }
-        showError(form, "Impossible d'envoyer pour le moment. Merci de nous appeler directement.");
+        var m = String((err && err.message) || '');
+        // Messages explicites renvoyés par la base (email invalide, trop de demandes…).
+        showError(form, /^(Demande refusée|Trop de demandes)/.test(m)
+          ? m : "Impossible d'envoyer pour le moment. Merci de nous appeler directement.");
       });
     });
   });

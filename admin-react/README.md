@@ -33,12 +33,21 @@ d'activité, nouveaux statuts, vues de calcul et règles de sécurité (RLS).
 
 ## 4. Créer ton compte admin
 
-Supabase → Authentication → Users → **Add user** (email + mot de passe).
-Le **premier** compte créé devient automatiquement `admin`. Les suivants
-sont `collaborateur` : ils créent et modifient, mais ne suppriment rien,
-ne changent ni les prix du site, ni la fiche entreprise, ni les rôles
-(détail : Système → Utilisateurs). L'admin invite les collaborateurs depuis
-Système → Utilisateurs (fonction `invite-user`).
+**Inscription libre désactivée** : Supabase → Authentication → Sign In / Providers →
+décocher « Allow new users to sign up ». Tout compte créé autrement qu'en étant
+invité reste **`en_attente`** (aucun accès au CRM).
+
+- **Votre compte administrateur** (une seule fois) : Authentication → Users →
+  **Add user** (email + mot de passe, « Auto confirm »), puis dans le SQL Editor :
+  `select public.definir_admin('votre@email.fr');`
+  *(Si vous étiez déjà admin avant cette mise à jour, rien à faire : les rôles
+  existants sont conservés.)*
+- **Collaborateurs** : Back-office → Système → Utilisateurs → « Inviter un
+  utilisateur » (fonction `invite-user`). Un compte « En attente » se valide
+  au même endroit (changer son rôle).
+- Rôles : `admin` (tout), `collaborateur` (crée et modifie, ne supprime rien,
+  ne change ni les prix, ni la fiche entreprise, ni les rôles), `en_attente`
+  (aucun accès). Il reste toujours au moins un administrateur.
 
 ## 5. Automatisations (Edge Functions)
 
@@ -61,7 +70,7 @@ mettre dans le code ou dans `.env` du front.**
 | `SIGN_BASE` | URL de la page publique de signature (`…/devis.html`) |
 | `ADMIN_URL` | URL du back-office (liens dans les emails) |
 | `RESEND_API_KEY`, `NOTIFY_FROM`, `NOTIFY_TO` | envoi des emails (sans clé : simulation) |
-| `WEBHOOK_SECRET` | optionnel, protège `notify-new-lead` |
+| `WEBHOOK_SECRET` | **obligatoire** pour `notify-new-lead` (sans lui, la fonction refuse tout appel) |
 | `STRIPE_*`, `SITE_URL` | paiement en ligne du site Assistance |
 
 Les fonctions **refusent** désormais les appels anonymes (sauf la page publique

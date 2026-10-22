@@ -15,6 +15,7 @@ import { notificationProvider } from "./providers/notificationProvider";
 import { themeConfig } from "./theme";
 import { queryClient } from "./queryClient";
 import { AppLayout } from "./components/layout/AppLayout";
+import { ExigerEquipe } from "./components/layout/ExigerEquipe";
 
 import { LoginPage } from "./pages/login";
 
@@ -69,7 +70,9 @@ export default function App() {
             <Route
               element={
                 <Authenticated key="app" fallback={<CatchAllNavigate to="/login" />}>
-                  <AppLayout />
+                  <ExigerEquipe>
+                    <AppLayout />
+                  </ExigerEquipe>
                 </Authenticated>
               }
             >

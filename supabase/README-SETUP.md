@@ -15,10 +15,21 @@ sans risque pour les données. C'est le **seul** script à utiliser
 (les anciens `schema.sql` / `settings.sql` ont été supprimés).
 
 ## 2. Compte administrateur
-Supabase → **Authentication** → **Users** → **Add user** (cocher « Auto confirm »).
-Le **premier** compte créé devient `admin` ; les suivants sont `collaborateur`.
-Recommandé : Authentication → Providers → Email → désactiver « Allow new users
-to sign up » (les collaborateurs sont invités depuis le back-office).
+**Inscription libre désactivée** : Supabase → Authentication → Sign In / Providers →
+décocher « Allow new users to sign up ». Tout compte créé autrement qu'en étant
+invité reste **`en_attente`** (aucun accès au CRM).
+
+- **Votre compte administrateur** (une seule fois) : Authentication → Users →
+  **Add user** (email + mot de passe, « Auto confirm »), puis dans le SQL Editor :
+  `select public.definir_admin('votre@email.fr');`
+  *(Si vous étiez déjà admin avant cette mise à jour, rien à faire : les rôles
+  existants sont conservés.)*
+- **Collaborateurs** : Back-office → Système → Utilisateurs → « Inviter un
+  utilisateur » (fonction `invite-user`). Un compte « En attente » se valide
+  au même endroit (changer son rôle).
+- Rôles : `admin` (tout), `collaborateur` (crée et modifie, ne supprime rien,
+  ne change ni les prix, ni la fiche entreprise, ni les rôles), `en_attente`
+  (aucun accès). Il reste toujours au moins un administrateur.
 
 ## 3. Back-office
 Voir [`../admin-react/README.md`](../admin-react/README.md) (lancement,

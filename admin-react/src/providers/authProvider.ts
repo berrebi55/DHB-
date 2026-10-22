@@ -16,17 +16,21 @@ export async function profilCourant(): Promise<(Profil & { id: string; email?: s
   if (cache && cache.id === user.id && Date.now() - cache.at < 30_000) {
     return { id: user.id, email: user.email, ...cache.profil };
   }
-  let profil: Profil = { role: "collaborateur", nom: null };
+  // Jamais de droits par défaut : profil absent ou illisible = « en_attente ».
+  // (La base applique de toute façon la même règle via RLS.)
+  let profil: Profil = { role: "en_attente", nom: null };
   try {
     const { data: p } = await supabaseClient.from("profiles").select("role, nom").eq("id", user.id).maybeSingle();
-    // Sans table profiles (base non migrée), on garde l'ancien comportement : le compte est admin.
-    profil = p ? { role: p.role, nom: p.nom ?? null } : { role: "admin", nom: null };
+    if (p) profil = { role: p.role, nom: p.nom ?? null };
   } catch {
-    profil = { role: "admin", nom: null };
+    /* profil = en_attente */
   }
   cache = { id: user.id, profil, at: Date.now() };
   return { id: user.id, email: user.email, ...profil };
 }
+
+export const ROLES_EQUIPE = ["admin", "collaborateur"];
+export const estEquipe = (role?: string | null) => !!role && ROLES_EQUIPE.includes(role);
 
 export function viderCacheProfil() {
   cache = null;

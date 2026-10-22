@@ -12,7 +12,13 @@ import { viderCacheProfil } from "../../providers/authProvider";
 const ROLES = [
   { value: "admin", label: "Administrateur" },
   { value: "collaborateur", label: "Collaborateur" },
+  { value: "en_attente", label: "En attente (aucun accès)" },
 ];
+const LIBELLE_ROLE: Record<string, [string, string]> = {
+  admin: ["Administrateur", "tone-primary"],
+  collaborateur: ["Collaborateur", "tone-neutral"],
+  en_attente: ["En attente", "tone-warning"],
+};
 
 export const PERMISSIONS: [string, string, string][] = [
   ["Consulter toutes les données", "Oui", "Oui"],
@@ -52,7 +58,7 @@ export function UtilisateursPage() {
     const r = await appelerFonction("invite-user", v);
     setEnvoi(false);
     if (r.ok) {
-      message.success(`Invitation envoyée à ${v.email}`);
+      message.success((r.data as { existant?: boolean } | undefined)?.existant ? `Accès validé pour ${v.email}` : `Invitation envoyée à ${v.email}`);
       setInvite(false);
       form.resetFields();
     } else message.error(r.message);
@@ -62,7 +68,7 @@ export function UtilisateursPage() {
     <>
       <PageHeader
         title="Utilisateurs"
-        subtitle="Comptes ayant accès au back-office et leurs rôles."
+        subtitle="Comptes du back-office et leurs rôles. Un compte « En attente » n'a accès à rien tant qu'un administrateur ne l'a pas validé."
         crumbs={[{ label: "Système" }, { label: "Utilisateurs" }]}
         actions={isAdmin ? <Button type="primary" icon={<UserAddOutlined />} onClick={() => setInvite(true)}>Inviter un utilisateur</Button> : undefined}
       />
@@ -89,7 +95,7 @@ export function UtilisateursPage() {
                 title: "Rôle", dataIndex: "role",
                 render: (v: string, p) => isAdmin && p.id !== me?.id
                   ? <Select size="small" value={v} options={ROLES} style={{ width: 150 }} onChange={(r) => changerRole(p, r)} aria-label="Changer le rôle" />
-                  : <span className={`st ${v === "admin" ? "tone-primary" : "tone-neutral"}`}>{v === "admin" ? "Administrateur" : "Collaborateur"}</span>,
+                  : <span className={`st ${(LIBELLE_ROLE[v] ?? LIBELLE_ROLE.en_attente)[1]}`}>{(LIBELLE_ROLE[v] ?? LIBELLE_ROLE.en_attente)[0]}</span>,
               },
               ...(!isMobile ? [{ title: "Depuis le", dataIndex: "created_at", render: (v: string) => dateFR(v) }] : []),
             ]}
@@ -107,11 +113,11 @@ export function UtilisateursPage() {
         </Panel>
       </div>
       <Modal open={invite} onCancel={() => setInvite(false)} onOk={inviter} confirmLoading={envoi} okText="Envoyer l'invitation" cancelText="Annuler" title="Inviter un utilisateur" destroyOnClose>
-        <p className="muted" style={{ marginTop: 0 }}>La personne reçoit un email pour créer son mot de passe.</p>
+        <p className="muted" style={{ marginTop: 0 }}>La personne reçoit un email pour créer son mot de passe. Si elle a déjà un compte « En attente », son accès est simplement validé.</p>
         <Form form={form} layout="vertical" initialValues={{ role: "collaborateur" }} requiredMark="optional">
           <Form.Item name="email" label="Email" rules={[{ required: true, message: "Saisissez un email." }, { type: "email", message: "Email invalide." }]}><Input /></Form.Item>
           <Form.Item name="nom" label="Nom affiché"><Input /></Form.Item>
-          <Form.Item name="role" label="Rôle"><Select options={ROLES} /></Form.Item>
+          <Form.Item name="role" label="Rôle"><Select options={ROLES.filter((r) => r.value !== "en_attente")} /></Form.Item>
         </Form>
       </Modal>
     </>

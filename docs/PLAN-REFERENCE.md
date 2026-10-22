@@ -147,7 +147,7 @@ Ordre adapté à l'audit : la **sécurité critique** (C1, C2) et la **sauvegard
 | Lot | Contenu | Problèmes | Dépendances / impacts à tester | Configuration propriétaire |
 |---|---|---|---|---|
 | **0** ✅ | Stabilité du chargement | — | — | — |
-| **1** | **Sécurité des accès et des données** : rôle `en_attente` + `is_staff()` dans toutes les règles ; rattrapage sans élévation ; `invite-user` attribue le rôle ; écran « accès en attente » ; demandes publiques : colonnes imposées par un trigger + champ piège anti-robot ; factures émises non supprimables ; `notify-new-lead` : secret obligatoire | C1, C2, I1, I2, I3, I4 | connexion admin/collab, invitation, formulaires publics des 3 sites, création/suppression devis-factures-paiements, journal, statistiques | Désactiver l'inscription libre ; relancer `full-setup.sql` |
+| **1** ✅ | **Sécurité des accès et des données** : rôle `en_attente` + `is_staff()` dans toutes les règles ; rattrapage sans élévation ; `invite-user` attribue le rôle ; écran « accès en attente » ; demandes publiques : colonnes imposées par un trigger + champ piège anti-robot ; factures émises non supprimables ; `notify-new-lead` : secret obligatoire | C1, C2, I1, I2, I3, I4 | connexion admin/collab, invitation, formulaires publics des 3 sites, création/suppression devis-factures-paiements, journal, statistiques | Désactiver l'inscription libre ; relancer `full-setup.sql` |
 | **2** | **Sauvegarde indépendante** : GitHub Actions nocturne (`pg_dump` chiffré, 30 jours), table `sauvegardes`, page Système → Sauvegardes, procédure de restauration testée | C3 | aucune donnée modifiée | Secret GitHub `SUPABASE_DB_URL` + clé de chiffrement |
 | **3** | **Accessibilité et cohérence UI** : couleurs de texte secondaire conformes, libellés des filtres, ordre des titres, liens soulignés | I6, I7, A4, A5 | rendu de toutes les pages (captures avant/après), axe-core | — |
 | **4** | **CRM : attribution + timeline** : colonnes d'attribution, captation sur les sites, source modifiable, vue entonnoir ; timeline client complète (journal + notes + appels) ; suppression client → archivage par défaut | I10, I5 | formulaires publics, fiches client/demande, statistiques | — |
@@ -175,5 +175,46 @@ Ordre adapté à l'audit : la **sécurité critique** (C1, C2) et la **sauvegard
 - **Mesures** : JS initial back-office ~2,8 Mo → ~1,8 Mo.
 - **À confirmer chez le propriétaire** : envoi d'un formulaire réel et affichage des prix sur la vraie base.
 
+### Lot 1 — Sécurité des accès et des données ✅ VALIDÉ (base de test)
+
+**Modifié**
+- Rôles : nouveau rôle `en_attente` (valeur par défaut) ; fonction `is_staff()` (admin ou collaborateur) ; suppression de la règle historique « premier compte = admin ».
+- RLS : toutes les règles internes (clients, demandes, devis, factures, paiements, abonnements, tickets, prestations, notes, journal, fiche entreprise) exigent `is_staff()` au lieu de « tout compte connecté » ; profils : chacun lit le sien, l'équipe lit tout.
+- Rattrapage de profil : crée `en_attente`, jamais `admin` ; profils existants inchangés.
+- `definir_admin(email)` : désignation d'un admin **uniquement depuis le SQL Editor** (non appelable par l'API) ; garde-fou « il reste toujours au moins un admin ».
+- Formulaires publics : trigger `trg_leads_00_proteger` (hors équipe) qui impose statut, priorité, client, lecture, notes, relance, dates, identifiant ; contrôle site d'origine, email/téléphone, longueurs ; limites de débit (3 / 10 min par email, 30 / 10 min au total).
+- Anti-robot côté sites (`main.js`) : champ piège invisible (hors écran, `aria-hidden`, hors tabulation) + délai minimal de 3 s ; messages de refus du serveur affichés tels quels (« Trop de demandes… »).
+- Factures : trigger `trg_factures_proteger` — facture émise (envoyée, payée, annulée) non supprimable, contenu non modifiable (numéro, date, client, lignes, montants, conditions), pas de retour en brouillon, annulée = définitive. Brouillons inchangés.
+- Numérotation : `next_facture_numero` / `next_devis_numero` refusent un compte non validé (équipe et fonctions serveur uniquement).
+- Edge Functions : `requireUser` refuse tout compte non validé ou sans profil (403 `acces_en_attente`) ; comparaison des secrets à durée constante ; `invite-user` valide aussi un compte `en_attente` existant ; `notify-new-lead` : secret **obligatoire** (503 si non configuré, 401 si absent/faux), méthode POST, données contrôlées (400).
+- Back-office : profil absent ou illisible = `en_attente` (avant : **admin**) ; écran « Accès en attente de validation » (ni menu ni données) ; contrôle d'accès « rien » pour un compte non validé ; rôle « En attente » dans Système → Utilisateurs ; message `acces_en_attente`.
+
+**Corrigé** : C1, C2, I1, I2 (partiel, voir risques), I3, I4.
+
+**Fichiers**
+`supabase/full-setup.sql` · `supabase/tests/lot1-securite.sql` (nouveau) · `supabase/functions/_shared/securite.ts` · `supabase/functions/invite-user/index.ts` · `supabase/functions/notify-new-lead/index.ts` · `admin-react/src/providers/authProvider.ts` · `admin-react/src/providers/accessControlProvider.ts` · `admin-react/src/components/layout/ExigerEquipe.tsx` (nouveau) · `admin-react/src/App.tsx` · `admin-react/src/pages/systeme/utilisateurs.tsx` · `admin-react/src/lib/functions.ts` · `sites/infogerance/assets/js/main.js` (+ copies dans les 2 autres sites) · `supabase/README-SETUP.md` · `admin-react/README.md` · `docs/PROMPT-COMPLET.md`.
+
+**Tests (base PostgreSQL 16 de test)**
+- `full-setup.sql` rejoué **6 fois** (3 avant, 3 après données de test) : 0 erreur ; aucun compte promu ; rôles existants conservés.
+- **73 / 73 scénarios SQL** exécutés directement en base avec chaque rôle (contournement total de l'interface) : inscription (2 comptes → `en_attente`), rattrapage d'un compte orphelin (→ `en_attente`), compte en attente (13 tentatives : lecture clients/vue/demandes/factures/journal/entreprise, modification, création, auto-promotion, numéro, note, `definir_admin` → tout refusé ou 0 ligne), anonyme (11 : lecture, modification, suppression, numéro, `definir_admin`, demandes invalides), collaborateur (13 : son rôle, rôle d'autrui, validation d'un compte, fiche entreprise, prix, suppressions → refusés ; travail normal → OK), admin (5 dont « dernier admin »), factures (12 : brouillon / envoyée / payée / annulée, suppression, montant, numéro, retour brouillon, réactivation, annulation, échéance, service role), formulaire falsifié (statut « Gagné », priorité « Urgente », client, id, date → tous imposés par la base), anti-robot (4e demande refusée, autre visiteur accepté), paiements (partiel, solde, suppression → réouverture, paiements conservés, facture annulée non payable), numérotation continue (+1, collaborateur et service role).
+- **Edge Functions** (exécutées avec Deno) : `notify-new-lead` 11/11 (sans secret configuré, sans secret, mauvais secret, secret presque juste, GET, JSON invalide, autre table, id invalide, sans contact, demande valide) ; `requireUser` 10/10 (admin, collaborateur, en attente, sans profil, rôle inconnu, sans jeton, jeton invalide, cron) ; `invite-user` 6/6 sur un Supabase simulé (collaborateur, compte en attente, jeton invalide, email invalide, validation d'un compte en attente, invitation) ; `deno check` des fonctions modifiées : OK.
+- **Navigateur** : formulaires publics 8/8 (envoi normal, piège invisible et non transmis, robot, envoi < 3 s, refus serveur explicite, panne, 0 erreur JS) ; écran « en attente » 7/7 (en attente, sans profil, collaborateur, admin, déconnexion, 0 donnée chargée, 0 erreur JS) ; non-régression : 16 parcours, 8 scénarios de panne, 61 vues.
+- TypeScript : 0 erreur ; `npm run build` : OK.
+
+**Résultat** : ✅ **VALIDÉ** sur la base de test.
+
+**Risques / points à surveiller**
+- **Comptes déjà créés sur la vraie base** : un compte inconnu qui se serait inscrit **avant** ce lot a déjà le rôle `collaborateur` et le garde. → Après mise à jour, ouvrir Système → Utilisateurs et passer tout compte inconnu en « En attente ».
+- **Inscription libre** : à désactiver dans Supabase (réglage non modifiable par le code) ; le code protège même si elle reste ouverte.
+- **Anti-robot** : pas de CAPTCHA ; un robot qui écrit directement dans l'API contourne le piège et le délai, mais reste bloqué par les limites de débit en base (30 demandes / 10 min au total → un afflux massif peut temporairement bloquer aussi les vrais visiteurs). Un CAPTCHA respectueux de la vie privée (Turnstile) est envisageable au lot 16 si du spam apparaît.
+- **Vraie base non testée** (inaccessible depuis l'environnement de développement) : à confirmer chez le propriétaire (voir « À faire »).
+
+**À faire (propriétaire)**
+1. Supabase → Authentication → désactiver « Allow new users to sign up ».
+2. SQL Editor → exécuter `supabase/full-setup.sql`.
+3. Vérifier Système → Utilisateurs (rôles corrects, aucun compte inconnu).
+4. Redéployer `notify-new-lead`, `invite-user`, `send-devis`, `send-invoice`, `generate-recurring-invoices`, `send-reminders` (code partagé modifié) et définir `WEBHOOK_SECRET` + l'en-tête `x-webhook-secret` dans le webhook.
+5. Test rapide : envoyer une demande depuis un site, la voir dans Demandes.
+
 ### Problèmes connus restants
-Voir §3 (C1–C3, I1–I12, A1–A7).
+Voir §3 : C3, I5–I12, A1–A7 (C1, C2, I1, I2, I3, I4 traités au lot 1).

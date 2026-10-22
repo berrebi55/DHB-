@@ -179,7 +179,7 @@ Script unique idempotent : `supabase/full-setup.sql` (relançable sans risque ; 
 **Déclencheurs** : type de client auto sur les demandes, `paid_at` des factures, solde automatique des factures par paiements (insertion/suppression), dates de résolution/fermeture des tickets, **journal d'activité** (`log_activite`, security definer) sur leads/clients/devis/factures/paiements/abonnements/tickets/notes, numérotation sécurisée `next_devis_numero` / `next_facture_numero` (format `DEV-2026-0001`, `2026-0001`).
 **Realtime** activé sur `activites` (et utilisé sur demandes/tickets).
 **RLS** : lecture/insertion/modification pour tout utilisateur authentifié ; **suppression réservée à l'admin** (`is_admin()`) ; `settings` et `entreprise` modifiables **par l'admin uniquement** ; `leads` : **insertion anonyme autorisée** (formulaires publics), lecture/gestion authentifiée ; `activites` en lecture seule ; `profiles` : un utilisateur ne peut pas changer son propre rôle (`my_role()`). Les compteurs de numérotation ne sont plus modifiables par les anonymes. Clés étrangères en `NOT VALID` pour ne pas casser l'existant.
-**Rôles** : le **premier** compte créé devient `admin` ; les suivants `collaborateur` (créent/modifient, **ne suppriment rien**, ne changent ni les prix, ni la fiche entreprise, ni les rôles).
+**Rôles** (lot 1) : inscription libre désactivée ; tout nouveau compte est `en_attente` (aucun accès) ; seul un admin invite ou valide (`invite-user`, page Utilisateurs) ; premier admin désigné par `select public.definir_admin('email')` dans le SQL Editor ; toutes les règles internes utilisent `is_staff()` ; il reste toujours au moins un admin. `collaborateur` (créent/modifient, **ne suppriment rien**, ne changent ni les prix, ni la fiche entreprise, ni les rôles).
 
 ---
 
@@ -234,7 +234,7 @@ Tous les `[À COMPLÉTER PAR LE PROPRIÉTAIRE]` / `[EXEMPLE]` : téléphone, ema
 ## 12. PROCÉDURE DE MISE EN SERVICE
 
 1. Supabase → SQL Editor → exécuter `supabase/full-setup.sql`.
-2. Supabase → Authentication → créer le compte admin (le premier = admin).
+2. Supabase → Authentication : désactiver l'inscription libre, créer son compte, puis `select public.definir_admin('email')` dans le SQL Editor.
 3. Déployer les Edge Functions (`--no-verify-jwt`) et définir les secrets.
 4. `python3 build/build_all.py` (`DHB_LIENS=prod` pour la production), publier `sites/*` sur trois domaines, builder `admin-react` (`npm run build`) et le déployer (réécriture de toutes les URL vers `index.html`).
 5. Renseigner `GA_ID`, les domaines réels, la fiche entreprise, les prix.

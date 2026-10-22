@@ -10,6 +10,7 @@ const MESSAGES: Record<string, string> = {
   email_client_manquant: "Ce document n'a pas d'adresse email client. Ajoutez-la puis réessayez.",
   non_authentifie: "Votre session a expiré. Reconnectez-vous puis réessayez.",
   reserve_admin: "Cette action est réservée aux administrateurs.",
+  acces_en_attente: "Votre compte n'est pas encore validé par un administrateur.",
   devis_clos: "Ce devis est refusé ou expiré : il ne peut plus être envoyé.",
   facture_annulee: "Cette facture est annulée : elle ne peut pas être envoyée.",
   email_invalide: "L'adresse email saisie n'est pas valide.",

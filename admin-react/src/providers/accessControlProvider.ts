@@ -1,7 +1,8 @@
 import type { AccessControlProvider } from "@refinedev/core";
-import { profilCourant } from "./authProvider";
+import { estEquipe, profilCourant } from "./authProvider";
 
 // Reflet, côté interface, des règles appliquées par la base (RLS) :
+//  - en_attente (ou sans profil) : rien ;
 //  - admin : tout ;
 //  - collaborateur : consulte et travaille au quotidien, mais ne supprime rien
 //    et ne modifie ni les prix, ni les paramètres société, ni les utilisateurs.
@@ -12,6 +13,7 @@ const RESERVE_ADMIN_EDITION = ["settings", "entreprise", "profiles"];
 export const accessControlProvider: AccessControlProvider = {
   can: async ({ resource, action }) => {
     const role = (await profilCourant())?.role;
+    if (!estEquipe(role)) return { can: false, reason: "Compte en attente de validation." };
     if (role === "admin") return { can: true };
     if (action === "delete") return { can: false, reason: "Suppression réservée aux administrateurs." };
     if (resource && RESERVE_ADMIN_EDITION.includes(resource) && action !== "list" && action !== "show") {

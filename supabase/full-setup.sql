@@ -80,6 +80,11 @@ create or replace function public.next_facture_numero()
 returns text language plpgsql as $$
 declare y int := extract(year from now())::int; n int;
 begin
+  -- Équipe et fonctions serveur uniquement : un compte « en_attente » ne
+  -- consomme jamais de numéro (fonction non appelable par les anonymes : section 14).
+  if coalesce(auth.jwt()->>'role','') = 'authenticated' and not public.is_staff() then
+    raise exception 'Accès réservé à l''équipe.' using errcode = '42501';
+  end if;
   insert into public.facture_compteurs(annee, dernier) values (y, 1)
     on conflict (annee) do update set dernier = public.facture_compteurs.dernier + 1
     returning dernier into n;
@@ -219,6 +224,11 @@ create or replace function public.next_devis_numero()
 returns text language plpgsql as $$
 declare y int := extract(year from now())::int; n int;
 begin
+  -- Équipe et fonctions serveur uniquement : un compte « en_attente » ne
+  -- consomme jamais de numéro (fonction non appelable par les anonymes : section 14).
+  if coalesce(auth.jwt()->>'role','') = 'authenticated' and not public.is_staff() then
+    raise exception 'Accès réservé à l''équipe.' using errcode = '42501';
+  end if;
   insert into public.devis_compteurs(annee, dernier) values (y, 1)
     on conflict (annee) do update set dernier = public.devis_compteurs.dernier + 1
     returning dernier into n;
@@ -256,18 +266,21 @@ create policy "prestations auth all" on public.prestations for all to authentica
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   email text,
-  role text not null default 'collaborateur' check (role in ('admin','collaborateur')),
+  role text not null default 'en_attente' check (role in ('admin','collaborateur','en_attente')),
   created_at timestamptz not null default now()
 );
 
 -- À la création d'un compte : 1er inscrit = admin, les suivants = collaborateur.
+-- Tout nouveau compte est « en_attente » : aucun accès au CRM tant qu'un
+-- administrateur ne l'a pas invité ou validé (Edge Function invite-user,
+-- ou page Système → Utilisateurs). L'ancienne règle « premier compte = admin »
+-- est supprimée : le premier administrateur se désigne depuis le SQL Editor
+-- avec public.definir_admin('email') (voir section 15).
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer set search_path = public as $$
-declare has_admin boolean;
 begin
-  select exists(select 1 from public.profiles where role = 'admin') into has_admin;
   insert into public.profiles (id, email, role)
-    values (new.id, new.email, case when has_admin then 'collaborateur' else 'admin' end)
+    values (new.id, new.email, 'en_attente')
     on conflict (id) do nothing;
   return new;
 end; $$;
@@ -275,9 +288,10 @@ drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created after insert on auth.users
   for each row execute function public.handle_new_user();
 
--- Rattrapage : crée un profil admin pour les comptes déjà existants sans profil.
+-- Rattrapage : crée un profil « en_attente » (jamais admin) pour les comptes
+-- existants sans profil. Les profils existants ne sont pas modifiés.
 insert into public.profiles (id, email, role)
-  select u.id, u.email, 'admin' from auth.users u
+  select u.id, u.email, 'en_attente' from auth.users u
   where not exists (select 1 from public.profiles p where p.id = u.id)
 on conflict (id) do nothing;
 
@@ -287,9 +301,17 @@ returns boolean language sql stable security definer set search_path = public as
   select exists(select 1 from public.profiles where id = auth.uid() and role = 'admin');
 $$;
 
+-- Helper : l'utilisateur courant fait-il partie de l'équipe (admin ou collaborateur) ?
+-- C'est la condition d'accès à toutes les données internes du CRM.
+create or replace function public.is_staff()
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists(select 1 from public.profiles where id = auth.uid() and role in ('admin','collaborateur'));
+$$;
+
 alter table public.profiles enable row level security;
 drop policy if exists "profiles self read" on public.profiles;
-create policy "profiles self read" on public.profiles for select to authenticated using (true);
+create policy "profiles self read" on public.profiles for select to authenticated
+  using (id = auth.uid() or public.is_staff());
 drop policy if exists "profiles admin write" on public.profiles;
 create policy "profiles admin write" on public.profiles for all to authenticated
   using (public.is_admin()) with check (public.is_admin());
@@ -647,7 +669,8 @@ select f.*,
 from public.factures f;
 
 -- ---------- 12) SÉCURITÉ : RLS par action ----------
--- Lecture / création / modification : comptes connectés.
+-- Lecture / création / modification : membres de l'équipe (is_staff : admin ou
+-- collaborateur) — jamais un simple compte connecté « en_attente ».
 -- Suppression : administrateurs uniquement (appliqué par la base, pas seulement l'interface).
 alter table public.paiements enable row level security;
 alter table public.notes enable row level security;
@@ -661,9 +684,9 @@ do $$ declare t text; begin
     execute format('drop policy if exists "%s insert" on public.%I', t, t);
     execute format('drop policy if exists "%s update" on public.%I', t, t);
     execute format('drop policy if exists "%s delete admin" on public.%I', t, t);
-    execute format('create policy "%s read" on public.%I for select to authenticated using (true)', t, t);
-    execute format('create policy "%s insert" on public.%I for insert to authenticated with check (true)', t, t);
-    execute format('create policy "%s update" on public.%I for update to authenticated using (true) with check (true)', t, t);
+    execute format('create policy "%s read" on public.%I for select to authenticated using (public.is_staff())', t, t);
+    execute format('create policy "%s insert" on public.%I for insert to authenticated with check (public.is_staff())', t, t);
+    execute format('create policy "%s update" on public.%I for update to authenticated using (public.is_staff()) with check (public.is_staff())', t, t);
     execute format('create policy "%s delete admin" on public.%I for delete to authenticated using (public.is_admin())', t, t);
   end loop;
 end $$;
@@ -673,21 +696,27 @@ drop policy if exists "abos auth all" on public.abonnements;
 drop policy if exists "leads auth delete" on public.leads;
 drop policy if exists "leads delete admin" on public.leads;
 create policy "leads delete admin" on public.leads for delete to authenticated using (public.is_admin());
+-- Lecture / traitement des demandes : équipe uniquement (l'insertion publique
+-- reste ouverte, mais filtrée par le trigger leads_proteger_saisie_publique).
+drop policy if exists "leads auth read" on public.leads;
+create policy "leads auth read" on public.leads for select to authenticated using (public.is_staff());
+drop policy if exists "leads auth update" on public.leads;
+create policy "leads auth update" on public.leads for update to authenticated using (public.is_staff()) with check (public.is_staff());
 
 drop policy if exists "notes read" on public.notes;
 drop policy if exists "notes insert" on public.notes;
 drop policy if exists "notes delete" on public.notes;
-create policy "notes read" on public.notes for select to authenticated using (true);
-create policy "notes insert" on public.notes for insert to authenticated with check (author_id = auth.uid());
+create policy "notes read" on public.notes for select to authenticated using (public.is_staff());
+create policy "notes insert" on public.notes for insert to authenticated with check (author_id = auth.uid() and public.is_staff());
 create policy "notes delete" on public.notes for delete to authenticated using (author_id = auth.uid() or public.is_admin());
 
 drop policy if exists "activites read" on public.activites;
-create policy "activites read" on public.activites for select to authenticated using (true);
+create policy "activites read" on public.activites for select to authenticated using (public.is_staff());
 -- (aucune politique d'écriture : seul le trigger log_activite écrit dans le journal)
 
 drop policy if exists "entreprise read" on public.entreprise;
 drop policy if exists "entreprise admin write" on public.entreprise;
-create policy "entreprise read" on public.entreprise for select to authenticated using (true);
+create policy "entreprise read" on public.entreprise for select to authenticated using (public.is_staff());
 create policy "entreprise admin write" on public.entreprise for update to authenticated using (public.is_admin()) with check (public.is_admin());
 
 -- Profils : chacun peut modifier son nom, jamais son propre rôle.
@@ -717,3 +746,143 @@ revoke execute on function public.next_facture_numero() from public, anon;
 revoke execute on function public.next_devis_numero() from public, anon;
 grant execute on function public.next_facture_numero() to authenticated, service_role;
 grant execute on function public.next_devis_numero() to authenticated, service_role;
+grant execute on function public.is_staff() to authenticated, service_role;
+
+-- =====================================================================
+-- 15) LOT 1 — SÉCURITÉ DES ACCÈS ET DES DONNÉES (idempotent)
+-- =====================================================================
+
+-- ---------- 15.1 Rôles : « en_attente » pour tout compte non validé ----------
+alter table public.profiles alter column role set default 'en_attente';
+alter table public.profiles drop constraint if exists profiles_role_check;
+alter table public.profiles add constraint profiles_role_check
+  check (role in ('admin','collaborateur','en_attente'));
+
+-- Désigner un administrateur depuis le SQL Editor de Supabase uniquement
+-- (premier admin d'un nouveau projet, ou dépannage). Non appelable par l'API.
+create or replace function public.definir_admin(p_email text)
+returns text language plpgsql security definer set search_path = public as $$
+declare uid uuid;
+begin
+  select id into uid from auth.users where lower(email) = lower(trim(p_email));
+  if uid is null then
+    raise exception 'Aucun compte avec l''email % : créez-le d''abord (Authentication → Users).', p_email;
+  end if;
+  insert into public.profiles (id, email, role) values (uid, lower(trim(p_email)), 'admin')
+    on conflict (id) do update set role = 'admin';
+  return 'Administrateur : ' || p_email;
+end; $$;
+revoke execute on function public.definir_admin(text) from public, anon, authenticated;
+
+-- Il doit toujours rester au moins un administrateur (évite de se bloquer dehors).
+create or replace function public.profiles_garder_un_admin()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if old.role = 'admin' and (tg_op = 'DELETE' or new.role <> 'admin')
+     and not exists (select 1 from public.profiles where role = 'admin' and id <> old.id) then
+    raise exception 'Impossible : il doit rester au moins un administrateur.';
+  end if;
+  return case when tg_op = 'DELETE' then old else new end;
+end; $$;
+drop trigger if exists trg_profiles_garder_admin on public.profiles;
+create trigger trg_profiles_garder_admin before update of role or delete on public.profiles
+  for each row execute function public.profiles_garder_un_admin();
+
+-- ---------- 15.2 Formulaires publics : valeurs imposées par la base ----------
+-- Une demande créée hors de l'équipe (visiteur anonyme ou compte en attente)
+-- ne peut fixer que les champs du formulaire. Tout le reste est imposé.
+-- Limites anti-robot : 3 demandes / 10 min par email, 30 / 10 min au total.
+create or replace function public.leads_proteger_saisie_publique()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if public.is_staff() then return new; end if;
+
+  -- Champs internes : jamais contrôlables depuis un formulaire public.
+  new.id := gen_random_uuid();
+  new.status := 'nouveau';
+  new.priorite := 'normale';
+  new.is_read := false;
+  new.notes := null;
+  new.relance_at := null;
+  new.client_id := null;
+  new.type_client := null;      -- recalculé par trg_leads_type_client
+  new.created_at := now();
+  new.updated_at := now();
+
+  -- Valeurs autorisées.
+  if new.type is null or new.type not in ('devis','question') then new.type := 'devis'; end if;
+  if new.entity is null or new.entity not in ('infogerance','particuliers','groupe') then
+    raise exception 'Demande refusée : site d''origine inconnu.' using errcode = '22023';
+  end if;
+
+  -- Contenu : nettoyage et longueurs maximales.
+  new.nom := nullif(trim(new.nom), '');
+  new.entreprise := nullif(trim(new.entreprise), '');
+  new.email := nullif(lower(trim(new.email)), '');
+  new.telephone := nullif(trim(new.telephone), '');
+  new.message := nullif(trim(new.message), '');
+  new.service := nullif(trim(new.service), '');
+  if new.email is null and new.telephone is null then
+    raise exception 'Demande refusée : email ou téléphone requis.' using errcode = '22023';
+  end if;
+  if new.email is not null and new.email !~ '^[^@\s]+@[^@\s]+\.[^@\s]+$' then
+    raise exception 'Demande refusée : email invalide.' using errcode = '22023';
+  end if;
+  if length(coalesce(new.nom,'')) > 120 or length(coalesce(new.entreprise,'')) > 160
+     or length(coalesce(new.email,'')) > 254 or length(coalesce(new.telephone,'')) > 40
+     or length(coalesce(new.message,'')) > 5000 or length(coalesce(new.service,'')) > 120
+     or length(coalesce(new.source_url,'')) > 500 then
+    raise exception 'Demande refusée : contenu trop long.' using errcode = '22023';
+  end if;
+
+  -- Limites de débit (anti-robot côté serveur).
+  if new.email is not null and (select count(*) from public.leads
+      where email = new.email and created_at > now() - interval '10 minutes') >= 3 then
+    raise exception 'Trop de demandes envoyées : réessayez dans quelques minutes.' using errcode = '54000';
+  end if;
+  if (select count(*) from public.leads where created_at > now() - interval '10 minutes') >= 30 then
+    raise exception 'Trop de demandes en ce moment : réessayez dans quelques minutes.' using errcode = '54000';
+  end if;
+  return new;
+end; $$;
+-- Nom choisi pour s'exécuter avant trg_leads_type_client (ordre alphabétique).
+drop trigger if exists trg_leads_00_proteger on public.leads;
+create trigger trg_leads_00_proteger before insert on public.leads
+  for each row execute function public.leads_proteger_saisie_publique();
+
+-- ---------- 15.3 Factures émises : ni suppression, ni modification du contenu ----------
+-- Obligation de numérotation continue : une facture envoyée/payée/annulée reste
+-- en base. On l'annule (statut « annulée »), on ne la supprime pas.
+create or replace function public.factures_proteger_emises()
+returns trigger language plpgsql as $$
+begin
+  if tg_op = 'DELETE' then
+    if old.status <> 'brouillon' then
+      raise exception 'Une facture émise (%) ne peut pas être supprimée : annulez-la.', coalesce(old.numero, old.id::text)
+        using errcode = '42501';
+    end if;
+    return old;
+  end if;
+  -- UPDATE
+  if old.status = 'brouillon' then return new; end if;
+  if new.status = 'brouillon' then
+    raise exception 'Une facture émise ne peut pas repasser en brouillon.' using errcode = '42501';
+  end if;
+  if old.status = 'annulee' and new.status <> 'annulee' then
+    raise exception 'Une facture annulée ne peut pas être réactivée : créez une nouvelle facture.' using errcode = '42501';
+  end if;
+  if new.numero is distinct from old.numero or new.date_facture is distinct from old.date_facture
+     or new.client_nom is distinct from old.client_nom or new.client_adresse is distinct from old.client_adresse
+     or new.lignes is distinct from old.lignes or new.libelle is distinct from old.libelle
+     or new.quantite is distinct from old.quantite or new.prix_unitaire is distinct from old.prix_unitaire
+     or new.tva_taux is distinct from old.tva_taux or new.total_ht is distinct from old.total_ht
+     or new.total_ttc is distinct from old.total_ttc or new.entity is distinct from old.entity
+     or new.conditions is distinct from old.conditions then
+    raise exception 'Une facture émise ne peut plus être modifiée : annulez-la puis créez-en une nouvelle.'
+      using errcode = '42501';
+  end if;
+  return new;
+end; $$;
+drop trigger if exists trg_factures_proteger on public.factures;
+create trigger trg_factures_proteger before update or delete on public.factures
+  for each row execute function public.factures_proteger_emises();
