@@ -149,7 +149,7 @@ Ordre adapté à l'audit : la **sécurité critique** (C1, C2) et la **sauvegard
 | **0** ✅ | Stabilité du chargement | — | — | — |
 | **1** ✅ | **Sécurité des accès et des données** : rôle `en_attente` + `is_staff()` dans toutes les règles ; rattrapage sans élévation ; `invite-user` attribue le rôle ; écran « accès en attente » ; demandes publiques : colonnes imposées par un trigger + champ piège anti-robot ; factures émises non supprimables ; `notify-new-lead` : secret obligatoire | C1, C2, I1, I2, I3, I4 | connexion admin/collab, invitation, formulaires publics des 3 sites, création/suppression devis-factures-paiements, journal, statistiques | Désactiver l'inscription libre ; relancer `full-setup.sql` |
 | **2** ✅ | **Sauvegarde indépendante** : GitHub Actions nocturne (`pg_dump` chiffré, 30 jours), table `sauvegardes`, page Système → Sauvegardes, procédure de restauration testée | C3 | aucune donnée modifiée | Secret GitHub `SUPABASE_DB_URL` + clé de chiffrement |
-| **3** | **Accessibilité et cohérence UI** : couleurs de texte secondaire conformes, libellés des filtres, ordre des titres, liens soulignés | I6, I7, A4, A5 | rendu de toutes les pages (captures avant/après), axe-core | — |
+| **3** ✅ | **Accessibilité et cohérence UI** : couleurs de texte secondaire conformes, libellés des filtres, ordre des titres, liens soulignés | I6, I7, A4, A5 | rendu de toutes les pages (captures avant/après), axe-core | — |
 | **4** | **CRM : attribution + timeline** : colonnes d'attribution, captation sur les sites, source modifiable, vue entonnoir ; timeline client complète (journal + notes + appels) ; suppression client → archivage par défaut | I10, I5 | formulaires publics, fiches client/demande, statistiques | — |
 | **5** | **Tableau de bord commercial** : blocs Commercial, Clients, Finance (données existantes) ; bloc Acquisition = sources des demandes (lot 4), visiteurs ajoutés au lot 10 | — | pilotage, cache | — |
 | **6** | **Documents** : `render-pdf` (devis/facture), bucket Storage privé, table `documents`, téléchargement depuis les fiches | I9 | devis, factures, envoi email | — |
@@ -261,5 +261,46 @@ Ordre adapté à l'audit : la **sécurité critique** (C1, C2) et la **sauvegard
 3. GitHub → Actions → « Sauvegarde de la base » → Run workflow, puis vérifier Système → Sauvegardes.
 4. Faire une restauration d'essai dans un projet Supabase neuf (`docs/SAUVEGARDE.md` §3).
 
+### Lot 3 — Accessibilité et cohérence UI ✅ VALIDÉ (environnement de test)
+
+**Modifié**
+- **Couleurs (I6)** : gris de texte secondaire du back-office `#8A93A3` → `#667085` (même gris que les sites ; variable `--text-3`, `theme.ts`, valeurs écrites en dur dans les pages et l'aperçu imprimable `lib/document.ts`) ; titres de groupes du menu `#98A2B3` → `#667085` ; sous-titre « Back-office » du panneau sombre de connexion en gris clair `#97A3B8`. Sites : sous-titres de la barre inter-sites `#6F7E96` → `#97A3B8` ; doré du site Groupe **assombri pour le texte** (`--accent-text: #876536`, surtitres et étiquette « GROUPE »), le doré d'origine `#B08D57` reste sur les filets décoratifs ; surtitres lisibles dans **toutes** les sections sombres (`section--nuit`, `hero--ink`, bleu clair ou doré clair selon le site). La couleur grise des graphiques (non textuelle) est inchangée.
+- **Libellés (I7)** : listes déroulantes de filtre (Demandes, Clients, Devis, Factures, Paiements, Tickets, Journal) avec un libellé lu par les lecteurs d'écran (« Filtrer : priorité »…) ; éditeur devis/facture : chaque libellé visible relié à son champ (client, nom, email, adresse, conditions, notes, activité, date, validité/échéance, TVA) ; catalogue de prestations, choix de la facture réglée, année (Chiffre d'affaires), lien de signature, nom affiché (Sécurité). Rien ne change à l'écran.
+- **Ordre des titres (A4)** : titres de colonnes du pied de page `h4` → `h2` (3 sites) ; cartes placées juste sous le `h1` passées en `h2` **avec le même rendu** (classe `h3`) : fiches pannes (84), fiches d'aide (22), page Tarifs, index Services / Zones / Pannes / Centre d'aide, plan du site ; back-office : titres de panneaux `h3` → `h2`, titres de la fiche client `h3` → `h2`, messages « vide » / « erreur » en paragraphe (ce ne sont pas des titres de section).
+- **Liens et repères (A5)** : liens dans le texte courant **soulignés** (paragraphes, encadrés, cases de consentement RGPD, listes d'articles) ; barre inter-sites placée dans un repère nommé « Groupe DHB » ; lien téléphone de cette barre nommé « Appeler le … » (sur mobile, le numéro est masqué et le lien n'avait plus de nom).
+
+**Corrigé** : I6, I7, A4, A5.
+
+**Fichiers**
+`sites/infogerance/assets/css/style.css` (+ copies dans les 2 autres sites) · `build/marque.py` · `build/pages_problems.py` · `build/pages_services.py` · `build/pages_zones.py` · `build/pages_misc.py` · `build/particuliers/build_particuliers.py` · pages régénérées des 3 sites · `admin-react/src/styles.css` · `admin-react/src/theme.ts` · `admin-react/src/lib/document.ts` · `admin-react/src/components/ui/index.tsx` · `admin-react/src/components/ui/ErrorBoundary.tsx` · `admin-react/src/components/forms/ClientSelect.tsx` · `admin-react/src/components/documents/LinesEditor.tsx` · `admin-react/src/components/layout/GlobalSearch.tsx` · `admin-react/src/pages/documents/DocumentEditor.tsx` · pages de liste (leads, clients, devis, factures, paiements, tickets, abonnements, prestations, journal), `clients/show`, `devis/show`, `pilotage`, `contenu/prix`, `systeme/securite`, `login`, `dashboard`. **Aucune modification de la base.**
+
+**Tests**
+- Environnement de test recréé : PostgreSQL 16 (Docker) imitant Supabase ; `full-setup.sql` rejoué 3 fois sans erreur ; **lot 1 : 73/73**, **lot 2 : 9/9** (avant et après le lot).
+- **axe-core 4.10** (WCAG 2.0/2.1 A et AA + bonnes pratiques), Chrome piloté par Playwright, **52 vues** : 13 pages publiques (Groupe : accueil, le groupe, contact ; Pro : accueil, service, fiche panne, zone, blog, article, 404 ; Assistance : accueil, fiche d'aide, tarifs) et 13 écrans du back-office (connexion, tableau de bord, demandes, clients, fiche client, devis, nouveau devis, factures, paiements, tickets, statistiques, utilisateurs, journal), chacun sur ordinateur et sur mobile. Back-office branché sur un **faux Supabase** (adresse fictive, aucune requête vers la vraie base).
+
+| Règle axe-core (éléments en défaut) | Avant | Après |
+|---|---|---|
+| Contraste des couleurs | 493 | **0** |
+| Ordre des titres | 32 | **0** |
+| Champ sans libellé | 36 | **0** |
+| Lien repérable seulement par la couleur | 18 | **0** |
+| Contenu hors repère | 13 | **0** |
+| Lien sans nom (téléphone, mobile) | 13 | **0** |
+| Onglets Ant Design (bouton « … » dans la liste d'onglets) | 7 | 7 (hors lot, voir risques) |
+| En-tête de colonne vide (colonne « Actions ») | 2 | 2 (hors lot) |
+
+- **Ordre des titres sur les 170 pages** (contrôle de tout le HTML généré) : 0 saut de niveau (avant : 159 pages sur 170, à cause du pied de page et des cartes).
+- **Rendu** : captures avant/après des 52 vues ; titres changés de niveau vérifiés un par un (taille, graisse et police identiques à avant : 1,18 rem / 1,3 rem / 0,95 rem) ; 0 débordement horizontal ; 0 erreur JavaScript.
+- Liens internes des 3 sites : 14 249 vérifiés, **0 cassé**. `python build/build_all.py` OK. TypeScript 0 erreur ; `npm run build` OK.
+
+**Résultat** : ✅ **VALIDÉ** sur l'environnement de test.
+
+**Risques / points à surveiller**
+- Changement **visible mais léger** : gris secondaires un peu plus foncés dans le back-office, doré du texte du site Groupe plus profond, liens du texte soulignés.
+- Restent 2 points mineurs **hors lot** : la liste d'onglets d'Ant Design contient le bouton « … » (structure interne de la librairie, sans gêne réelle à l'usage) ; les colonnes « Actions » sans texte (nouveau devis, paiements). À reprendre au lot 15 avec la mise à jour des dépendances.
+- Le contrôle porte sur 26 écrans représentatifs (gabarits communs) ; les fenêtres modales et tiroirs n'ont pas été audités un par un.
+
+**À faire plus tard en production** : rien de spécifique. Les sites (fichiers régénérés) et le back-office (`npm run build`) seront publiés avec le reste, sans action sur Supabase.
+
 ### Problèmes connus restants
-Voir §3 : I5–I12, A1–A7 (C1, C2, I1, I2, I3, I4 traités au lot 1 ; C3 au lot 2, actif après configuration).
+Voir §3 : I5, I8–I12, A1–A3, A6, A7 (C1, C2, I1, I2, I3, I4 traités au lot 1 ; C3 au lot 2, actif après configuration ; I6, I7, A4, A5 au lot 3). Nouveaux points mineurs relevés au lot 3 : onglets Ant Design et colonnes « Actions » sans texte (voir rapport du lot 3).
