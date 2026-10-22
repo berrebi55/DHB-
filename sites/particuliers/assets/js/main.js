@@ -135,13 +135,23 @@
         telephone: get('telephone'),
         message: get('message'),
         service: form.getAttribute('data-service') || null,
-        source_url: location.pathname + (window.DHBSuivi ? window.DHBSuivi.utm() : '')
+        source_url: location.pathname
       };
+      // Origine de la visite (campagne, site d'origine, page d'arrivée) : voir suivi.js.
+      var origine = (window.DHBSuivi && window.DHBSuivi.attribution) ? window.DHBSuivi.attribution() : {};
+      var complet = {};
+      for (var k in payload) complet[k] = payload[k];
+      for (var o in origine) complet[o] = origine[o];
 
       if (!configure) { showConfirmation(form); return; }  // pas de config → démo
 
       if (btn) { btn.disabled = true; btn.dataset.label = btn.textContent; btn.textContent = 'Envoi…'; }
-      supabaseRest('leads', { method: 'POST', body: payload }).then(function () {
+      // Si la base n'a pas encore les colonnes d'origine (mise à jour pas encore
+      // appliquée), on renvoie la demande sans elles : elle n'est jamais perdue.
+      supabaseRest('leads', { method: 'POST', body: complet }).catch(function (err) {
+        if (!/column|schema cache/i.test(String((err && err.message) || ''))) throw err;
+        return supabaseRest('leads', { method: 'POST', body: payload });
+      }).then(function () {
         if (btn) { btn.disabled = false; btn.textContent = btn.dataset.label || 'Envoyer'; }
         if (window.DHBSuivi) window.DHBSuivi.lead(payload.type, payload.service);
         showConfirmation(form);

@@ -15,18 +15,38 @@
   }
   function configure() { return GA_ID && GA_ID.indexOf('XXXX') === -1; }
 
-  // Paramètres UTM conservés pour la session (rattachés ensuite à la demande envoyée)
-  function utm() {
+  // Origine de la visite (paramètres de campagne, site d'où vient le visiteur,
+  // page d'arrivée) : conservée pour la session (onglet) et jointe uniquement à
+  // la demande que le visiteur envoie. Rien n'est transmis à un tiers.
+  var CLES = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'gclid'];
+  function attribution() {
+    var a = {};
+    try { a = JSON.parse(sessionStorage.getItem('dhb-origine') || '{}') || {}; } catch (e) { a = {}; }
     try {
-      var p = new URLSearchParams(location.search), out = [];
-      ['utm_source', 'utm_medium', 'utm_campaign', 'gclid'].forEach(function (k) {
-        if (p.get(k)) out.push(k + '=' + encodeURIComponent(p.get(k)));
-      });
-      if (out.length) sessionStorage.setItem('dhb-utm', '?' + out.join('&'));
-      return sessionStorage.getItem('dhb-utm') || '';
-    } catch (e) { return ''; }
+      var p = new URLSearchParams(location.search), campagne = false, ref = '';
+      CLES.forEach(function (k) { if (p.get(k)) campagne = true; });
+      try {
+        var h = document.referrer ? new URL(document.referrer).hostname : '';
+        if (h && h !== location.hostname) ref = h;   // domaine seulement, jamais l'adresse complète
+      } catch (e) {}
+      // Première page de la visite, ou arrivée par une nouvelle campagne.
+      if (!a.landing_page || campagne) {
+        a = { landing_page: location.pathname };
+        CLES.forEach(function (k) { if (p.get(k)) a[k] = p.get(k).slice(0, 200); });
+        if (ref) a.referrer = ref;
+        sessionStorage.setItem('dhb-origine', JSON.stringify(a));
+      }
+    } catch (e) {}
+    var out = {};
+    for (var k in a) if (Object.prototype.hasOwnProperty.call(a, k)) out[k] = a[k];
+    // Identifiant Google Analytics : seulement si la mesure d'audience est acceptée.
+    if (consent()) {
+      var m = document.cookie.match(/(?:^|;\s*)_ga=GA\d\.\d\.(\d+\.\d+)/);
+      if (m) out.ga_client_id = m[1];
+    }
+    return out;
   }
-  utm();
+  attribution();
 
   function evt(nom, params) {
     if (!actif || !window.gtag) return;
@@ -104,7 +124,7 @@
 
   // API pour main.js (conversion = demande envoyée)
   window.DHBSuivi = {
-    utm: utm,
+    attribution: attribution,
     lead: function (type, service) { evt('generate_lead', { type: type, service: service || '', page: location.pathname }); }
   };
 

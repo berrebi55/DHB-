@@ -159,7 +159,7 @@ def build():
   <h2>Responsable du traitement</h2>
   <p>Le responsable du traitement des données collectées sur ce site est {SITE_NAME}. Pour toute question, contactez-nous à <a href="mailto:{EMAIL}">{EMAIL}</a> <span class="a-completer">[À COMPLÉTER]</span>.</p>
   <h2>Quelles données collectons-nous ?</h2>
-  <p>Via le formulaire de contact, nous collectons uniquement les informations que vous nous transmettez : nom, nom de l'entreprise, adresse email, numéro de téléphone et le contenu de votre message. Nous ne collectons aucune donnée sensible.</p>
+  <p>Via le formulaire de contact, nous collectons uniquement les informations que vous nous transmettez : nom, nom de l'entreprise, adresse email, numéro de téléphone et le contenu de votre message. Avec votre demande, nous enregistrons aussi la page par laquelle vous êtes arrivé(e) sur le site et, le cas échéant, le site ou la campagne qui vous y a conduit(e) (par exemple une recherche Google ou un lien sur un site partenaire), pour savoir comment nos clients nous trouvent. Ces informations restent chez DHB. Nous ne collectons aucune donnée sensible.</p>
   <h2>Pourquoi ?</h2>
   <p>Ces données servent exclusivement à répondre à votre demande et à vous recontacter. Elles ne sont jamais revendues ni cédées à des tiers à des fins commerciales.</p>
   <h2>Combien de temps les conservons-nous ?</h2>
