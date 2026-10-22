@@ -62,6 +62,7 @@ export function ClientsList() {
     filters,
     sorters: [{ field: f.tri || "created_at", order: (f.ordre as "asc" | "desc") || "desc" }],
     pagination: { current: page, pageSize: PAGE, mode: "server" },
+    queryOptions: { keepPreviousData: true },
   });
   const rows = data?.data ?? [];
 

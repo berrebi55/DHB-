@@ -63,6 +63,7 @@ export function PaiementsList() {
     filters,
     sorters: [{ field: "date_paiement", order: "desc" }, { field: "created_at", order: "desc" }],
     pagination: { current: page, pageSize: PAGE, mode: "server" },
+    queryOptions: { keepPreviousData: true },
     meta: { select: "*, factures(numero, client_nom)" },
   });
   const rows = data?.data ?? [];

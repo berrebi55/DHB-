@@ -88,7 +88,7 @@ export function DataList<T extends { id: string }>(props: {
         onRow={(r) => ({
           onClick: (e) => {
             // Ne pas déclencher la navigation quand on clique un contrôle dans la ligne.
-            if ((e.target as HTMLElement).closest("button, a, .ant-select, input, .ant-dropdown-trigger")) return;
+            if ((e.target as HTMLElement).closest("button, a, .ant-select, .ant-select-dropdown, .ant-dropdown, .ant-popover, .ant-picker-dropdown, .ant-modal, input, .ant-dropdown-trigger")) return;
             props.onRowClick?.(r);
           },
         })}

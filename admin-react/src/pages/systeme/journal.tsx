@@ -44,7 +44,7 @@ export function JournalPage() {
 
   const { data, isLoading, isError } = useList<Activite>({
     resource: "activites", filters, sorters: [{ field: "created_at", order: "desc" }],
-    pagination: { current: page, pageSize: PAGE, mode: "server" }, queryOptions: { retry: false },
+    pagination: { current: page, pageSize: PAGE, mode: "server" }, queryOptions: { retry: false, keepPreviousData: true },
   });
   const rows = data?.data ?? [];
   const total = data?.total ?? 0;

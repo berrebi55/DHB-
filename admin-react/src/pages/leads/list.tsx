@@ -73,6 +73,7 @@ export function LeadsList({ mode }: { mode: "devis" | "question" }) {
     filters,
     sorters,
     pagination: { current: page, pageSize: PAGE, mode: "server" },
+    queryOptions: { keepPreviousData: true },
     liveMode: "auto",
   });
   const rows = data?.data ?? [];
@@ -92,7 +93,7 @@ export function LeadsList({ mode }: { mode: "devis" | "question" }) {
 
   const changerStatut = (l: Lead, status: string) =>
     update(
-      { resource: "leads", id: l.id, values: { status }, successNotification: false, errorNotification: false },
+      { resource: "leads", id: l.id, values: { status }, mutationMode: "optimistic", successNotification: false, errorNotification: false },
       { onSuccess: () => message.success(`Statut : ${label("lead", status)}`), onError: (e) => message.error(messageErreurBase(e)) },
     );
 

@@ -38,7 +38,7 @@ export function PageHeader(props: {
           </nav>
         )}
         <h1>{props.title}</h1>
-        {props.subtitle && <p className="subtitle">{props.subtitle}</p>}
+        {props.subtitle && <div className="subtitle">{props.subtitle}</div>}
       </div>
       {props.actions && <div className="actions">{props.actions}</div>}
     </div>

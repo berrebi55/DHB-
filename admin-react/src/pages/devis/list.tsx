@@ -86,7 +86,7 @@ export function DevisList() {
     filters,
     sorters: [{ field: f.tri || "created_at", order: (f.ordre as "asc" | "desc") || "desc" }],
     pagination: { current: page, pageSize: PAGE, mode: "server" },
-    queryOptions: { enabled: f.facture !== "aucune" || factures !== null },
+    queryOptions: { keepPreviousData: true, enabled: f.facture !== "aucune" || factures !== null },
   });
   const rows = data?.data ?? [];
 

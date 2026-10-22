@@ -86,6 +86,7 @@ export function FacturesList() {
     filters,
     sorters: [{ field: f.tri || "date_facture", order: (f.ordre as "asc" | "desc") || "desc" }, { field: "numero", order: "desc" }],
     pagination: { current: page, pageSize: PAGE, mode: "server" },
+    queryOptions: { keepPreviousData: true },
   });
   const rows = data?.data ?? [];
 

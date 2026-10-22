@@ -59,6 +59,7 @@ export function TicketsList() {
     filters,
     sorters: [{ field: "created_at", order: "desc" }],
     pagination: { current: page, pageSize: PAGE, mode: "server" },
+    queryOptions: { keepPreviousData: true },
     liveMode: "auto",
   });
   const rows = data?.data ?? [];
@@ -77,7 +78,7 @@ export function TicketsList() {
     return p ? p.nom || p.email : null;
   };
   const changer = (t: Ticket, values: Partial<Ticket>, ok: string) =>
-    update({ resource: "tickets", id: t.id, values, successNotification: false, errorNotification: false },
+    update({ resource: "tickets", id: t.id, values, mutationMode: "optimistic", successNotification: false, errorNotification: false },
       { onSuccess: () => message.success(ok), onError: (e) => message.error(messageErreurBase(e)) });
 
   const periode: [Dayjs | null, Dayjs | null] = [f.du ? dayjs(f.du) : null, f.au ? dayjs(f.au) : null];
