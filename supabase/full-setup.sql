@@ -1047,7 +1047,9 @@ begin
     case when exists (select 1 from public.paiements where client_id = old.id) then 'paiements' end,
     case when exists (select 1 from public.abonnements where client_id = old.id) then 'abonnements' end,
     case when exists (select 1 from public.tickets where client_id = old.id) then 'tickets' end,
-    case when exists (select 1 from public.notes where client_id = old.id) then 'notes' end);
+    case when exists (select 1 from public.notes where client_id = old.id) then 'notes' end,
+    case when to_regclass('public.emails') is not null
+              and exists (select 1 from public.emails where client_id = old.id) then 'emails' end);
   if quoi <> '' then
     raise exception 'Ce client a un historique (%) : archivez-le au lieu de le supprimer.', quoi using errcode = '42501';
   end if;
@@ -1245,3 +1247,71 @@ begin
 end; $$;
 revoke execute on function public.stripe_traiter_evenement(text, text, text, jsonb) from public, anon, authenticated;
 grant execute on function public.stripe_traiter_evenement(text, text, text, jsonb) to service_role;
+
+-- =====================================================================
+-- 20) LOT 8 — COMMUNICATION : HISTORIQUE ET MODÈLES D'EMAILS (idempotent)
+-- =====================================================================
+-- Tous les emails partent par un seul module serveur (_shared/email.ts) et
+-- sont inscrits ici : envois manuels depuis les fiches, devis, factures,
+-- relances, alertes de nouvelles demandes. Historique en lecture seule.
+create table if not exists public.emails (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now(),
+  origine text not null check (origine in ('manuel','devis','facture','relance_devis','relance_facture','alerte_demande','automatisation')),
+  modele_cle text,
+  destinataire text not null,          -- adresse prévue (fiche du client)
+  destinataire_reel text,              -- adresse réellement utilisée si redirection de test
+  sujet text not null,
+  corps_html text not null,
+  piece_jointe text,                   -- nom du PDF joint
+  statut text not null check (statut in ('envoye','echec')),
+  erreur text,
+  fournisseur_id text,                 -- identifiant Resend
+  envoye_par uuid,
+  envoye_par_email text,
+  client_id uuid references public.clients(id) on delete set null,
+  lead_id uuid references public.leads(id) on delete set null,
+  devis_id uuid references public.devis(id) on delete set null,
+  facture_id uuid references public.factures(id) on delete set null,
+  ticket_id uuid references public.tickets(id) on delete set null
+);
+create index if not exists emails_created_idx on public.emails (created_at desc);
+create index if not exists emails_client_idx on public.emails (client_id, created_at desc);
+create index if not exists emails_lead_idx on public.emails (lead_id, created_at desc);
+alter table public.emails enable row level security;
+drop policy if exists "emails read" on public.emails;
+create policy "emails read" on public.emails for select to authenticated using (public.is_staff());
+-- (aucune politique d'écriture : seules les fonctions serveur écrivent l'historique)
+revoke insert, update, delete, truncate on public.emails from anon, authenticated;
+
+-- Modèles : texte avec variables {{…}}, remplacées au moment de l'envoi.
+-- Lecture : équipe ; modification : administrateurs (comme la fiche entreprise).
+create table if not exists public.email_modeles (
+  cle text primary key check (cle ~ '^[a-z0-9_]{2,40}$'),
+  nom text not null,
+  cible text not null default 'tous' check (cible in ('tous','client','lead','devis','facture','ticket')),
+  sujet text not null,
+  corps text not null,
+  actif boolean not null default true,
+  updated_at timestamptz not null default now()
+);
+alter table public.email_modeles enable row level security;
+drop policy if exists "email_modeles read" on public.email_modeles;
+drop policy if exists "email_modeles admin write" on public.email_modeles;
+create policy "email_modeles read" on public.email_modeles for select to authenticated using (public.is_staff());
+create policy "email_modeles admin write" on public.email_modeles for all to authenticated using (public.is_admin()) with check (public.is_admin());
+drop trigger if exists trg_email_modeles_touch on public.email_modeles;
+create trigger trg_email_modeles_touch before update on public.email_modeles for each row execute function public.touch_updated_at();
+
+-- Modèles de départ (modifiables ; jamais écrasés s'ils existent déjà).
+insert into public.email_modeles (cle, nom, cible, sujet, corps) values
+  ('libre', 'Message libre', 'tous', '', E'Bonjour {{contact_nom}},\n\n\n\nCordialement,\n{{signature}}'),
+  ('suivi_demande', 'Suite à votre demande', 'lead', 'Votre demande — {{societe}}',
+   E'Bonjour {{contact_nom}},\n\nMerci pour votre demande. Pour vous proposer la solution la plus adaptée, pourriez-vous nous indiquer un moment où vous joindre par téléphone ?\n\nCordialement,\n{{signature}}'),
+  ('relance_devis', 'Relance d''un devis', 'devis', 'Votre devis {{devis_numero}} — {{societe}}',
+   E'Bonjour {{contact_nom}},\n\nJe reviens vers vous au sujet du devis {{devis_numero}} d''un montant de {{devis_montant}}. Avez-vous pu en prendre connaissance ? Je reste à votre disposition pour en parler ou l''ajuster.\n\nCordialement,\n{{signature}}'),
+  ('rappel_facture', 'Rappel de facture', 'facture', 'Rappel — facture {{facture_numero}} — {{societe}}',
+   E'Bonjour {{contact_nom}},\n\nSauf erreur de notre part, la facture {{facture_numero}} reste à régler : montant restant {{facture_reste}}, échéance {{facture_echeance}}.\n\nSi le paiement a déjà été effectué, merci de ne pas tenir compte de ce message.\n\nCordialement,\n{{signature}}'),
+  ('ticket_resolu', 'Ticket résolu', 'ticket', 'Votre demande d''assistance « {{ticket_sujet}} »',
+   E'Bonjour {{contact_nom}},\n\nNous vous confirmons que votre demande « {{ticket_sujet}} » est résolue. Si le problème réapparaît, répondez simplement à cet email.\n\nCordialement,\n{{signature}}')
+on conflict (cle) do nothing;
