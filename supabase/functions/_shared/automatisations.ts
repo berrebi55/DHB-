@@ -14,6 +14,7 @@ import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.45.4
 import type { Appelant } from "./securite.ts";
 import { envoyerEtJournaliser } from "./email.ts";
 import { contexte, remplir, texteEnHtml, type TypeCible } from "./modeles.ts";
+import { envoyerConversion, journal as journalIntegration } from "./google.ts";
 
 export interface Regle { cle: string; nom: string; declencheur: string; actif: boolean; delai_jours: number; modele_cle: string | null }
 type Issue = { statut: "envoye" | "echec" | "ignore"; detail: string; email_id?: string; temporaire?: boolean };
@@ -48,6 +49,28 @@ export async function appliquerRegle(sb: SupabaseClient, r: Regle, type: TypeCib
   return { statut: "envoye", detail: `Email envoyé à ${ctx.destinataire}`, email_id: e.id };
 }
 
+/**
+ * Demande gagnée → conversion « close_convert_lead » envoyée à GA4 (Measurement
+ * Protocol), seulement si le visiteur avait accepté la mesure d'audience (identifiant
+ * GA4 enregistré avec sa demande) et si GA4 est configuré. « temporaire » = à réessayer.
+ */
+export async function conversionGa4(sb: SupabaseClient, leadId: string): Promise<{ statut: "ok" | "ignore" | "temporaire"; message: string }> {
+  const secret = Deno.env.get("GA_API_SECRET");
+  const { data: ga4 } = await sb.from("integrations").select("details").eq("cle", "ga4").maybeSingle();
+  const mesure = (ga4?.details as Record<string, string> | null)?.ga4_measurement_id;
+  if (!secret || !mesure) return { statut: "ignore", message: "GA4 non configuré pour les conversions" };
+  const { data: lead } = await sb.from("leads").select("ga_client_id, source").eq("id", leadId).maybeSingle();
+  if (!lead?.ga_client_id) return { statut: "ignore", message: "Pas d'identifiant GA4 (mesure d'audience refusée ou demande saisie à la main)" };
+  try {
+    const ok = await envoyerConversion(mesure, secret, lead.ga_client_id, "close_convert_lead", lead.source ? { lead_source: lead.source } : {});
+    if (!ok) return { statut: "temporaire", message: "GA4 a refusé la conversion" };
+    await journalIntegration(sb, "ga4", "conversion", "ok", "Conversion « demande gagnée » envoyée à Google Analytics.");
+    return { statut: "ok", message: "Conversion envoyée" };
+  } catch {
+    return { statut: "temporaire", message: "Google Analytics injoignable" };
+  }
+}
+
 async function journaliser(sb: SupabaseClient, r: Regle, type: string, id: string, i: Issue) {
   await sb.from("automatisation_runs").insert({ automatisation_cle: r.cle, objet_type: type, objet_id: id, statut: i.statut, detail: i.detail, email_id: i.email_id ?? null });
 }
@@ -66,17 +89,22 @@ export async function traiterFile(sb: SupabaseClient, maxi = 50) {
     if (!pris?.length) continue;
 
     const actives = toutes.filter((r) => r.actif && r.declencheur === ev.type);
-    if (!actives.length) {
+    const conversion = ev.type === "lead_gagne";
+    if (!actives.length && !conversion) {
       await sb.from("evenements").update({ statut: "ignore", traite_le: new Date().toISOString(), erreur: null }).eq("id", ev.id);
       bilan.ignores++; continue;
     }
     // Délai : on attend la date prévue (l'événement reste en attente jusque-là).
-    const echeance = Math.max(...actives.map((r) => new Date(ev.created_at).getTime() + r.delai_jours * 86400000));
+    const echeance = Math.max(0, ...actives.map((r) => new Date(ev.created_at).getTime() + r.delai_jours * 86400000));
     if (echeance > Date.now()) {
       await sb.from("evenements").update({ prochaine_tentative: new Date(echeance).toISOString() }).eq("id", ev.id);
       bilan.reportes++; continue;
     }
     let temporaire: string | null = null;
+    if (conversion) {
+      const c = await conversionGa4(sb, ev.objet_id);
+      if (c.statut === "temporaire") temporaire = c.message;
+    }
     for (const r of actives) {
       if (UNE_FOIS.includes(r.cle)) {
         const { data: deja } = await sb.from("automatisation_runs").select("id").eq("automatisation_cle", r.cle).eq("objet_id", ev.objet_id).eq("statut", "envoye").limit(1);
