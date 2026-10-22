@@ -162,7 +162,7 @@ Ordre adapté à l'audit : la **sécurité critique** (C1, C2) et la **sauvegard
 | **11** ✅ | **Google Drive** : dossier client + 8 sous-dossiers, copie des PDF, statut et reprise | — | clients, documents | même connexion Google |
 | **12** ✅ | **Search Console** : synchronisation, Pilotage → SEO | — | — | domaines achetés + propriétés vérifiées |
 | **13** ✅ | **SEO technique** : titres/descriptions, `og:image`, 404, fils d'Ariane, `noindex` paiement, polices auto-hébergées | I11, I12, A7 | 170 pages, sitemap, liens, GA | — |
-| **14** | **SEO local + contenu** : pages utiles et distinctes (intention, mot-clé, FAQ, maillage) | — | sitemap, maillage | validation du contenu par le propriétaire |
+| **14** ✅ | **SEO local + contenu** : pages utiles et distinctes (intention, mot-clé, FAQ, maillage) | — | sitemap, maillage | validation du contenu par le propriétaire |
 | **15** | **Performance + dépendances** : mesure, Vite à jour, ESLint, agrégats SQL si nécessaire | A1, A2, A6 | build, tous les écrans | — |
 | **16** | **Conversion** : lead magnets, outils interactifs | — | formulaires, GA | — |
 | **17** | **Audit global final** | — | tout | — |
@@ -638,6 +638,32 @@ Ordre adapté à l'audit : la **sécurité critique** (C1, C2) et la **sauvegard
 - Images de partage : à vérifier une fois en ligne avec l'outil de débogage de Facebook / l'inspecteur de LinkedIn.
 
 **À faire plus tard (mise en production)** : rien de spécifique (fichiers statiques déjà générés) ; après mise en ligne, soumettre les sitemaps dans Search Console (lot 12).
+
+### Lot 14 — SEO local et contenu ✅ VALIDÉ (environnement de test) — propositions de contenu en attente du propriétaire
+
+**Modifié** (aucune information inventée : on raccourcit, on relie, on recense)
+- **Titres courts** pour les 29 pages encore trop longues (`build/titres_courts.py`) : reformulations de la question de la page, **à valider** ; le titre complet reste sur la page (h1, partage). **Plus aucun titre > 60 caractères.**
+- **Descriptions** : les fiches pannes coupaient le symptôme au 150ᵉ caractère, en plein mot → symptôme entier, complété seulement si la place le permet ; 5 descriptions trop longues raccourcies en retirant des mots (« Découvrez », « concrètement »…).
+- **Maillage des fiches** : chaque fiche proposait les **4 premières** de sa catégorie (les suivantes ne recevaient presque aucun lien) → les **4 suivantes, en boucle**, complétées par d'autres catégories pour les petites catégories (titre du bloc ajusté : « À voir aussi » / « Autres aides »). Pages à 3 liens entrants ou moins : **36 → 5**.
+- **Pages de villes** : nouveau bloc « Autres zones d'intervention » (6 villes, même département d'abord, + support à distance) ; avant, aucune ville ne renvoyait vers une autre.
+- **`docs/CONTENU-A-VALIDER.md`** : titres proposés ; **engagements déjà publiés jamais confirmés** (horaires 9 h – 18 h aussi transmis à Google, « sous 24 h » ×27, « 24/7 », délais par ville, « gratuit » ×69, « sans engagement » ×31) ; ce qui manque pour que les **13 pages de villes** (semblables à 70 %) soient vraiment utiles — ou les retirer ; les 38 `[À COMPLÉTER]`.
+- Mesuré, sans action nécessaire : doublons entre Pro et Assistance faibles (≤ 37 %, surtout le gabarit) ; FAQ structurées déjà présentes partout sauf le blog (pas de FAQ rédigée : rien ajouté).
+
+**Fichiers**
+`build/titres_courts.py` (nouveau) · `build/marque.py` (voisins, fiches liées, titres courts) · `build/pages_problems.py` · `build/pages_zones.py` · `build/pages_services.py` · `build/blog_data.py` · `build/particuliers/build_particuliers.py` · `sites/**` (régénérés) · `docs/CONTENU-A-VALIDER.md` (nouveau).
+
+**Tests**
+- **Contrôles du lot 14 : 12 / 12** — 0 titre > 60 sur 173 pages ; les 29 titres courts existent, sont appliqués, le titre complet reste en og:title ; descriptions ≤ 160 et finies, plus de symptôme tronqué ; chaque fiche panne (83) et d'aide (22) reçoit au moins 3 liens ; bloc « autres fiches » : 4 liens, jamais la page elle-même, titre exact ; chaque ville renvoie vers ≥ 6 zones existantes, même département d'abord ; document de validation complet.
+- **Navigateur : 37 / 37** — villes, fiches à petite catégorie, aide : statut 200, bloc de liens, chaque lien mène à une vraie page, axe-core sans défaut, aucun débordement (bureau et mobile), 0 erreur JS.
+- Non-régression : contrôles SEO du lot 13 **16 / 16**, navigateur du lot 13 **54 / 54**, **liens internes : 14 646, 0 cassé**, audit d'accessibilité des 52 vues inchangé, régénération reproductible.
+
+**Résultat** : ✅ **VALIDÉ** sur l'environnement de test pour la partie technique. **Contenu : en attente du propriétaire** (titres proposés, engagements, pages de villes — `docs/CONTENU-A-VALIDER.md`).
+
+**Risques / points à surveiller**
+- Tant que les engagements (délais, horaires, 24/7) ne sont pas confirmés, ils restent publiés tels qu'avant ce lot.
+- Les pages de villes restent proches les unes des autres : sans informations locales réelles, Google peut n'en indexer qu'une partie.
+
+**À faire plus tard** : relire `docs/CONTENU-A-VALIDER.md` avec le propriétaire, appliquer ses réponses dans `build/`, régénérer (`python3 build/build_all.py`).
 
 ### Problèmes connus restants
 Voir §3 : A1–A3, A6 (C1, C2, I1, I2, I3, I4 traités au lot 1 ; C3 au lot 2, actif après configuration ; I6, I7, A4, A5 au lot 3 ; I5, I10 au lot 4 ; I9 au lot 6 ; I8 au lot 7 ; I11, I12, A7 au lot 13). Points mineurs relevés au lot 3 : onglets Ant Design et colonnes « Actions » sans texte.
