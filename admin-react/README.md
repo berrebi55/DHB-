@@ -56,7 +56,7 @@ l'utilisateur connecté ou le secret de cron, d'où `--no-verify-jwt` :
 
 ```bash
 for f in get-devis-public sign-devis send-devis send-invoice invite-user \
-         generate-recurring-invoices send-reminders notify-new-lead create-checkout          render-pdf stripe-webhook email-send; do
+         generate-recurring-invoices send-reminders notify-new-lead create-checkout          render-pdf stripe-webhook email-send worker; do
   supabase functions deploy $f --no-verify-jwt
 done
 ```
@@ -92,13 +92,20 @@ select cron.schedule('dhb-factures', '0 8 * * *', $$
     headers := '{"Content-Type":"application/json","x-cron-secret":"<CRON_SECRET>"}'::jsonb,
     body := '{}'::jsonb);
 $$);
-select cron.schedule('dhb-relances', '0 9 * * 1-5', $$
+-- Robot des automatisations (lot 9) : file d'événements + relances, toutes les 15 min.
+select cron.schedule('dhb-robot', '*/15 * * * *', $$
   select net.http_post(
-    url := 'https://<PROJECT>.supabase.co/functions/v1/send-reminders',
+    url := 'https://<PROJECT>.supabase.co/functions/v1/worker',
     headers := '{"Content-Type":"application/json","x-cron-secret":"<CRON_SECRET>"}'::jsonb,
     body := '{}'::jsonb);
 $$);
 ```
+
+Le robot `worker` remplace la planification `dhb-relances` (`send-reminders`) : si
+elle existe déjà, elle continue de fonctionner (même moteur, mêmes règles), mais
+il suffit de garder `dhb-robot`. Les règles se règlent dans **Système →
+Automatisations** (activer, délai, modèle d'email) ; « Bienvenue » et « Ticket
+résolu » sont **désactivées** tant que vous ne les avez pas relues et activées.
 
 ## 6. Mettre en ligne
 
