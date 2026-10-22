@@ -11,11 +11,13 @@ import {
   SendOutlined,
   StopOutlined,
   WalletOutlined,
+  MailOutlined,
 } from "@ant-design/icons";
 import { useList, useOne } from "@refinedev/core";
 import { supabaseClient } from "../../supabaseClient";
 import { EmptyState, PageHeader, Panel, StatusTag, ErrorState } from "../../components/ui";
 import { NotesPanel } from "../../components/activity/NotesPanel";
+import { EmailDrawer } from "../../components/communication/EmailDrawer";
 import { BoutonPdf } from "../../components/documents/BoutonPdf";
 import { ActivityFeed } from "../../components/activity/ActivityFeed";
 import { PaiementModal } from "../../components/forms/PaiementModal";
@@ -29,6 +31,7 @@ import { EtatFacture, type FactureVue } from "./list";
 export function FactureShow() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [ecrire, setEcrire] = useState(false);
   const { message } = App.useApp();
   const { entreprise } = useEntreprise();
   const rafraichir = useRafraichir();
@@ -79,6 +82,7 @@ export function FactureShow() {
     : null;
 
   const plus = [
+    { key: "email", icon: <MailOutlined />, label: f.status === "envoyee" ? "Écrire un email (rappel…)" : "Écrire un email", onClick: () => setEcrire(true) },
     ...(f.status === "brouillon" ? [
       { key: "edit", icon: <EditOutlined />, label: "Modifier", onClick: () => navigate(`/factures/${f.id}/modifier`) },
       { key: "manuel", icon: <CheckOutlined />, label: "Marquer comme envoyée (envoi manuel)", onClick: () => majStatut("envoyee", "Facture marquée comme envoyée") },
@@ -92,6 +96,8 @@ export function FactureShow() {
 
   return (
     <>
+      <EmailDrawer open={ecrire} onClose={() => setEcrire(false)} cible="facture" id={f.id} destinataire={f.client_email}
+        pdf={f.status !== "brouillon"} modeleParDefaut={f.en_retard ? "rappel_facture" : undefined} />
       <PageHeader
         title={`Facture ${f.numero ?? ""}`}
         subtitle={<Space size={8} wrap><EtatFacture f={f} /><span className="faint">{f.client_nom} · {eur(f.total_ttc)} · émise le {dateFR(f.date_facture)}</span></Space>}

@@ -9,6 +9,8 @@ import {
   FileTextOutlined,
   HistoryOutlined,
   HomeOutlined,
+  MailOutlined,
+  FileSearchOutlined,
   InboxOutlined,
   LineChartOutlined,
   QuestionCircleOutlined,
@@ -62,6 +64,13 @@ export const NAV: NavGroup[] = [
     items: [
       { key: "tickets", label: "Tickets", path: "/tickets", icon: <CustomerServiceOutlined />, badge: "tickets" },
       { key: "questions", label: "Questions reçues", path: "/support/questions", icon: <QuestionCircleOutlined />, badge: "questions" },
+    ],
+  },
+  {
+    title: "Communication",
+    items: [
+      { key: "emails", label: "Emails envoyés", path: "/communication/emails", icon: <MailOutlined /> },
+      { key: "modeles", label: "Modèles d'emails", path: "/communication/modeles", icon: <FileSearchOutlined /> },
     ],
   },
   {

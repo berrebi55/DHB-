@@ -21,6 +21,7 @@ import { useDelete, useList, useOne, useUpdate } from "@refinedev/core";
 import { EmptyState, PageHeader, Panel, StatusTag, ErrorState } from "../../components/ui";
 import { NotesPanel } from "../../components/activity/NotesPanel";
 import { DocumentsClient } from "../../components/documents/DocumentsClient";
+import { EmailDrawer } from "../../components/communication/EmailDrawer";
 import { ClientTimeline } from "../../components/activity/ClientTimeline";
 import { ActivityFeed } from "../../components/activity/ActivityFeed";
 import { ClientDrawer, adresseComplete } from "../../components/forms/ClientDrawer";
@@ -52,6 +53,7 @@ function MiniListe<T extends { id: string }>(props: { rows: T[]; loading?: boole
 export function ClientShow() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [ecrire, setEcrire] = useState(false);
   const { message } = App.useApp();
   const { isAdmin } = useRole();
   const [f, setF] = useUrlState(["onglet"] as const);
@@ -102,6 +104,7 @@ export function ClientShow() {
 
   return (
     <>
+      <EmailDrawer open={ecrire} onClose={() => setEcrire(false)} cible="client" id={c.id} destinataire={c.email} />
       <PageHeader
         title={<span className="entity-head"><span className="avatar-lg">{initiales(nom)}</span><span>{nom}</span></span>}
         subtitle={<Space size={8} wrap>
@@ -117,6 +120,7 @@ export function ClientShow() {
             <Button icon={<FileDoneOutlined />} onClick={() => navigate(`/factures/nouvelle?client=${c.id}`)}>Créer une facture</Button>
             <Button icon={<CustomerServiceOutlined />} onClick={() => setTicket(true)}>Créer un ticket</Button>
             <Button icon={<MessageOutlined />} onClick={() => setF({ onglet: "notes" })}>Ajouter une note</Button>
+            {c.email && <Button icon={<MailOutlined />} onClick={() => setEcrire(true)}>Écrire un email</Button>}
             <Dropdown menu={{ items: plus }} trigger={["click"]}><Button icon={<MoreOutlined />} aria-label="Plus d'actions" /></Dropdown>
           </div>
         }

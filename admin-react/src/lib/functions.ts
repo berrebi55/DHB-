@@ -18,6 +18,12 @@ const MESSAGES: Record<string, string> = {
   document_introuvable: "Ce document est introuvable (il a peut-être été supprimé).",
   parametres_invalides: "Demande invalide.",
   archivage_impossible: "Le PDF n'a pas pu être archivé. Réessayez dans un instant.",
+  sujet_ou_message_vide: "Le sujet et le message sont obligatoires.",
+  message_trop_long: "Le message est trop long (10 000 caractères au maximum).",
+  facture_brouillon: "Une facture brouillon ne peut pas être jointe : envoyez d'abord la facture.",
+  piece_jointe_impossible: "Seuls les devis et les factures peuvent être joints.",
+  fiche_introuvable: "Cette fiche est introuvable (elle a peut-être été supprimée).",
+  resend_injoignable: "Le service d'envoi d'emails ne répond pas. Réessayez dans un instant.",
 };
 
 const RESEAU = "La fonction serveur ne répond pas. Vérifiez qu'elle est déployée dans Supabase (voir README).";

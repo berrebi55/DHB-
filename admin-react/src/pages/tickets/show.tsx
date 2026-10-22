@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { App, Button, Dropdown, Modal, Select, Skeleton, Space, Typography } from "antd";
-import { CheckOutlined, CustomerServiceOutlined, DeleteOutlined, MoreOutlined, ReloadOutlined, UserOutlined } from "@ant-design/icons";
+import { CheckOutlined, CustomerServiceOutlined, DeleteOutlined, MailOutlined, MoreOutlined, ReloadOutlined, UserOutlined } from "@ant-design/icons";
 import { useDelete, useOne, useUpdate } from "@refinedev/core";
 import { EmptyState, PageHeader, Panel, StatusTag, ErrorState } from "../../components/ui";
 import { NotesPanel } from "../../components/activity/NotesPanel";
+import { EmailDrawer } from "../../components/communication/EmailDrawer";
 import { ActivityFeed } from "../../components/activity/ActivityFeed";
 import { useProfils, type Ticket } from "../../components/forms/TicketDrawer";
 import { dateTimeFR, fromNow } from "../../lib/format";
@@ -14,6 +16,7 @@ import { messageErreurBase, estIntrouvable } from "../../lib/functions";
 export function TicketShow() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [ecrire, setEcrire] = useState(false);
   const { message } = App.useApp();
   const { isAdmin } = useRole();
   const { data: me } = useIdentite();
@@ -41,6 +44,7 @@ export function TicketShow() {
   })();
 
   const plus = [
+    { key: "email", icon: <MailOutlined />, label: "Écrire un email au client", onClick: () => setEcrire(true) },
     ...(t.status !== "resolu" && t.status !== "ferme" ? [{ key: "resolu", icon: <CheckOutlined />, label: "Marquer résolu", onClick: () => maj({ status: "resolu" }, "Ticket marqué résolu") }] : []),
     ...(t.status !== "ferme" ? [{ key: "ferme", label: "Fermer sans suite", onClick: () => maj({ status: "ferme" }, "Ticket fermé") }] : []),
     ...(isAdmin ? [{ type: "divider" as const }, {
@@ -52,6 +56,8 @@ export function TicketShow() {
 
   return (
     <>
+      <EmailDrawer open={ecrire} onClose={() => setEcrire(false)} cible="ticket" id={t.id} destinataire={t.client_email}
+        modeleParDefaut={t.status === "resolu" ? "ticket_resolu" : undefined} />
       <PageHeader
         title={t.sujet}
         subtitle={<Space size={8} wrap><StatusTag kind="ticket" value={t.status} /><StatusTag kind="priorite" value={t.priorite} /><span className="faint">ouvert {fromNow(t.created_at)}</span></Space>}

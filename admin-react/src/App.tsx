@@ -46,6 +46,8 @@ const UtilisateursPage = lazy(() => import("./pages/systeme/utilisateurs").then(
 const ParametresPage = lazy(() => import("./pages/systeme/parametres").then((m) => ({ default: m.ParametresPage })));
 const SecuritePage = lazy(() => import("./pages/systeme/securite").then((m) => ({ default: m.SecuritePage })));
 const SauvegardesPage = lazy(() => import("./pages/systeme/sauvegardes").then((m) => ({ default: m.SauvegardesPage })));
+const EmailsPage = lazy(() => import("./pages/communication").then((m) => ({ default: m.EmailsPage })));
+const ModelesEmailPage = lazy(() => import("./pages/communication").then((m) => ({ default: m.ModelesEmailPage })));
 const JournalPage = lazy(() => import("./pages/systeme/journal").then((m) => ({ default: m.JournalPage })));
 
 const RESOURCES = [
@@ -108,6 +110,8 @@ export default function App() {
               <Route path="/systeme/securite" element={<SecuritePage />} />
               <Route path="/systeme/sauvegardes" element={<SauvegardesPage />} />
               <Route path="/systeme/journal" element={<JournalPage />} />
+              <Route path="/communication/emails" element={<EmailsPage />} />
+              <Route path="/communication/modeles" element={<ModelesEmailPage />} />
               <Route path="*" element={<NotFound />} />
             </Route>
             <Route

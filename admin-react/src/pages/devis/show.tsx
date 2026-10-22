@@ -12,12 +12,14 @@ import {
   MoreOutlined,
   PrinterOutlined,
   SendOutlined,
+  MailOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useDelete, useList, useOne } from "@refinedev/core";
 import { supabaseClient } from "../../supabaseClient";
 import { EmptyState, PageHeader, Panel, StatusTag, ErrorState } from "../../components/ui";
 import { NotesPanel } from "../../components/activity/NotesPanel";
+import { EmailDrawer } from "../../components/communication/EmailDrawer";
 import { BoutonPdf } from "../../components/documents/BoutonPdf";
 import { ActivityFeed } from "../../components/activity/ActivityFeed";
 import { documentHtml, imprimerDocument } from "../../lib/document";
@@ -32,6 +34,7 @@ const SIGN_BASE = (import.meta.env.VITE_SIGN_BASE as string | undefined) || "";
 export function DevisShow() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [ecrire, setEcrire] = useState(false);
   const { message } = App.useApp();
   const { isAdmin } = useRole();
   const { entreprise } = useEntreprise();
@@ -107,6 +110,7 @@ export function DevisShow() {
     : null;
 
   const plus = [
+    { key: "email", icon: <MailOutlined />, label: "Écrire un email (relance…)", onClick: () => setEcrire(true) },
     ...(modifiable ? [{ key: "edit", icon: <EditOutlined />, label: "Modifier", onClick: () => navigate(`/devis/${d.id}/modifier`) }] : []),
     { key: "dup", icon: <CopyOutlined />, label: "Dupliquer", onClick: () => navigate(`/devis/nouveau?dupliquer=${d.id}`) },
     ...(lien ? [{ key: "lien", icon: <CopyOutlined />, label: "Copier le lien de signature", onClick: () => copier(lien) }] : []),
@@ -125,6 +129,8 @@ export function DevisShow() {
 
   return (
     <>
+      <EmailDrawer open={ecrire} onClose={() => setEcrire(false)} cible="devis" id={d.id} destinataire={d.client_email} pdf
+        modeleParDefaut={d.statut === "envoye" ? "relance_devis" : undefined} />
       <PageHeader
         title={`Devis ${d.numero ?? ""}`}
         subtitle={<Space size={8} wrap><StatusTag kind="devis" value={d.statut} />

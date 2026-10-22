@@ -17,6 +17,7 @@ import { useDelete, useList, useOne, useUpdate } from "@refinedev/core";
 import { supabaseClient } from "../../supabaseClient";
 import { EmptyState, PageHeader, Panel, StatusTag, ErrorState } from "../../components/ui";
 import { NotesPanel } from "../../components/activity/NotesPanel";
+import { EmailDrawer } from "../../components/communication/EmailDrawer";
 import { ActivityFeed } from "../../components/activity/ActivityFeed";
 import { LeadDrawer, type Lead } from "../../components/forms/LeadDrawer";
 import { ClientDrawer, type Client } from "../../components/forms/ClientDrawer";
@@ -30,6 +31,7 @@ const PARCOURS = ["nouveau", "a_contacter", "contacte", "devis_a_preparer", "dev
 export function LeadShow() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [ecrire, setEcrire] = useState(false);
   const { message, modal } = App.useApp();
   const { isAdmin } = useRole();
   const { data, isLoading, isError, error, refetch } = useOne<Lead>({ resource: "leads", id: id!, liveMode: "auto" });
@@ -92,6 +94,7 @@ export function LeadShow() {
 
   const etape = PARCOURS.indexOf(lead.status);
   const plus = [
+    ...(lead.email ? [{ key: "email", icon: <MailOutlined />, label: "Écrire un email", onClick: () => setEcrire(true) }] : []),
     { key: "edit", icon: <EditOutlined />, label: "Modifier", onClick: () => setEdit(true) },
     { key: "perdu", label: "Marquer comme perdue", onClick: () => maj({ status: "perdu" }, "Demande marquée perdue") },
     { key: "archive", label: "Archiver", onClick: () => maj({ status: "archive" }, "Demande archivée") },
@@ -106,6 +109,7 @@ export function LeadShow() {
 
   return (
     <>
+      <EmailDrawer open={ecrire} onClose={() => setEcrire(false)} cible="lead" id={lead.id} destinataire={lead.email} modeleParDefaut="suivi_demande" />
       <PageHeader
         title={lead.nom || lead.email || "Demande"}
         subtitle={<Space size={8} wrap><StatusTag kind="lead" value={lead.status} /><StatusTag kind="priorite" value={lead.priorite} />
