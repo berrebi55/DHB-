@@ -152,7 +152,7 @@ Ordre adapté à l'audit : la **sécurité critique** (C1, C2) et la **sauvegard
 | **3** ✅ | **Accessibilité et cohérence UI** : couleurs de texte secondaire conformes, libellés des filtres, ordre des titres, liens soulignés | I6, I7, A4, A5 | rendu de toutes les pages (captures avant/après), axe-core | — |
 | **4** ✅ | **CRM : attribution + timeline** : colonnes d'attribution, captation sur les sites, source modifiable, vue entonnoir ; timeline client complète (journal + notes + appels) ; suppression client → archivage par défaut | I10, I5 | formulaires publics, fiches client/demande, statistiques | — |
 | **5** ✅ | **Tableau de bord commercial** : blocs Commercial, Clients, Finance (données existantes) ; bloc Acquisition = sources des demandes (lot 4), visiteurs ajoutés au lot 10 | — | pilotage, cache | — |
-| **6** | **Documents** : `render-pdf` (devis/facture), bucket Storage privé, table `documents`, téléchargement depuis les fiches | I9 | devis, factures, envoi email | — |
+| **6** ✅ | **Documents** : `render-pdf` (devis/facture), bucket Storage privé, table `documents`, téléchargement depuis les fiches | I9 | devis, factures, envoi email | — |
 | **7** | **Paiements Stripe** : `stripe-webhook` → paiement + facture payée + abonnement démarré | I8 | paiements, factures, abonnements | Webhook + secret `whsec_…` |
 | **8** | **Communication** : `email-send` unique et journalisé, historique, modèles à variables, envoi manuel depuis client/demande/devis/facture/ticket | — | envois existants (devis, facture, relances) | Resend (domaine à vérifier ; en attendant : envoi vers sa propre adresse) |
 | **9** | **Automatisations** : `evenements` + `worker`, règles SI → ALORS (bienvenue, relance devis J+5, rappel facture J+7, ticket résolu), migration de `send-reminders` | — | lots 6 à 8 | Planification (cron) |
@@ -364,5 +364,42 @@ Ordre adapté à l'audit : la **sécurité critique** (C1, C2) et la **sauvegard
 
 **À faire en production** : rien de spécifique (publier le back-office).
 
+### Lot 6 — Documents PDF ✅ VALIDÉ (environnement de test)
+
+**Modifié**
+- **PDF côté serveur** (`supabase/functions/_shared/pdf.ts`, bibliothèque pdf-lib, polices standard) : même contenu que l'aperçu imprimable — émetteur lu dans la fiche entreprise, « [À COMPLÉTER PAR LE PROPRIÉTAIRE : …] » pour tout ce qui manque (jamais inventé), mention « TVA non applicable, art. 293 B du CGI », bandeaux BROUILLON / FACTURE ANNULÉE, conditions, pénalités, IBAN, bon pour accord ou signature en ligne ; pagination automatique avec en-tête de tableau répété et « page x / n » ; caractères non imprimables remplacés ; titre et langue du document renseignés.
+- **Edge Function `render-pdf`** (équipe uniquement) : **facture émise** → PDF archivé **une seule fois** puis toujours renvoyé à l'identique (même si la fiche entreprise change), jamais d'écrasement ; **devis** → dernière version conservée ; **facture brouillon** → aperçu non conservé ; téléchargement d'un document archivé par son identifiant ; stockage en panne : devis renvoyé quand même, facture émise refusée avec un message clair (rien n'est servi sans être archivé).
+- **Base** : table `documents` (type, devis/facture, client, numéro, nom, emplacement, taille, empreinte SHA-256, auteur) — lecture équipe, **aucune écriture depuis l'API** ; l'archive d'une facture émise est unique et **ni modifiable ni supprimable**, même par la clé serveur ; espace de stockage **privé** `documents` (aucune politique d'accès : seul le serveur y accède).
+- **Back-office** : « Télécharger le PDF » sur les fiches devis et facture (l'ancien « Télécharger en PDF » qui ouvrait l'impression est retiré ; « Imprimer » reste) ; onglet **Documents** sur la fiche client (PDF archivés, téléchargement) ; messages d'erreur compréhensibles ; barre « part payée » nommée pour les lecteurs d'écran.
+- **Sauvegarde** (complète le lot 2) : les PDF sont copiés dans le fichier chiffré (dossier `fichiers/`) si les secrets facultatifs `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` existent ; noms de fichiers contrôlés ; un PDF non copié **n'empêche jamais** la sauvegarde de la base (compté dans le manifeste et signalé dans Système → Sauvegardes) ; la restauration remet les PDF dans le stockage (ou les copie en local) et vérifie leur nombre.
+
+**Corrigé** : I9.
+
+**Fichiers**
+`supabase/full-setup.sql` (section 18) · `supabase/tests/lot6-documents.sql` (nouveau) · `supabase/functions/_shared/pdf.ts` (nouveau) · `supabase/functions/render-pdf/index.ts` (nouveau) · `supabase/restauration-complements.sql` · `scripts/sauvegarde.sh` · `scripts/restaurer.sh` · `.github/workflows/sauvegarde.yml` · `docs/SAUVEGARDE.md` · `admin-react/README.md` · `admin-react/src/lib/functions.ts` · `src/components/documents/BoutonPdf.tsx` (nouveau) · `src/components/documents/DocumentsClient.tsx` (nouveau) · `src/pages/devis/show.tsx` · `src/pages/factures/show.tsx` · `src/pages/clients/show.tsx`.
+
+**Tests**
+- `full-setup.sql` rejoué 4 fois : 0 erreur ; espace de stockage créé **privé**.
+- **SQL `lot6-documents.sql` : 16 / 16** — lecture équipe / refus en attente et anonyme ; écriture depuis l'API refusée (admin, collaborateur, anonyme) ; serveur : mise à jour d'un devis OK, modification / suppression / doublon d'archive de facture **refusés**, type inconnu refusé ; facture archivée non supprimable.
+- **Contenu des PDF : 64 / 64** (8 documents types, texte relu avec pdf.js) — références, dates, montants au format français, émetteur, client, lignes et descriptions, total, mention 293 B ; entreprise vide → 4 « À COMPLÉTER » et aucun IBAN inventé ; devis de 60 lignes sur 3 pages (en-tête répété, total sur la dernière) ; devis signé ; TVA 20 % (n° TVA demandé) ; accents, Œ, emoji remplacé, espace fine, mot de 150 caractères coupé ; **aucun texte hors des marges** ; langue fr-FR. Contrôle visuel des pages rendues.
+- **Fonction `render-pdf` exécutée avec Deno : 23 / 23** (faux Supabase HTTP) — 401 sans jeton / jeton invalide, 403 compte en attente, 405, 400 (type, identifiant, document), 404 ; brouillon non conservé ; archivage (empreinte et taille = fichier stocké, client, numéro, auteur) ; 2ᵉ demande par un collaborateur après changement de la fiche entreprise → **fichier identique** ; devis mis à jour (une seule ligne) ; **2 demandes simultanées → une seule archive, même fichier** ; stockage en panne (devis servi, facture refusée en 502 puis archivée une fois le stockage rétabli). `deno check` des 10 fonctions : OK.
+- **Navigateur : 31 / 31** (ordinateur et mobile) — téléchargement réel depuis devis et facture (nom de fichier, contenu PDF, jeton de session), erreur serveur expliquée, onglet Documents (liste, téléchargement par identifiant), axe-core sans défaut, 0 débordement, 0 erreur JS.
+- **Sauvegarde / restauration (conteneur Linux, pg_dump 16, GnuPG) : 17 / 17** — 2 PDF inclus et identiques, nom dangereux (`../../etc/passwd`) refusé, manifeste et avertissement corrects, aucun fichier en clair ; sans clé ou stockage injoignable → base sauvegardée et PDF signalés ; restauration complète sans écart avec PDF remis à l'identique et espace recréé privé ; sans clé → copie locale + consigne ; archive altérée (PDF retiré) → **restauration refusée**.
+- Non-régression : SQL lots 1 / 2 / 4 (73 / 9 / 30), tests navigateur lots 4 et 5 (40 / 49), audit d'accessibilité des 52 vues (inchangé), TypeScript 0 erreur, `npm run build` OK.
+
+**Résultat** : ✅ **VALIDÉ** sur l'environnement de test.
+
+**Risques / points à surveiller**
+- **Jamais testé sur le vrai Supabase Storage** (le stockage a été simulé) : à vérifier à la mise en service (voir « À faire »).
+- La clé `service_role` donne tous les droits : elle ne doit exister que dans les secrets Supabase et GitHub.
+- Le PDF d'une facture est archivé à son **premier téléchargement après émission** : une facture émise jamais téléchargée n'a pas encore de PDF archivé (il le sera au premier téléchargement, avec les informations de la fiche entreprise à ce moment-là). L'envoi automatique du PDF avec l'email de facture viendra au lot 8 (Communication) et archivera le PDF au moment de l'envoi.
+- PDF en polices standard (Helvetica) : sobres et légers, sans la police Inter du back-office.
+
+**À faire plus tard sur la vraie Supabase (mise en production)**
+1. SQL Editor → exécuter `supabase/full-setup.sql` (table `documents` + espace privé `documents`) ; vérifier dans Storage que `documents` est **privé**.
+2. Déployer `render-pdf` : `supabase functions deploy render-pdf --no-verify-jwt`.
+3. Test : télécharger le PDF d'un devis et d'une facture envoyée, puis les retrouver dans l'onglet Documents du client.
+4. (Facultatif, recommandé) Secrets GitHub `SUPABASE_URL` et `SUPABASE_SERVICE_ROLE_KEY` pour inclure les PDF dans la sauvegarde nocturne.
+
 ### Problèmes connus restants
-Voir §3 : I8, I9, I11, I12, A1–A3, A6, A7 (C1, C2, I1, I2, I3, I4 traités au lot 1 ; C3 au lot 2, actif après configuration ; I6, I7, A4, A5 au lot 3 ; I5, I10 au lot 4). Points mineurs relevés au lot 3 : onglets Ant Design et colonnes « Actions » sans texte.
+Voir §3 : I8, I11, I12, A1–A3, A6, A7 (C1, C2, I1, I2, I3, I4 traités au lot 1 ; C3 au lot 2, actif après configuration ; I6, I7, A4, A5 au lot 3 ; I5, I10 au lot 4 ; I9 au lot 6). Points mineurs relevés au lot 3 : onglets Ant Design et colonnes « Actions » sans texte.

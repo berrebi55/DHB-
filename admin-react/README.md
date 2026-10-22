@@ -56,10 +56,14 @@ l'utilisateur connecté ou le secret de cron, d'où `--no-verify-jwt` :
 
 ```bash
 for f in get-devis-public sign-devis send-devis send-invoice invite-user \
-         generate-recurring-invoices send-reminders notify-new-lead create-checkout; do
+         generate-recurring-invoices send-reminders notify-new-lead create-checkout          render-pdf; do
   supabase functions deploy $f --no-verify-jwt
 done
 ```
+
+`render-pdf` (lot 6) produit les PDF des devis et factures et les range dans
+l'espace de stockage **privé** `documents` (créé par `full-setup.sql`) : aucun
+secret supplémentaire n'est nécessaire.
 
 Secrets à définir (Supabase → Edge Functions → Secrets). **Aucun n'est à
 mettre dans le code ou dans `.env` du front.**
