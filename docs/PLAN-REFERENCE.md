@@ -52,7 +52,8 @@ PDF générés côté serveur, stockage de documents, webhook Stripe (paiements 
 
 - ✅ supprimé au lot 0 : ancienne admin `admin/`, `schema.sql`, `settings.sql`.
 - ✅ centralisé au lot 8 : code d'envoi d'email (un seul module `_shared/email.ts`).
-- Restant : règles de relance codées en dur dans `send-reminders` (à migrer au lot Automatisations) ; UTM concaténés dans `source_url` (lot CRM).
+- ✅ migré au lot 9 : règles de relance (réglables dans Système → Automatisations).
+- Restant : UTM concaténés dans `source_url` (lot CRM).
 
 ---
 
@@ -156,7 +157,7 @@ Ordre adapté à l'audit : la **sécurité critique** (C1, C2) et la **sauvegard
 | **6** ✅ | **Documents** : `render-pdf` (devis/facture), bucket Storage privé, table `documents`, téléchargement depuis les fiches | I9 | devis, factures, envoi email | — |
 | **7** ✅ | **Paiements Stripe** : `stripe-webhook` → paiement + facture payée + abonnement démarré | I8 | paiements, factures, abonnements | Webhook + secret `whsec_…` |
 | **8** ✅ | **Communication** : `email-send` unique et journalisé, historique, modèles à variables, envoi manuel depuis client/demande/devis/facture/ticket | — | envois existants (devis, facture, relances) | Resend (domaine à vérifier ; en attendant : envoi vers sa propre adresse) |
-| **9** | **Automatisations** : `evenements` + `worker`, règles SI → ALORS (bienvenue, relance devis J+5, rappel facture J+7, ticket résolu), migration de `send-reminders` | — | lots 6 à 8 | Planification (cron) |
+| **9** ✅ | **Automatisations** : `evenements` + `worker`, règles SI → ALORS (bienvenue, relance devis J+5, rappel facture J+7, ticket résolu), migration de `send-reminders` | — | lots 6 à 8 | Planification (cron) |
 | **10** | **Intégrations + Google Analytics** : page Système → Intégrations, connexion Google OAuth, dictionnaire d'événements, conversions serveur, copie quotidienne des chiffres, Pilotage → Acquisition | — | consentement, formulaires, sites | Projet Google Cloud, GA4, secret Measurement Protocol |
 | **11** | **Google Drive** : dossier client + 8 sous-dossiers, copie des PDF, statut et reprise | — | clients, documents | même connexion Google |
 | **12** | **Search Console** : synchronisation, Pilotage → SEO | — | — | domaines achetés + propriétés vérifiées |
@@ -473,6 +474,45 @@ Ordre adapté à l'audit : la **sécurité critique** (C1, C2) et la **sauvegard
 3. Secrets : `RESEND_API_KEY`, `NOTIFY_FROM`, et **`EMAIL_REDIRECTION` = votre adresse** tant que le domaine n'est pas vérifié.
 4. Test : Écrire un email depuis une fiche client (aperçu puis envoi) → reçu sur votre adresse avec « [TEST → …] » ; vérifier Communication → Emails envoyés.
 5. Domaine vérifié chez Resend : mettre `NOTIFY_FROM` sur ce domaine et **supprimer** `EMAIL_REDIRECTION`.
+
+### Lot 9 — Automatisations ✅ VALIDÉ (environnement de test)
+
+**Modifié**
+- **File d'événements** (`evenements`), alimentée **par la base elle-même** (déclencheurs, donc aucun oubli possible) : nouvelle demande, client créé, devis envoyé / accepté, facture envoyée / payée, ticket résolu. Chaque événement a un statut, un nombre de tentatives, une date de prochaine tentative et une erreur lisible ; lecture équipe, aucune écriture depuis l'API ; un administrateur peut « Réessayer » un événement en erreur.
+- **Règles SI → ALORS** (`automatisations`, réglables par un administrateur : activer, délai, modèle d'email) :
+  - *Relance des devis sans réponse* — **active**, J+5 après l'envoi ;
+  - *Rappel des factures en retard* — **active**, J+7 après l'échéance ;
+  - *Bienvenue aux nouveaux clients* — **désactivée** par défaut (nouveau modèle « bienvenue », neutre) ;
+  - *Ticket résolu* — **désactivée** par défaut.
+  Au plus une relance tous les 7 jours par document ; « une seule fois » pour bienvenue et ticket (garanti par la base).
+- **Robot `worker`** (Edge Function à planifier toutes les 15 min) : réserve chaque événement avant de le traiter (deux robots en parallèle n'envoient jamais deux fois), applique les règles avec les **modèles d'emails** (lot 8) ; envoi en échec → nouvelles tentatives (5 min, 30 min, 2 h, 12 h) puis « erreur » après 5 essais, **sans jamais bloquer le CRM** ; variables manquantes ou fiche sans email → exécution « ignorée / échec » avec la raison ; ménage des événements terminés après 90 jours.
+- **`send-reminders` migrée** : mêmes règles, même moteur, textes = modèles ; les planifications existantes continuent de fonctionner (règles codées en dur du §2.4 supprimées).
+- **Back-office** : **Système → Automatisations** (règles, file d'attente avec erreurs et « Réessayer », dernières exécutions, « Lancer maintenant ») ; liens des lignes de liste soulignés (accessibilité).
+
+**Fichiers**
+`supabase/full-setup.sql` (section 21) · `supabase/tests/lot9-automatisations.sql` (nouveau) · `supabase/functions/_shared/automatisations.ts` (nouveau) · `supabase/functions/worker/index.ts` (nouveau) · `supabase/functions/send-reminders/index.ts` · `admin-react/README.md` · `admin-react/src/pages/systeme/automatisations.tsx` (nouveau) · `src/components/layout/nav.tsx` · `src/App.tsx` · `src/styles.css`.
+
+**Tests**
+- `full-setup.sql` rejoué 4 fois : 0 erreur.
+- **SQL `lot9-automatisations.sql` : 23 / 23** (rejouable) — événements émis à la création d'un client, à une demande envoyée **par un visiteur anonyme**, devis envoyé puis accepté, facture envoyée puis **payée par un paiement**, ticket résolu ; modifications sans effet ignorées ; file lisible par l'équipe seulement, non falsifiable ; « Réessayer » réservé à l'admin (compteur et erreur remis à zéro) ; règles : valeurs par défaut, collaborateur sans effet, admin OK, délai et modèle contrôlés, ni création ni suppression ; « une seule fois » garanti ; journal non falsifiable.
+- **Bout en bout sur la vraie base de test** (déclencheurs réels + PostgREST + `worker` exécuté par Deno + faux Resend) : **20 / 20** — appel non autorisé refusé ; règles inactives → événements ignorés ; relance du seul devis à J+6 (pas celui à J+2) ; rappel de la seule facture en retard de 10 j (pas celle de 3 j) ; texte du modèle rempli ; dates de relance et exécutions enregistrées ; **2ᵉ passage : aucun doublon** ; bienvenue et ticket résolu une fois activées ; « une seule fois » ; client sans email ignoré avec la raison ; délai de 2 jours respecté puis envoi ; **Resend en panne → 1 tentative, prochain essai à +5 min, erreur lisible, puis « erreur » après 5 essais, CRM non bloqué** ; réessai après rétablissement ; **deux robots simultanés → un seul email** ; `send-reminders` respecte une règle désactivée.
+- Fonctions emails du lot 8 rejouées (`send-reminders` désormais par les règles) : **30 / 30**. `deno check` des 13 fonctions : OK.
+- **Navigateur : 18 / 18** — règles, alerte d'erreurs, file, exécutions, enregistrement (activer + délai sur la bonne règle), « Réessayer », « Lancer maintenant », collaborateur en lecture seule, axe-core sans défaut, 0 débordement, 0 erreur JS.
+- Non-régression : SQL lots 1 / 2 / 4 / 6 / 7 / 8 (73 / 9 / 30 / 16 / 33 / 15), navigateur lots 4 à 8 (40 / 49 / 31 / 10 / 59), audit d'accessibilité des 52 vues (inchangé), TypeScript 0 erreur, `npm run build` OK.
+
+**Résultat** : ✅ **VALIDÉ** sur l'environnement de test.
+
+**Risques / points à surveiller**
+- **Changement de comportement** : le rappel de facture part désormais **7 jours après l'échéance** (avant : dès le retard) et la relance de devis **5 jours** après l'envoi (avant : 7) — conformément au plan ; réglable dans Système → Automatisations.
+- Les relances utilisent désormais les **modèles d'emails** (textes modifiables) au lieu des textes codés en dur ; une variable manquante sur une fiche bloque la relance de ce document (visible dans « Dernières exécutions »).
+- Le robot n'agit que s'il est **planifié** (cron) ; sans planification, rien ne part automatiquement (bouton « Lancer maintenant » disponible).
+- Pas d'éditeur de règles libres : 4 règles prévues, réglables (activer, délai, modèle) — suffisant pour le besoin actuel, extensible.
+
+**À faire plus tard (mise en production)**
+1. SQL Editor → exécuter `supabase/full-setup.sql`.
+2. Déployer `worker` et redéployer `send-reminders`.
+3. Planifier le robot toutes les 15 min (`admin-react/README.md`, « dhb-robot ») ; l'ancienne planification `dhb-relances` peut être supprimée.
+4. Système → Automatisations : relire les modèles « Bienvenue » et « Ticket résolu », puis activer ces règles si souhaité.
 
 ### Problèmes connus restants
 Voir §3 : I11, I12, A1–A3, A6, A7 (C1, C2, I1, I2, I3, I4 traités au lot 1 ; C3 au lot 2, actif après configuration ; I6, I7, A4, A5 au lot 3 ; I5, I10 au lot 4 ; I9 au lot 6 ; I8 au lot 7). Points mineurs relevés au lot 3 : onglets Ant Design et colonnes « Actions » sans texte.
