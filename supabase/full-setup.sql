@@ -913,3 +913,146 @@ drop policy if exists "sauvegardes read" on public.sauvegardes;
 create policy "sauvegardes read" on public.sauvegardes for select to authenticated using (public.is_staff());
 -- (aucune politique d'écriture : ni anon ni authenticated ne peuvent écrire)
 revoke insert, update, delete, truncate on public.sauvegardes from anon, authenticated;
+
+-- =====================================================================
+-- 17) LOT 4 — CRM : ORIGINE DES DEMANDES ET HISTORIQUE CLIENT (idempotent)
+-- =====================================================================
+
+-- ---------- 17.1 Origine des demandes (attribution) ----------
+-- Renseignée par les formulaires des sites (paramètres de campagne, site
+-- d'où vient le visiteur, page d'arrivée) et modifiable par l'équipe (« source »).
+alter table public.leads add column if not exists source text;
+alter table public.leads add column if not exists utm_source text;
+alter table public.leads add column if not exists utm_medium text;
+alter table public.leads add column if not exists utm_campaign text;
+alter table public.leads add column if not exists utm_term text;
+alter table public.leads add column if not exists utm_content text;
+alter table public.leads add column if not exists gclid text;
+alter table public.leads add column if not exists referrer text;       -- site d'où vient le visiteur (domaine seulement)
+alter table public.leads add column if not exists landing_page text;   -- première page vue pendant la visite
+alter table public.leads add column if not exists ga_client_id text;   -- identifiant GA4 (seulement si cookies acceptés)
+do $$ begin
+  if not exists (select 1 from pg_constraint where conname = 'leads_source_check') then
+    alter table public.leads add constraint leads_source_check check (source is null or source in
+      ('recherche','publicite','reseaux_sociaux','email','site_referent','site_dhb','direct','telephone','recommandation','autre'));
+  end if;
+end $$;
+create index if not exists leads_source_idx on public.leads (source);
+
+-- Classement automatique de l'origine (règles simples, documentées) :
+-- clic publicitaire (gclid ou utm_medium payant) → publicité ; campagne email ;
+-- réseaux sociaux ; moteur de recherche ; autre site du groupe ; autre site ;
+-- aucune information de campagne ni site d'origine → accès direct.
+create or replace function public.classer_source_lead(
+  p_utm_source text, p_utm_medium text, p_gclid text, p_referrer text)
+returns text language sql immutable as $$
+  select case
+    when nullif(p_gclid,'') is not null
+      or lower(coalesce(p_utm_medium,'')) in ('cpc','ppc','paid','paidsearch','paid_search','display','cpm','ads')
+      then 'publicite'
+    when lower(coalesce(p_utm_medium,'')) in ('email','e-mail','newsletter','mail')
+      then 'email'
+    when lower(coalesce(p_utm_medium,'')) in ('social','social-network','social_media','reseaux_sociaux')
+      or lower(coalesce(p_utm_source, p_referrer, '')) ~ '(facebook|instagram|linkedin|lnkd\.in|twitter|(^|\.)x\.com$|^t\.co$|tiktok|youtube|pinterest|whatsapp)'
+      then 'reseaux_sociaux'
+    when lower(coalesce(p_utm_medium,'')) = 'organic'
+      or lower(coalesce(p_utm_source, p_referrer, '')) ~ '(google|bing|duckduckgo|qwant|ecosia|yahoo|search\.brave|startpage|lilo)'
+      then 'recherche'
+    when lower(coalesce(p_referrer,'')) ~ 'dhb' then 'site_dhb'
+    when nullif(p_utm_source,'') is not null or nullif(p_referrer,'') is not null then 'site_referent'
+    else 'direct' end;
+$$;
+
+create or replace function public.leads_definir_source()
+returns trigger language plpgsql as $$
+begin
+  if new.source is null and (new.utm_source is not null or new.utm_medium is not null or new.gclid is not null
+      or new.referrer is not null or new.landing_page is not null) then
+    new.source := public.classer_source_lead(new.utm_source, new.utm_medium, new.gclid, new.referrer);
+  end if;
+  return new;
+end; $$;
+-- « trg_leads_10_… » : s'exécute après trg_leads_00 / 01 (ordre alphabétique).
+drop trigger if exists trg_leads_10_source on public.leads;
+create trigger trg_leads_10_source before insert on public.leads
+  for each row execute function public.leads_definir_source();
+
+-- Formulaires publics : les champs d'origine sont acceptés mais nettoyés et
+-- bornés (jamais de refus de la demande à cause d'eux) ; la source est toujours
+-- calculée par la base, jamais fournie par le visiteur.
+create or replace function public.leads_nettoyer_attribution()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if public.is_staff() then return new; end if;
+  new.source := null;
+  new.utm_source := left(nullif(trim(new.utm_source), ''), 200);
+  new.utm_medium := left(nullif(trim(new.utm_medium), ''), 200);
+  new.utm_campaign := left(nullif(trim(new.utm_campaign), ''), 200);
+  new.utm_term := left(nullif(trim(new.utm_term), ''), 200);
+  new.utm_content := left(nullif(trim(new.utm_content), ''), 200);
+  new.gclid := left(nullif(trim(new.gclid), ''), 200);
+  new.referrer := left(nullif(lower(trim(new.referrer)), ''), 255);
+  new.landing_page := left(nullif(trim(new.landing_page), ''), 500);
+  new.ga_client_id := case when new.ga_client_id ~ '^[0-9]{1,20}\.[0-9]{1,20}$' then new.ga_client_id end;
+  return new;
+end; $$;
+drop trigger if exists trg_leads_01_attribution on public.leads;
+create trigger trg_leads_01_attribution before insert on public.leads
+  for each row execute function public.leads_nettoyer_attribution();
+
+-- Rattrapage : les anciennes demandes avaient leurs paramètres de campagne
+-- collés dans source_url (« /contact/?utm_source=… »). On les recopie dans les
+-- nouvelles colonnes, sans rien supprimer. Sans information : origine inconnue
+-- (aucune valeur inventée).
+create or replace function public.rattraper_attribution_leads()
+returns int language plpgsql security definer set search_path = public as $$
+declare n int;
+begin
+  update public.leads set
+      utm_source   = substring(source_url from '[?&]utm_source=([^&#]+)'),
+      utm_medium   = substring(source_url from '[?&]utm_medium=([^&#]+)'),
+      utm_campaign = substring(source_url from '[?&]utm_campaign=([^&#]+)'),
+      gclid        = substring(source_url from '[?&]gclid=([^&#]+)')
+    where source_url ~ '[?&](utm_source|utm_medium|utm_campaign|gclid)='
+      and utm_source is null and utm_medium is null and utm_campaign is null and gclid is null;
+  get diagnostics n = row_count;
+  update public.leads set source = public.classer_source_lead(utm_source, utm_medium, gclid, referrer)
+    where source is null and (utm_source is not null or utm_medium is not null or gclid is not null);
+  return n;
+end; $$;
+revoke execute on function public.rattraper_attribution_leads() from public, anon, authenticated;
+select public.rattraper_attribution_leads();
+
+-- ---------- 17.2 Historique client : appels, emails, rendez-vous ----------
+-- Une note peut être typée pour tracer les échanges dans le fil chronologique du client.
+alter table public.notes add column if not exists type text not null default 'note';
+do $$ begin
+  if not exists (select 1 from pg_constraint where conname = 'notes_type_check') then
+    alter table public.notes add constraint notes_type_check check (type in ('note','appel','email','rendez_vous'));
+  end if;
+end $$;
+
+-- ---------- 17.3 Clients : archivage plutôt que suppression ----------
+-- Un client qui a un historique (demandes, devis, factures, paiements,
+-- abonnements, tickets, notes) ne peut plus être supprimé : on l'archive.
+-- Seule une fiche vide (créée par erreur) reste supprimable (admin).
+create or replace function public.clients_proteger_suppression()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare quoi text;
+begin
+  quoi := concat_ws(', ',
+    case when exists (select 1 from public.leads where client_id = old.id) then 'demandes' end,
+    case when exists (select 1 from public.devis where client_id = old.id) then 'devis' end,
+    case when exists (select 1 from public.factures where client_id = old.id) then 'factures' end,
+    case when exists (select 1 from public.paiements where client_id = old.id) then 'paiements' end,
+    case when exists (select 1 from public.abonnements where client_id = old.id) then 'abonnements' end,
+    case when exists (select 1 from public.tickets where client_id = old.id) then 'tickets' end,
+    case when exists (select 1 from public.notes where client_id = old.id) then 'notes' end);
+  if quoi <> '' then
+    raise exception 'Ce client a un historique (%) : archivez-le au lieu de le supprimer.', quoi using errcode = '42501';
+  end if;
+  return old;
+end; $$;
+drop trigger if exists trg_clients_proteger_suppression on public.clients;
+create trigger trg_clients_proteger_suppression before delete on public.clients
+  for each row execute function public.clients_proteger_suppression();
