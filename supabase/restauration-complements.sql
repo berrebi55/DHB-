@@ -24,3 +24,12 @@ do $$ declare t text; begin
     end if;
   end loop;
 end $$;
+
+-- Espace de stockage privé des PDF (lot 6) : les fichiers eux-mêmes sont remis
+-- par scripts/restaurer.sh (étape 7).
+do $$ begin
+  if exists (select 1 from information_schema.tables where table_schema = 'storage' and table_name = 'buckets') then
+    insert into storage.buckets (id, name, public) values ('documents', 'documents', false)
+      on conflict (id) do update set public = false;
+  end if;
+end $$;

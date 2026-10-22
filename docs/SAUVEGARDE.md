@@ -6,6 +6,7 @@ DHB sauvegarde donc lui-même sa base, **hors de Supabase** :
 | Quoi | Où | Quand | Conservation |
 |---|---|---|---|
 | Données métier + structure (schéma `public`) et comptes (`auth.users`) | Artefacts GitHub, fichier **chiffré AES-256** | Chaque nuit (02h17 UTC) + à la demande | 30 jours |
+| PDF archivés (devis, factures émises — stockage `documents`) | Dans le même fichier chiffré (dossier `fichiers/`) | Idem, si les 2 secrets facultatifs sont créés | 30 jours |
 | Historique (date, statut, taille, nombre de lignes, erreur) | Table `public.sauvegardes` → Back-office › Système › Sauvegardes | À chaque exécution | Illimitée |
 
 Fichiers : `.github/workflows/sauvegarde.yml`, `scripts/sauvegarde.sh`,
@@ -33,7 +34,13 @@ Fichiers : `.github/workflows/sauvegarde.yml`, `scripts/sauvegarde.sh`,
 4. **Créer les secrets** : GitHub → dépôt → Settings → Secrets and variables →
    Actions → New repository secret :
    - `SUPABASE_DB_URL` = la chaîne de l'étape 2 ;
-   - `BACKUP_PASSPHRASE` = la phrase de l'étape 3.
+   - `BACKUP_PASSPHRASE` = la phrase de l'étape 3 ;
+   - **facultatifs, pour sauvegarder aussi les PDF** (lot 6) : `SUPABASE_URL`
+     (adresse du projet, `https://….supabase.co`) et `SUPABASE_SERVICE_ROLE_KEY`
+     (Supabase → Project Settings → API → clé `service_role` / « secret »).
+     Cette clé donne tous les droits : elle ne va **que** dans les secrets
+     GitHub, jamais dans le code. Sans ces deux secrets, la base est sauvegardée
+     et le nombre de PDF non copiés est signalé dans Système → Sauvegardes.
 5. **Premier test** : GitHub → Actions → « Sauvegarde de la base » →
    **Run workflow**. Au bout de 1 à 2 minutes :
    - l'exécution est verte et contient un artefact `dhb-sauvegarde-…` ;
@@ -72,6 +79,12 @@ Pré-requis : un poste avec `psql`, `pg_restore` (version ≥ celle de Supabase)
    `public` (déclencheur de profil, temps réel) et **compare le nombre de
    lignes de chaque table avec la sauvegarde** : il s'arrête en erreur au
    moindre écart.
+   **PDF** : ajouter `SUPABASE_URL='https://<nouveau>.supabase.co'
+   SUPABASE_SERVICE_ROLE_KEY='…'` devant la commande pour remettre les PDF dans
+   le stockage `documents` du nouveau projet. Sans ces variables, les PDF sont
+   copiés dans un dossier `pdf-restaures-…` à déposer à la main (Supabase →
+   Storage → documents, mêmes sous-dossiers `factures/` et `devis/`). Le
+   script vérifie que le nombre de PDF correspond à la sauvegarde.
 5. **Rebrancher** : remplacer l'URL et la clé publique du nouveau projet dans
    `sites/*/assets/js/supabase-config.js` et `admin-react/.env`, redéployer les
    Edge Functions et leurs secrets, et vérifier dans Authentication que
@@ -79,8 +92,10 @@ Pré-requis : un poste avec `psql`, `pg_restore` (version ≥ celle de Supabase)
 
 ## 4. Limites connues
 
-- Les **fichiers** (Supabase Storage) ne sont pas encore concernés : il n'y en
-  a pas aujourd'hui ; ils seront ajoutés à la sauvegarde au lot « Documents ».
+- Les **PDF** ne sont copiés que si `SUPABASE_URL` et `SUPABASE_SERVICE_ROLE_KEY`
+  sont définis ; un PDF de devis manquant se régénère depuis le back-office,
+  mais le PDF **archivé** d'une facture émise n'existe que dans le stockage et
+  dans les sauvegardes.
 - Les comptes sont restaurés avec leurs mots de passe chiffrés ; si la
   version d'Auth du nouveau projet diffère fortement, certains utilisateurs
   peuvent devoir réinitialiser leur mot de passe.

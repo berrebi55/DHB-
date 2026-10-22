@@ -6,8 +6,10 @@
 #    - public.dump     : toutes les données métier + structure (schéma public,
 #                        format pg_dump « custom ») ;
 #    - auth.sql        : les comptes utilisateurs (auth.users, auth.identities) ;
-#    - manifeste.json  : date, nombre de lignes par table (sert à vérifier
-#                        une restauration).
+#    - manifeste.json  : date, nombre de lignes par table, nombre de fichiers
+#                        (sert à vérifier une restauration) ;
+#    - fichiers/       : les PDF archivés (stockage « documents », lot 6), si
+#                        la clé serveur est fournie (voir ci-dessous).
 #  Puis enregistre le résultat dans public.sauvegardes (visible dans
 #  Back-office → Système → Sauvegardes), y compris en cas d'échec.
 #
@@ -18,6 +20,10 @@
 #    SAUVEGARDE_TYPE     quotidienne | manuelle | test   (défaut : manuelle)
 #    RUN_URL             lien vers l'exécution (GitHub Actions), facultatif
 #    DOSSIER_SORTIE      dossier du fichier produit (défaut : ./sauvegardes)
+#    SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+#                        (facultatives) pour copier les PDF du stockage. Sans
+#                        elles, la base est sauvegardée et le nombre de PDF
+#                        non copiés est signalé (jamais d'échec pour ça).
 #
 #  Usage : scripts/sauvegarde.sh       → affiche le chemin du fichier produit
 #  Exécuté chaque nuit par .github/workflows/sauvegarde.yml.
@@ -66,6 +72,36 @@ pg_dump "$SUPABASE_DB_URL" --format=custom --schema=public --no-owner --file="$T
 ETAPE="export des comptes (auth)"
 pg_dump "$SUPABASE_DB_URL" --data-only --table=auth.users --table=auth.identities --file="$TRAVAIL/auth.sql"
 
+ETAPE="export des fichiers PDF (stockage « documents »)"
+# Un fichier manquant n'empêche jamais la sauvegarde de la base : il est compté
+# et signalé (manifeste + historique), la base reste la priorité.
+mkdir -p "$TRAVAIL/fichiers"
+NB_FICHIERS=0; NB_NON_COPIES=0
+OBJETS=""
+if [ "$(psql "$SUPABASE_DB_URL" -X -q -tAc "select to_regclass('storage.objects') is not null")" = "t" ]; then
+  OBJETS="$(psql "$SUPABASE_DB_URL" -X -q -tAc "select name from storage.objects where bucket_id = 'documents' order by name")"
+fi
+while IFS= read -r OBJET; do
+  [ -z "$OBJET" ] && continue
+  # Noms attendus : factures/<uuid>.pdf, devis/<uuid>.pdf (tout autre nom est refusé).
+  if [ -z "${SUPABASE_URL:-}" ] || [ -z "${SUPABASE_SERVICE_ROLE_KEY:-}" ] \
+     || ! [[ "$OBJET" =~ ^[A-Za-z0-9_-]+/[A-Za-z0-9_.-]+$ ]] || [[ "$OBJET" == *..* ]]; then
+    NB_NON_COPIES=$((NB_NON_COPIES + 1)); continue
+  fi
+  mkdir -p "$TRAVAIL/fichiers/$(dirname "$OBJET")"
+  if curl -fsS --retry 2 --max-time 60 -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+       "$SUPABASE_URL/storage/v1/object/documents/$OBJET" -o "$TRAVAIL/fichiers/$OBJET"; then
+    NB_FICHIERS=$((NB_FICHIERS + 1))
+  else
+    rm -f "$TRAVAIL/fichiers/$OBJET"; NB_NON_COPIES=$((NB_NON_COPIES + 1))
+  fi
+done <<< "$OBJETS"
+AVERTISSEMENT=""
+if [ "$NB_NON_COPIES" -gt 0 ]; then
+  AVERTISSEMENT="Attention : ${NB_NON_COPIES} fichier(s) PDF non copié(s) (clé serveur absente ou stockage injoignable). La base est sauvegardée."
+  echo "$AVERTISSEMENT" >&2
+fi
+
 ETAPE="comptage des lignes"
 LIGNES="$(psql "$SUPABASE_DB_URL" -X -q -tA <<'SQL'
 select json_object_agg(t, n order by t) from (
@@ -77,25 +113,28 @@ select json_object_agg(t, n order by t) from (
 ) s;
 SQL
 )"
-printf '{"cree_le":"%s","type":"%s","lignes":%s}\n' "$DEBUT" "$TYPE" "$LIGNES" > "$TRAVAIL/manifeste.json"
+printf '{"cree_le":"%s","type":"%s","lignes":%s,"fichiers":%s,"fichiers_non_copies":%s}\n' \
+  "$DEBUT" "$TYPE" "$LIGNES" "$NB_FICHIERS" "$NB_NON_COPIES" > "$TRAVAIL/manifeste.json"
 
 ETAPE="vérification de l'archive"
 pg_restore --list "$TRAVAIL/public.dump" >/dev/null
 
 ETAPE="chiffrement"
 mkdir -p "$SORTIE"
-tar -C "$TRAVAIL" -cf - public.dump auth.sql manifeste.json \
+tar -C "$TRAVAIL" -cf - public.dump auth.sql manifeste.json fichiers \
   | gpg --batch --yes --quiet --pinentry-mode loopback --passphrase-fd 3 \
         --symmetric --cipher-algo AES256 --output "$SORTIE/$NOM" 3<<<"$BACKUP_PASSPHRASE"
 
 ETAPE="contrôle du fichier chiffré"
 gpg --batch --quiet --pinentry-mode loopback --passphrase-fd 3 --decrypt "$SORTIE/$NOM" 3<<<"$BACKUP_PASSPHRASE" \
-  | tar -tf - | sort | tr '\n' ' ' | grep -q "auth.sql manifeste.json public.dump"
+  | tar -tf - > "$TRAVAIL/contenu"
+for f in public.dump auth.sql manifeste.json; do grep -qx "$f" "$TRAVAIL/contenu"; done
+[ "$(grep -c '^fichiers/.*[^/]$' "$TRAVAIL/contenu" || true)" = "$NB_FICHIERS" ]
 
 TAILLE="$(stat -c %s "$SORTIE/$NOM")"
 EMPREINTE="$(sha256sum "$SORTIE/$NOM" | cut -d' ' -f1)"
 
 ETAPE="enregistrement du résultat"
-enregistrer "reussie" "" "$TAILLE" "$NOM" "$EMPREINTE" "$LIGNES"
+enregistrer "reussie" "$AVERTISSEMENT" "$TAILLE" "$NOM" "$EMPREINTE" "$LIGNES"
 trap - ERR
 echo "$SORTIE/$NOM"
