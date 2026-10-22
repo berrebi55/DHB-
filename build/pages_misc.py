@@ -74,7 +74,7 @@ def build():
 {breadcrumb_jsonld([(DOMAIN + "/", "Accueil"), (DOMAIN + "/a-propos/", "À propos")])}
 """
     out["a-propos/index.html"] = page(1, "a-propos/",
-        "À propos — DHB, maintenance & sécurité informatique pour entreprises",
+        "À propos — maintenance & sécurité informatique | DHB Pro",
         "DHB, prestataire informatique à taille humaine : disponible, transparent et impliqué. Sur site en Île-de-France, à distance partout en France. Découvrez notre approche.",
         body)
 
@@ -111,7 +111,7 @@ def build():
 {breadcrumb_jsonld([(DOMAIN + "/", "Accueil"), (DOMAIN + "/contact/", "Contact")])}
 """
     out["contact/index.html"] = page(1, "contact/",
-        "Contact — DHB, dépannage & maintenance informatique entreprises",
+        "Contact — dépannage & maintenance informatique | DHB Pro",
         "Contactez DHB pour votre maintenance, dépannage ou sécurité informatique. Audit gratuit, réponse sous 24h ouvrées. Sur site en Île-de-France, à distance partout en France.",
         body)
 
@@ -224,6 +224,6 @@ def build():
   <p>Vous cherchiez peut-être : <a href="{root(0)}services/">nos services</a>, <a href="{root(0)}blog/">le blog</a> ou <a href="{root(0)}zones/">nos zones d'intervention</a>.</p>
 </div></section>
 """
-    out["404.html"] = page(0, "404.html", "Page introuvable | DHB", "Page introuvable sur le site DHB.", body)
+    out["404.html"] = page(0, "404.html", "Page introuvable | DHB", "Page introuvable sur le site DHB.", body, indexable=False)
 
     return out

@@ -2,7 +2,6 @@
 """Génère l'ensemble du site DHB (HTML statique + sitemap + robots)."""
 import os
 import sys
-import datetime
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
@@ -25,44 +24,20 @@ def main():
     for mod in (pages_home, pages_services, pages_zones, pages_blog, pages_misc, pages_problems):
         files.update(mod.build())
 
-    for rel, html in files.items():
-        write(rel, html)
-
-    # --- URLs pour le sitemap (dérivées des chemins index.html) ---
-    urls = []
-    priorities = {"index.html": "1.0"}
-    for rel in files:
-        if rel == "404.html":
-            continue
-        if rel.endswith("index.html"):
-            url_path = rel[:-len("index.html")]  # garde le slash final
-        else:
-            url_path = rel
-        loc = base.DOMAIN + "/" + url_path
-        # priorités simples
+    def priorite(url_path):
         if url_path == "":
-            prio = "1.0"
-        elif url_path in ("services/", "zones/", "blog/", "contact/", "pannes-frequentes/"):
-            prio = "0.9"
-        elif url_path.startswith("services/") or url_path.startswith("zones/"):
-            prio = "0.8"
-        elif (url_path.startswith("blog/") and url_path != "blog/") or \
-             (url_path.startswith("pannes-frequentes/") and url_path != "pannes-frequentes/"):
-            prio = "0.6"
-        elif url_path in ("mentions-legales/", "politique-confidentialite/", "plan-du-site/"):
-            prio = "0.3"
-        else:
-            prio = "0.7"
-        urls.append((loc, prio))
+            return "1.0"
+        if url_path in ("services/", "zones/", "blog/", "contact/", "pannes-frequentes/"):
+            return "0.9"
+        if url_path.startswith("services/") or url_path.startswith("zones/"):
+            return "0.8"
+        if url_path.startswith(("blog/", "pannes-frequentes/")):
+            return "0.6"
+        if url_path in ("mentions-legales/", "politique-confidentialite/", "plan-du-site/"):
+            return "0.3"
+        return "0.7"
 
-    today = datetime.date.today().isoformat()
-    sm = ['<?xml version="1.0" encoding="UTF-8"?>',
-          '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
-    for loc, prio in sorted(urls, key=lambda x: (-float(x[1]), x[0])):
-        sm.append(f"  <url><loc>{loc}</loc><lastmod>{today}</lastmod>"
-                  f"<changefreq>monthly</changefreq><priority>{prio}</priority></url>")
-    sm.append("</urlset>")
-    write("sitemap.xml", "\n".join(sm) + "\n")
+    nb_urls = base.marque.ecrire_site(ROOT, base.DOMAIN, files, priorite, exclus=("404.html",))
 
     # --- robots.txt ---
     robots = (
@@ -75,7 +50,7 @@ def main():
     write("robots.txt", robots)
 
     print(f"{len(files)} pages HTML générées + sitemap.xml + robots.txt")
-    print(f"{len(urls)} URLs dans le sitemap")
+    print(f"{nb_urls} URLs dans le sitemap")
 
 
 if __name__ == "__main__":

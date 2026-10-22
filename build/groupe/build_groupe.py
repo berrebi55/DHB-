@@ -3,7 +3,7 @@
 SEO propre à son domaine (balises, JSON-LD Organization + filiales, sitemap/robots).
 Exécuter : python3 build/groupe/build_groupe.py
 """
-import os, sys, json, datetime
+import os, sys, json
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(HERE))
@@ -46,7 +46,7 @@ def org_jsonld():
     return '<script type="application/ld+json">' + json.dumps(data, ensure_ascii=False) + '</script>'
 
 
-def page(depth, slug_path, title, desc, body, extra=""):
+def page(depth, slug_path, title, desc, body, extra="", indexable=True):
     R = "../" * depth
     canonical = DOMAIN + "/" + slug_path
     nav = f"""
@@ -72,16 +72,7 @@ def page(depth, slug_path, title, desc, body, extra=""):
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>{title}</title>
-<meta name="description" content="{desc}">
-<link rel="canonical" href="{canonical}">
-<meta name="robots" content="index, follow">
-<meta property="og:type" content="website">
-<meta property="og:title" content="{title}">
-<meta property="og:description" content="{desc}">
-<meta property="og:url" content="{canonical}">
-<meta property="og:locale" content="fr_FR">
-<meta property="og:site_name" content="{NAME}">
+{marque.balises_partage("groupe", DOMAIN, title, desc, canonical, indexable=indexable)}
 {marque.head_assets("groupe", depth)}
 {extra}
 </head>
@@ -183,7 +174,7 @@ def home():
 </div></div></section>
 {org_jsonld()}
 """
-    return page(0, "", f"{NAME} — services informatiques pour les entreprises et les particuliers",
+    return page(0, "", f"{NAME} — informatique pour entreprises et particuliers",
                 "Le groupe DHB réunit DHB Pro (infogérance et cybersécurité pour les entreprises) et DHB Assistance (dépannage pour les particuliers). Île-de-France et à distance.", body)
 
 
@@ -191,7 +182,7 @@ def entete_page(depth, ariane, eyebrow, titre, intro):
     R = "../" * depth
     return f"""
 <section class="page-hero"><div class="wrap">
-  <div class="breadcrumb"><a href="{R}">Accueil</a> <span>/</span> {ariane}</div>
+  {marque.fil_ariane(DOMAIN, depth, [(None, ariane)])}
   {f'<span class="eyebrow">{eyebrow}</span>' if eyebrow else ''}
   <h1>{titre}</h1>
   {f'<p>{intro}</p>' if intro else ''}
@@ -260,6 +251,24 @@ def legal(slug, title, h1, blocks):
     return page(1, slug, f"{title} | {NAME}", f"{h1} du site du groupe DHB.", body)
 
 
+def page_404():
+    autres = " · ".join(f'<a href="{a["url_prod"]}/">{a["nom"]} ({a["pour"].lower()})</a>' for a in ACTIVITES)
+    body = f"""
+<section class="page-hero"><div class="wrap center">
+  <h1>Page introuvable (404)</h1>
+  <p style="margin:0 auto">La page que vous cherchez n'existe pas ou a été déplacée.</p>
+  <div class="hero-cta" style="justify-content:center;margin-top:24px">
+    <a class="btn btn--primary btn--lg" href="./">Retour à l'accueil</a>
+    <a class="btn btn--ghost btn--lg" href="contact/">Nous contacter</a>
+  </div>
+</div></section>
+<section class="section"><div class="wrap center">
+  <p>Vous cherchiez peut-être : {autres}, ou <a href="le-groupe/">le groupe</a>.</p>
+</div></section>
+"""
+    return page(0, "404.html", f"Page introuvable | {NAME}", "Page introuvable sur le site du groupe DHB.", body, indexable=False)
+
+
 def build():
     pages = {
         "index.html": home(),
@@ -275,23 +284,10 @@ def build():
             '<h2>Vos droits</h2><p>Conformément au RGPD, vous disposez d\'un droit d\'accès, de rectification et de suppression. Contact : '
             f'<a href="mailto:{EMAIL}">{EMAIL}</a>.</p><p class="a-completer">[À COMPLÉTER : durées de conservation des demandes.]</p><h2>Mesure d\'audience (Google Analytics)</h2><p>Avec votre accord uniquement, nous utilisons Google Analytics 4 pour comprendre comment le site est utilisé (pages vues, clics, envoi de formulaires) et l\'améliorer. Les adresses IP sont anonymisées, aucune donnée publicitaire n\'est activée. Sans accord, rien n\'est chargé ni envoyé. Vous pouvez changer d\'avis à tout moment via « Gérer mes cookies » en bas de page. <span class="a-completer">[À COMPLÉTER : durée de conservation GA4 choisie, ex. 14 mois]</span></p>'),
     }
-    for rel, html in pages.items():
-        p = os.path.join(OUT, rel)
-        os.makedirs(os.path.dirname(p), exist_ok=True)
-        open(p, "w", encoding="utf-8").write(html)
-
-    today = datetime.date.today().isoformat()
-    urls = []
-    for rel in pages:
-        up = "" if rel == "index.html" else rel[:-len("index.html")]
-        prio = "1.0" if up == "" else ("0.8" if up in ("le-groupe/", "contact/") else "0.3")
-        urls.append((DOMAIN + "/" + up, prio))
-    sm = ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
-    for loc, prio in sorted(urls, key=lambda x: -float(x[1])):
-        sm.append(f"  <url><loc>{loc}</loc><lastmod>{today}</lastmod><changefreq>monthly</changefreq><priority>{prio}</priority></url>")
-    sm.append("</urlset>")
-    open(os.path.join(OUT, "sitemap.xml"), "w", encoding="utf-8").write("\n".join(sm) + "\n")
-    open(os.path.join(OUT, "robots.txt"), "w", encoding="utf-8").write(f"User-agent: *\nAllow: /\n\nSitemap: {DOMAIN}/sitemap.xml\n")
+    pages["404.html"] = page_404()
+    marque.ecrire_site(OUT, DOMAIN, pages, lambda up: "1.0" if up == "" else ("0.8" if up in ("le-groupe/", "contact/") else "0.3"),
+                       exclus=("404.html",))
+    open(os.path.join(OUT, "robots.txt"), "w", encoding="utf-8", newline="\n").write(f"User-agent: *\nAllow: /\n\nSitemap: {DOMAIN}/sitemap.xml\n")
     open(os.path.join(OUT, ".nojekyll"), "w").write("")
     print(f"Site GROUPE : {len(pages)} pages + sitemap + robots")
 

@@ -3,7 +3,7 @@
 Prix affichés (B2C), identité teal rassurante, base d'aide (Q&A grand public), SEO propre.
 Exécuter : python3 build/particuliers/build_particuliers.py
 """
-import os, sys, json, datetime
+import os, sys, json
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(HERE))
@@ -52,7 +52,7 @@ def org_jsonld():
     return '<script type="application/ld+json">' + json.dumps(data, ensure_ascii=False) + '</script>'
 
 
-def page(depth, slug_path, title, desc, body, extra=""):
+def page(depth, slug_path, title, desc, body, extra="", indexable=True):
     R = "../" * depth
     home = R if R else "./"
     canonical = DOMAIN + "/" + slug_path
@@ -78,13 +78,7 @@ def page(depth, slug_path, title, desc, body, extra=""):
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>{title}</title>
-<meta name="description" content="{desc}">
-<link rel="canonical" href="{canonical}">
-<meta name="robots" content="index, follow">
-<meta property="og:type" content="website"><meta property="og:title" content="{title}">
-<meta property="og:description" content="{desc}"><meta property="og:url" content="{canonical}">
-<meta property="og:locale" content="fr_FR"><meta property="og:site_name" content="{NAME}">
+{marque.balises_partage("assistance", DOMAIN, title, desc, canonical, indexable=indexable)}
 {marque.head_assets("assistance", depth)}
 {extra}
 </head>
@@ -298,14 +292,14 @@ def home():
 <script type="application/ld+json">{json.dumps(faq_ld, ensure_ascii=False)}</script>
 {org_jsonld()}
 """
-    return page(0, "", f"{NAME} — dépannage et assistance informatique à domicile et à distance",
+    return page(0, "", f"Dépannage informatique à domicile et à distance | {NAME}",
                 "DHB Assistance : dépannage et assistance informatique pour les particuliers, à domicile (Île-de-France) et à distance (France). Ordinateur, virus, box, photos. Prix clairs.", body)
 
 
 def abonnement():
     body = f"""
 <section class="page-hero"><div class="wrap">
-  <div class="breadcrumb"><a href="../">Accueil</a> <span>/</span> Abonnement & tarifs</div>
+  {marque.fil_ariane(DOMAIN, 1, [(None, "Abonnement & tarifs")])}
   <span class="eyebrow">Nos formules</span>
   <h1>Abonnement & tarifs : des prix clairs, sans surprise</h1>
   <p>Choisissez la formule qui vous convient. Le tarif exact vous est toujours annoncé avant toute intervention.</p>
@@ -344,7 +338,7 @@ def aide_index():
     js = """<script>(function(){var s=document.getElementById('pb-search'),c=[].slice.call(document.querySelectorAll('.pb-card')),f=[].slice.call(document.querySelectorAll('.pb-filter')),e=document.getElementById('pb-empty'),cat='all';function n(x){return(x||'').toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'')}function a(){var q=n(s.value.trim()),k=0;c.forEach(function(x){var okc=(cat==='all'||x.getAttribute('data-cat')===cat),okq=(!q||n(x.getAttribute('data-kw')).indexOf(q)>-1),sh=okc&&okq;x.style.display=sh?'':'none';if(sh)k++});if(e)e.classList.toggle('show',k===0)}s.addEventListener('input',a);f.forEach(function(b){b.addEventListener('click',function(){f.forEach(function(y){y.classList.remove('active')});b.classList.add('active');cat=b.getAttribute('data-cat');a()})})})();</script>"""
     body = f"""
 <section class="page-hero"><div class="wrap">
-  <div class="breadcrumb"><a href="../">Accueil</a> <span>/</span> Centre d'aide</div>
+  {marque.fil_ariane(DOMAIN, 1, [(None, "Centre d'aide")])}
   <span class="eyebrow">Centre d'aide</span>
   <h1>Un souci informatique ? Trouvez la réponse</h1>
   <p>Cherchez votre problème ci-dessous, expliqué simplement. Et si vous préférez qu'on s'en occupe, on est là.</p>
@@ -380,7 +374,7 @@ def aide_page(a):
         "text": a["sym"] + " À essayer : " + " ; ".join(a["check"]) + ". " + a["call"]}}]}
     body = f"""
 <section class="page-hero"><div class="wrap">
-  <div class="breadcrumb"><a href="{r}">Accueil</a> <span>/</span> <a href="{r}aide/">Centre d'aide</a> <span>/</span> {label}</div>
+  {marque.fil_ariane(DOMAIN, 2, [("aide/", "Centre d'aide"), (None, label)], page_courante=a['q'])}
   <span class="pb-cat">{label}</span>
   <h1 style="margin-top:12px">{a['q']}</h1>
   <p>{a['sym']}</p>
@@ -408,13 +402,13 @@ def aide_page(a):
 {org_jsonld()}
 """
     return page(2, f"aide/{a['slug']}/", f"{a['q']} — aide informatique | {NAME}",
-                a["sym"][:155], body)
+                a["sym"], body)
 
 
 def contact():
     body = f"""
 <section class="page-hero"><div class="wrap">
-  <div class="breadcrumb"><a href="../">Accueil</a> <span>/</span> Contact</div>
+  {marque.fil_ariane(DOMAIN, 1, [(None, "Contact")])}
   <span class="eyebrow">Contact</span><h1>Besoin d'aide ? Écrivez-nous</h1>
   <p>Un problème à régler ou une question : on vous recontacte vite et on vous aide, chez vous ou à distance.</p>
 </div></section>
@@ -435,7 +429,7 @@ def contact():
 
 def a_propos():
     body = f"""
-<section class="page-hero"><div class="wrap"><div class="breadcrumb"><a href="../">Accueil</a> <span>/</span> À propos</div>
+<section class="page-hero"><div class="wrap">{marque.fil_ariane(DOMAIN, 1, [(None, "À propos")])}
   <span class="eyebrow">À propos</span><h1>Votre informatique, en toute confiance</h1>
   <p>DHB Assistance, c'est l'activité grand public du groupe DHB : une aide informatique proche, patiente et sans jargon.</p></div></section>
 <section class="section"><div class="wrap"><div class="article-body" style="max-width:820px">
@@ -455,7 +449,7 @@ def a_propos():
 
 def legal(slug, title, h1, blocks):
     body = f"""
-<section class="page-hero"><div class="wrap"><div class="breadcrumb"><a href="../">Accueil</a> <span>/</span> {h1}</div><h1>{h1}</h1></div></section>
+<section class="page-hero"><div class="wrap">{marque.fil_ariane(DOMAIN, 1, [(None, h1)])}<h1>{h1}</h1></div></section>
 <section class="section"><div class="wrap"><div class="article-body">{blocks}</div></div></section>"""
     return page(1, slug, f"{title} | {NAME}", f"{h1} du site DHB Assistance.", body)
 
@@ -478,37 +472,41 @@ def build():
     }
     # Pages de retour paiement (Stripe)
     pages["paiement-reussi/index.html"] = page(1, "paiement-reussi/", f"Merci — {NAME}",
-        "Votre paiement a bien été pris en compte. Merci !",
+        "Votre paiement a bien été pris en compte. Merci !", indexable=False, body=
         f"""<section class="page-hero"><div class="wrap"><h1>Merci !</h1><p>Votre paiement a bien été pris en compte. On revient vers vous très vite.</p>
         <div class="hero-cta"><a class="btn btn--primary btn--lg" href="../">Retour à l'accueil</a></div></div></section>""")
     pages["paiement-annule/index.html"] = page(1, "paiement-annule/", f"Paiement annulé — {NAME}",
-        "Le paiement a été annulé.",
+        "Le paiement a été annulé.", indexable=False, body=
         f"""<section class="page-hero"><div class="wrap"><h1>Paiement annulé</h1><p>Aucun montant n'a été débité. Vous pouvez réessayer, ou nous contacter si vous avez une question.</p>
         <div class="hero-cta"><a class="btn btn--primary btn--lg" href="../abonnement/">Voir les formules</a><a class="btn btn--outline btn--lg" href="../contact/">Nous contacter</a></div></div></section>""")
 
     for a in ad.A:
         pages[f"aide/{a['slug']}/index.html"] = aide_page(a)
 
-    for rel, html in pages.items():
-        p = os.path.join(OUT, rel)
-        os.makedirs(os.path.dirname(p), exist_ok=True)
-        open(p, "w", encoding="utf-8").write(html)
+    pages["404.html"] = page(0, "404.html", f"Page introuvable | {NAME}", "Page introuvable sur le site DHB Assistance.", f"""
+<section class="page-hero"><div class="wrap center">
+  <h1>Page introuvable (404)</h1>
+  <p style="margin:0 auto">La page que vous cherchez n'existe pas ou a été déplacée.</p>
+  <div class="hero-cta" style="justify-content:center;margin-top:24px">
+    <a class="btn btn--primary btn--lg" href="./">Retour à l'accueil</a>
+    <a class="btn btn--outline btn--lg" href="contact/">Nous contacter</a>
+  </div>
+</div></section>
+<section class="section"><div class="wrap center">
+  <p>Vous cherchiez peut-être : <a href="aide/">le centre d'aide</a>, <a href="abonnement/">l'abonnement et les tarifs</a> ou <a href="a-propos/">qui nous sommes</a>.</p>
+</div></section>
+""", indexable=False)
 
-    today = datetime.date.today().isoformat()
-    urls = []
-    for rel in pages:
-        up = "" if rel == "index.html" else rel[:-len("index.html")]
-        if up == "": prio = "1.0"
-        elif up in ("abonnement/", "aide/", "contact/"): prio = "0.9"
-        elif up.startswith("aide/"): prio = "0.7"
-        else: prio = "0.3"
-        urls.append((DOMAIN + "/" + up, prio))
-    sm = ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
-    for loc, prio in sorted(urls, key=lambda x: -float(x[1])):
-        sm.append(f"  <url><loc>{loc}</loc><lastmod>{today}</lastmod><changefreq>monthly</changefreq><priority>{prio}</priority></url>")
-    sm.append("</urlset>")
-    open(os.path.join(OUT, "sitemap.xml"), "w", encoding="utf-8").write("\n".join(sm) + "\n")
-    open(os.path.join(OUT, "robots.txt"), "w", encoding="utf-8").write(f"User-agent: *\nAllow: /\n\nSitemap: {DOMAIN}/sitemap.xml\n")
+    def priorite(up):
+        if up == "":
+            return "1.0"
+        if up in ("abonnement/", "aide/", "contact/"):
+            return "0.9"
+        return "0.7" if up.startswith("aide/") else "0.3"
+
+    marque.ecrire_site(OUT, DOMAIN, pages, priorite,
+                       exclus=("404.html", "paiement-reussi/index.html", "paiement-annule/index.html"))
+    open(os.path.join(OUT, "robots.txt"), "w", encoding="utf-8", newline="\n").write(f"User-agent: *\nAllow: /\n\nSitemap: {DOMAIN}/sitemap.xml\n")
     open(os.path.join(OUT, ".nojekyll"), "w").write("")
     print(f"Site PARTICULIERS : {len(pages)} pages + sitemap + robots ({len(ad.A)} fiches d'aide)")
 

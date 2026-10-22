@@ -14,18 +14,29 @@ import os
 
 SITES = {
     "groupe": {"nom": "DHB Groupe", "label": "Groupe", "dossier": "groupe", "prod": "https://www.dhb-groupe.fr/",
-               "pour": "Le groupe"},
+               "pour": "Le groupe",
+               "accroche": "Services informatiques pour les entreprises et les particuliers"},
     "pro": {"nom": "DHB Pro", "label": "Pro", "dossier": "infogerance", "prod": "https://pro.dhb-groupe.fr/",
-            "pour": "Entreprises"},
+            "pour": "Entreprises",
+            "accroche": "Infogérance, maintenance & cybersécurité pour les entreprises"},
     "assistance": {"nom": "DHB Assistance", "label": "Assistance", "dossier": "particuliers", "prod": "https://www.dhb-assistance.fr/",
-                   "pour": "Particuliers"},
+                   "pour": "Particuliers",
+                   "accroche": "Assistance & dépannage informatique pour les particuliers"},
 }
 
-FONTS = {
-    "groupe": "family=Inter:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,500;6..72,600",
-    "pro": "family=Inter:wght@400;500;600;700;800",
-    "assistance": "family=Inter:wght@400;500;600;700&family=Nunito:wght@700;800",
+# Polices hébergées sur chaque site (assets/fonts/, licence SIL OFL 1.1, paquets
+# Fontsource) : aucune requête vers Google, donc ni blocage ni transfert d'IP.
+# (famille CSS, fichier, graisses couvertes par la police variable)
+POLICES = {
+    "groupe": [("Inter", "inter-latin-wght-normal.woff2", "100 900"),
+               ("Newsreader", "newsreader-latin-wght-normal.woff2", "200 800")],
+    "pro": [("Inter", "inter-latin-wght-normal.woff2", "100 900")],
+    "assistance": [("Inter", "inter-latin-wght-normal.woff2", "100 900"),
+                   ("Nunito", "nunito-latin-wght-normal.woff2", "200 1000")],
 }
+# Jeu « latin » de Fontsource (français complet : accents, œ, « », €, …).
+PLAGE_LATIN = ("U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,"
+               "U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD")
 
 ICONES = {
     "phone": '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.6a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.5-1.1a2 2 0 0 1 2.1-.5c.8.3 1.7.5 2.6.6a2 2 0 0 1 1.7 2z"/></svg>',
@@ -49,12 +60,170 @@ def lien_site(cle, depth):
 
 def head_assets(site, depth, theme_color="#FFFFFF"):
     r = root(depth)
+    faces = "".join(
+        f"@font-face{{font-family:'{fam}';font-style:normal;font-display:swap;font-weight:{poids};"
+        f"src:url({r}assets/fonts/{fichier}) format('woff2');unicode-range:{PLAGE_LATIN}}}"
+        for fam, fichier, poids in POLICES[site])
     return f"""<meta name="theme-color" content="{theme_color}">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?{FONTS[site]}&display=swap">
+<link rel="preload" href="{r}assets/fonts/{POLICES[site][0][1]}" as="font" type="font/woff2" crossorigin>
+<style>{faces}</style>
 <link rel="stylesheet" href="{r}assets/css/style.css">
 <link rel="icon" href="{r}assets/img/favicon.svg" type="image/svg+xml">"""
+
+
+# --- Référencement (communs aux 3 sites) --------------------------------------
+TITRE_MAX = 60        # au-delà, Google coupe le titre dans ses résultats
+DESCRIPTION_MAX = 160
+
+
+def _couper_mots(texte, limite):
+    """Coupe à la dernière fin de mot ≤ limite (sans « … »)."""
+    if len(texte) <= limite:
+        return texte
+    t = texte[:limite + 1]
+    return t[:t.rfind(" ")].rstrip(" ,;:—-") if " " in t else texte[:limite]
+
+
+def titre_seo(titre):
+    """Raccourcit un titre trop long sans rien inventer ni couper une phrase :
+    du plus complet au plus court, on essaie le titre sans la marque
+    (« | DHB… »), sans les précisions entre parenthèses, sans le complément
+    après « — », puis sans la fin après « : » ou « , ». Si rien ne tient en
+    60 caractères, on garde la phrase entière (à réécrire par le propriétaire).
+    Le titre complet reste dans la page (h1, og:title)."""
+    if len(titre) <= TITRE_MAX:
+        return titre
+    principal, marque_ = titre, ""
+    marques = {s["nom"] for s in SITES.values()} | {"DHB"}
+    for sep in (" | ", " — "):
+        avant, _, apres = titre.rpartition(sep)
+        if avant and apres in marques:
+            principal, marque_ = avant, " | " + apres
+            break
+    import re
+    sans_paren = re.sub(r"\s*\([^)]*\)", "", principal).strip()
+    candidats = [principal, sans_paren]
+    for c in (principal, sans_paren):
+        if " — " in c:
+            candidats.append(c.split(" — ")[0])
+    for c in list(candidats):
+        for sep in (" : ", ", "):
+            if sep in c:
+                candidats.append(c.split(sep)[0])
+    for c in candidats:
+        c = c.strip()
+        if len(c) < 20:          # trop court pour décrire la page
+            continue
+        if len(c + marque_) <= TITRE_MAX:
+            return c + marque_
+        if len(c) <= TITRE_MAX:
+            return c
+    # Rien ne tient : la question seule, sans complément générique (« — causes et solutions »).
+    question = sans_paren.split(" — ")[0].strip()
+    return question if len(question) >= 20 else sans_paren
+
+
+def description_seo(texte):
+    """≤ 160 caractères : phrase(s) entière(s) si possible, sinon fin de mot + « … »."""
+    texte = " ".join(texte.split())
+    if len(texte) <= DESCRIPTION_MAX:
+        return texte
+    debut = texte[:DESCRIPTION_MAX]
+    fin = max(debut.rfind(". "), debut.rfind(" ! "), debut.rfind(" ? "))
+    if fin >= 70:
+        return debut[:fin + 1].rstrip()
+    return _couper_mots(texte, DESCRIPTION_MAX - 1) + "…"
+
+
+def balises_partage(site, domaine, titre, description, canonical, og_type="website", indexable=True):
+    """<title>, description, canonical, robots, Open Graph et carte Twitter/X.
+    Page non indexable (404, retour de paiement) : noindex et pas de canonical.
+    L'image og.png est produite par build/og/generer_og.mjs (mêmes accroches)."""
+    import html as _h
+    t, d = titre_seo(titre), description_seo(description)
+    e = lambda s: _h.escape(s, quote=True).replace("&#x27;", "'")
+    lignes = [f"<title>{e(t)}</title>", f'<meta name="description" content="{e(d)}">']
+    if indexable:
+        lignes += [f'<link rel="canonical" href="{canonical}">', '<meta name="robots" content="index, follow">']
+    else:
+        lignes += ['<meta name="robots" content="noindex, follow">']
+        if canonical.endswith("/404.html"):
+            # Servie à n'importe quelle adresse : ses liens relatifs partent de la racine.
+            lignes.append('<base href="/">')
+    image = f"{domaine}/assets/img/og.png"
+    lignes += [
+        f'<meta property="og:type" content="{og_type}">',
+        f'<meta property="og:title" content="{e(titre)}">',
+        f'<meta property="og:description" content="{e(d)}">',
+        f'<meta property="og:url" content="{canonical}">',
+        f'<meta property="og:image" content="{image}">',
+        '<meta property="og:image:type" content="image/png">',
+        '<meta property="og:image:width" content="1200">',
+        '<meta property="og:image:height" content="630">',
+        f'<meta property="og:image:alt" content="{e(SITES[site]["nom"])} — {e(SITES[site]["accroche"])}">',
+        '<meta property="og:locale" content="fr_FR">',
+        f'<meta property="og:site_name" content="{e(SITES[site]["nom"])}">',
+        '<meta name="twitter:card" content="summary_large_image">',
+    ]
+    return "\n".join(lignes)
+
+
+def fil_ariane(domaine, depth, etapes, page_courante=None):
+    """Fil d'Ariane visible + données structurées BreadcrumbList.
+    etapes : [(chemin_relatif_ou_None, libellé), …] après « Accueil ».
+    page_courante : titre de la page quand le dernier libellé visible n'est pas
+    la page elle-même (ex. une catégorie sans page propre) ; pour Google, le
+    dernier élément du fil est toujours la page affichée."""
+    import json
+    r = root(depth)
+    parts = [f'<a href="{r or "./"}">Accueil</a>']
+    elements = [{"name": "Accueil", "item": domaine + "/"}]
+    for chemin, libelle in etapes:
+        parts.append("<span>/</span>")
+        parts.append(f'<a href="{r}{chemin}">{libelle}</a>' if chemin else libelle)
+        if chemin:
+            elements.append({"name": libelle, "item": f"{domaine}/{chemin}"})
+        elif not page_courante:
+            elements.append({"name": libelle})
+    if page_courante:
+        elements.append({"name": page_courante})
+    donnees = {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [
+        {"@type": "ListItem", "position": i, **el} for i, el in enumerate(elements, start=1)]}
+    return (f'<div class="breadcrumb">{" ".join(parts)}</div>'
+            f'<script type="application/ld+json">{json.dumps(donnees, ensure_ascii=False)}</script>')
+
+
+def ecrire_site(dossier, domaine, pages, priorite, exclus=()):
+    """Écrit les pages puis sitemap.xml. La date « lastmod » d'une page ne change
+    que si son contenu change (sinon Google finit par ignorer ces dates).
+    priorite(chemin_url) -> "0.3".."1.0" ; exclus : pages hors sitemap (404, paiement)."""
+    import datetime, re
+    aujourd_hui = datetime.date.today().isoformat()
+    ancien = {}
+    chemin_sm = os.path.join(dossier, "sitemap.xml")
+    if os.path.exists(chemin_sm):
+        for loc, date in re.findall(r"<loc>(.*?)</loc><lastmod>(.*?)</lastmod>", open(chemin_sm, encoding="utf-8").read()):
+            ancien[loc] = date
+    urls = []
+    for rel, contenu in pages.items():
+        p = os.path.join(dossier, rel)
+        os.makedirs(os.path.dirname(p), exist_ok=True)
+        inchange = os.path.exists(p) and open(p, encoding="utf-8").read() == contenu
+        if not inchange:
+            with open(p, "w", encoding="utf-8", newline="\n") as f:
+                f.write(contenu)
+        if rel in exclus:
+            continue
+        chemin = "" if rel == "index.html" else (rel[:-len("index.html")] if rel.endswith("index.html") else rel)
+        loc = f"{domaine}/{chemin}"
+        urls.append((loc, priorite(chemin), ancien.get(loc, aujourd_hui) if inchange else aujourd_hui))
+    sm = ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
+    for loc, prio, date in sorted(urls, key=lambda x: (-float(x[1]), x[0])):
+        sm.append(f"  <url><loc>{loc}</loc><lastmod>{date}</lastmod><changefreq>monthly</changefreq><priority>{prio}</priority></url>")
+    sm.append("</urlset>")
+    with open(chemin_sm, "w", encoding="utf-8", newline="\n") as f:
+        f.write("\n".join(sm) + "\n")
+    return len(urls)
 
 
 def brandbar(site, depth, phone_display=None, phone_link=None):

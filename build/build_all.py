@@ -20,3 +20,18 @@ for site in ("groupe", "particuliers"):
         os.makedirs(os.path.dirname(dest), exist_ok=True)
         shutil.copyfile(os.path.join(SOURCE, rel), dest)
 print("Feuille de style et script communs synchronisés.")
+
+# Polices hébergées localement : chaque site reçoit les siennes (+ licences OFL).
+sys.path.insert(0, HERE)
+import marque  # noqa: E402
+POLICES_SRC = os.path.join(HERE, "polices")
+for cle, polices in marque.POLICES.items():
+    dest = os.path.join(REPO, "sites", marque.SITES[cle]["dossier"], "assets", "fonts")
+    os.makedirs(dest, exist_ok=True)
+    utiles = {f for _, f, _ in polices} | {f"LICENCE-{f.split('-')[0]}.txt" for _, f, _ in polices}
+    for f in os.listdir(dest):
+        if f not in utiles:
+            os.remove(os.path.join(dest, f))
+    for f in sorted(utiles):
+        shutil.copyfile(os.path.join(POLICES_SRC, f), os.path.join(dest, f))
+print("Polices copiées dans chaque site.")

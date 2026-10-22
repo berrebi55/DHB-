@@ -244,7 +244,7 @@ def localbusiness_jsonld():
         "url": DOMAIN + "/",
         "telephone": PHONE_LINK,
         "email": EMAIL,
-        "image": DOMAIN + "/assets/img/og.svg",
+        "image": DOMAIN + "/assets/img/og.png",
         "areaServed": [
             {"@type": "AdministrativeArea", "name": "Île-de-France"},
             {"@type": "Country", "name": "France"},
@@ -270,8 +270,9 @@ def breadcrumb_jsonld(trail_full):
 
 
 # --- Gabarit de page ---------------------------------------------------------
-def page(depth, slug_path, title, description, body, extra_head="", og_type="website"):
-    """slug_path: chemin relatif sans slash initial, ex. 'services/cybersecurite/' ou '' pour l'accueil."""
+def page(depth, slug_path, title, description, body, extra_head="", og_type="website", indexable=True):
+    """slug_path: chemin relatif sans slash initial, ex. 'services/cybersecurite/' ou '' pour l'accueil.
+    indexable=False : page hors index (404) — noindex, sans canonical."""
     r = root(depth)
     canonical = DOMAIN + "/" + slug_path
     colonnes = [
@@ -287,17 +288,7 @@ def page(depth, slug_path, title, description, body, extra_head="", og_type="web
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>{title}</title>
-<meta name="description" content="{description}">
-<link rel="canonical" href="{canonical}">
-<meta name="robots" content="index, follow">
-<meta property="og:type" content="{og_type}">
-<meta property="og:title" content="{title}">
-<meta property="og:description" content="{description}">
-<meta property="og:url" content="{canonical}">
-<meta property="og:image" content="{DOMAIN}/assets/img/og.svg">
-<meta property="og:locale" content="fr_FR">
-<meta property="og:site_name" content="{SITE_NAME}">
+{marque.balises_partage("pro", DOMAIN, title, description, canonical, og_type, indexable)}
 {marque.head_assets("pro", depth)}
 {extra_head}
 </head>

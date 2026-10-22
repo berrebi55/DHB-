@@ -155,10 +155,12 @@ python -m http.server 8000      # (Windows : py -m http.server 8000)
 
 ### Régénérer après modification du contenu
 ```bash
-python3 build/build.py
-python3 build/groupe/build_groupe.py
-python3 build/particuliers/build_particuliers.py
+python3 build/build_all.py
 ```
+(les 3 sites, la feuille de style commune et les polices hébergées localement ;
+`DHB_LIENS=prod` pour des liens vers les vrais domaines). Titres, descriptions,
+balises de partage, fil d'Ariane et sitemap sont produits par `build/marque.py` ;
+les images de partage (`assets/img/og.png`) par `build/og/generer_og.mjs`.
 
 ---
 
