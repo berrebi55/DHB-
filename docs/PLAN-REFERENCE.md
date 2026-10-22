@@ -159,7 +159,7 @@ Ordre adapté à l'audit : la **sécurité critique** (C1, C2) et la **sauvegard
 | **8** ✅ | **Communication** : `email-send` unique et journalisé, historique, modèles à variables, envoi manuel depuis client/demande/devis/facture/ticket | — | envois existants (devis, facture, relances) | Resend (domaine à vérifier ; en attendant : envoi vers sa propre adresse) |
 | **9** ✅ | **Automatisations** : `evenements` + `worker`, règles SI → ALORS (bienvenue, relance devis J+5, rappel facture J+7, ticket résolu), migration de `send-reminders` | — | lots 6 à 8 | Planification (cron) |
 | **10** ✅ | **Intégrations + Google Analytics** : page Système → Intégrations, connexion Google OAuth, dictionnaire d'événements, conversions serveur, copie quotidienne des chiffres, Pilotage → Acquisition | — | consentement, formulaires, sites | Projet Google Cloud, GA4, secret Measurement Protocol |
-| **11** | **Google Drive** : dossier client + 8 sous-dossiers, copie des PDF, statut et reprise | — | clients, documents | même connexion Google |
+| **11** ✅ | **Google Drive** : dossier client + 8 sous-dossiers, copie des PDF, statut et reprise | — | clients, documents | même connexion Google |
 | **12** | **Search Console** : synchronisation, Pilotage → SEO | — | — | domaines achetés + propriétés vérifiées |
 | **13** | **SEO technique** : titres/descriptions, `og:image`, 404, fils d'Ariane, `noindex` paiement, polices auto-hébergées | I11, I12, A7 | 170 pages, sitemap, liens, GA | — |
 | **14** | **SEO local + contenu** : pages utiles et distinctes (intention, mot-clé, FAQ, maillage) | — | sitemap, maillage | validation du contenu par le propriétaire |
@@ -546,6 +546,38 @@ Ordre adapté à l'audit : la **sécurité critique** (C1, C2) et la **sauvegard
 - L'identifiant de mesure doit aussi être saisi dans `suivi.js` (sites) : deux endroits à garder identiques.
 
 **À faire plus tard (mise en production)** : suivre `docs/GOOGLE.md` (projet Google Cloud, secrets, déploiement de `google-oauth`, `google-sync`, `integration-test`, `worker` ; connexion ; identifiants GA4 ; `GA_API_SECRET` ; planification `dhb-google` ; événements clés dans GA4) et exécuter `supabase/full-setup.sql`.
+
+### Lot 11 — Google Drive ✅ VALIDÉ (environnement de test)
+
+**Modifié**
+- **Dossier par client** dans « DHB — Clients » avec **8 sous-dossiers proposés** — *01 - Devis, 02 - Factures, 03 - Contrats et abonnements, 04 - Parc informatique, 05 - Interventions, 06 - Échanges, 07 - Documents du client, 08 - Divers* — **à valider par le propriétaire** : modifiables par un administrateur (2 à 8, noms contrôlés) dans Système → Intégrations.
+- **Copie des PDF** : devis → 1ᵉʳ sous-dossier (une nouvelle version **remplace** le fichier, pas de doublon) ; facture → 2ᵉ sous-dossier (**copie unique**, l'archive ne change jamais). Dossier supprimé dans Drive → recréé.
+- **Automatique et sans blocage** : client créé, PDF créé ou nouvelle version → événements de la file du lot 9, traités par le robot. Panne de Google → réessai automatique ; accès refusé → erreur **expliquée sur la fiche** et au journal, sans réessai inutile.
+- **Reprise** : `drive-sync` — bouton « Créer le dossier / Mettre à jour / Réessayer » sur la fiche client (équipe) et « Créer les dossiers des clients existants » (administrateur, par lots de 25).
+- **Sécurité** : autorisation `drive.file` (DHB ne voit **que** ce qu'il a créé) ; informations Drive des clients écrites **par le serveur seul** (un utilisateur ne peut pas y mettre un lien) ; l'archive d'une facture reste intouchable (seul le suivi de copie peut évoluer).
+- **Correctif découvert** : `clients_vue` et `factures_vue` (définies avec `c.*` / `f.*`) faisaient échouer le **2ᵉ passage** de `full-setup.sql` dès qu'une colonne était ajoutée à la table ; elles sont désormais recréées à chaque passage (droits et `security_invoker` vérifiés).
+- **Back-office** : carte *Google Drive* (Intégrations), ligne *Google Drive* de la fiche client (masquée si Drive désactivé), mention « copié dans Google Drive » / erreur dans l'onglet Documents. Documentation : `docs/GOOGLE.md` §3.
+
+**Fichiers**
+`supabase/full-setup.sql` (section 23, vues, événements et protection des documents) · `supabase/tests/lot11-drive.sql` (nouveau) · `supabase/functions/_shared/drive.ts` (nouveau) · `_shared/automatisations.ts` · `drive-sync/index.ts` (nouveau) · `admin-react/src/components/documents/DossierDrive.tsx` (nouveau) · `DocumentsClient.tsx` · `src/pages/clients/show.tsx` · `src/pages/systeme/integrations.tsx` · `admin-react/README.md` · `docs/GOOGLE.md`.
+
+**Tests**
+- `full-setup.sql` rejoué 4 fois après correction : 0 erreur (le 2ᵉ passage échouait avant la correction des vues).
+- **SQL `lot11-drive.sql` : 14 / 14** (rejouable) — réglages par défaut, admin OK, plus de 8 / nom avec « / » refusés, collaborateur sans effet ; lien Drive saisi par un collaborateur **ignoré** (création et modification), écrit par le serveur ; événements `document_cree` / `document_maj` (rien pour une simple note de copie) ; archive de facture : suivi Drive modifiable par le serveur, contenu et suppression **toujours refusés**, aucune écriture par l'équipe.
+- **Bout en bout** (vraie base + PostgREST + robot et `drive-sync` exécutés par Deno + faux Google Drive fidèle : dossiers, recherche, envoi multipart, remplacement, corbeille héritée) : **21 / 21** — Drive désactivé (rien créé, 409) ; racine + dossier client + 8 sous-dossiers, statut et lien ; devis copié (contenu identique) puis **nouvelle version remplacée** ; facture copiée **une seule fois** ; **panne → réessai, fiche en erreur puis à jour** ; **refus → erreur expliquée sans réessai** ; « Réessayer » (collaborateur) ; dossier supprimé → recréé et PDF recopié ; rattrapage (collaborateur refusé, admin OK) ; sous-dossiers renommés appliqués ; une seule racine.
+- Robot, Google, emails, PDF rejoués : 20 / 26 / 30 / 23 conformes. `deno check` des 17 fonctions : OK.
+- **Navigateur : 26 / 26** — carte Drive (8 sous-dossiers, renommer / retirer / minimum 2, enregistrement, rattrapage), Google non connecté → activation impossible, fiche (lien sécurisé en nouvel onglet, erreur + « Réessayer », masquée si désactivé), documents ; axe-core sans défaut, 0 débordement, 0 erreur JS.
+- Non-régression : SQL lots 1 / 2 / 4 / 6 / 7 / 8 / 9 / 10, navigateur lots 4 à 10 (le test du lot 10 a été précisé : deux boutons « Enregistrer » sur la page), audit d'accessibilité des 52 vues (inchangé), TypeScript 0 erreur, `npm run build` OK.
+
+**Résultat** : ✅ **VALIDÉ** sur l'environnement de test.
+
+**Risques / points à surveiller**
+- **Aucun appel réel à Google Drive** (simulé d'après la documentation) : premier dossier et première copie à vérifier.
+- **Noms des sous-dossiers à valider** ; un renommage ne s'applique qu'aux nouveaux dossiers (les dossiers existants ne sont pas renommés).
+- Seuls les PDF produits par DHB (devis, factures) sont copiés ; les autres sous-dossiers sont à remplir à la main.
+- Un dossier client déplacé hors de « DHB — Clients » reste utilisé ; un dossier mis à la corbeille est recréé.
+
+**À faire plus tard (mise en production)** : `supabase/full-setup.sql` ; déployer `drive-sync` et redéployer `worker` ; Système → Intégrations → Google Drive : valider les sous-dossiers, activer, « Créer les dossiers des clients existants » (`docs/GOOGLE.md` §3).
 
 ### Problèmes connus restants
 Voir §3 : I11, I12, A1–A3, A6, A7 (C1, C2, I1, I2, I3, I4 traités au lot 1 ; C3 au lot 2, actif après configuration ; I6, I7, A4, A5 au lot 3 ; I5, I10 au lot 4 ; I9 au lot 6 ; I8 au lot 7). Points mineurs relevés au lot 3 : onglets Ant Design et colonnes « Actions » sans texte.
