@@ -160,7 +160,7 @@ Ordre adapté à l'audit : la **sécurité critique** (C1, C2) et la **sauvegard
 | **9** ✅ | **Automatisations** : `evenements` + `worker`, règles SI → ALORS (bienvenue, relance devis J+5, rappel facture J+7, ticket résolu), migration de `send-reminders` | — | lots 6 à 8 | Planification (cron) |
 | **10** ✅ | **Intégrations + Google Analytics** : page Système → Intégrations, connexion Google OAuth, dictionnaire d'événements, conversions serveur, copie quotidienne des chiffres, Pilotage → Acquisition | — | consentement, formulaires, sites | Projet Google Cloud, GA4, secret Measurement Protocol |
 | **11** ✅ | **Google Drive** : dossier client + 8 sous-dossiers, copie des PDF, statut et reprise | — | clients, documents | même connexion Google |
-| **12** | **Search Console** : synchronisation, Pilotage → SEO | — | — | domaines achetés + propriétés vérifiées |
+| **12** ✅ | **Search Console** : synchronisation, Pilotage → SEO | — | — | domaines achetés + propriétés vérifiées |
 | **13** | **SEO technique** : titres/descriptions, `og:image`, 404, fils d'Ariane, `noindex` paiement, polices auto-hébergées | I11, I12, A7 | 170 pages, sitemap, liens, GA | — |
 | **14** | **SEO local + contenu** : pages utiles et distinctes (intention, mot-clé, FAQ, maillage) | — | sitemap, maillage | validation du contenu par le propriétaire |
 | **15** | **Performance + dépendances** : mesure, Vite à jour, ESLint, agrégats SQL si nécessaire | A1, A2, A6 | build, tous les écrans | — |
@@ -578,6 +578,34 @@ Ordre adapté à l'audit : la **sécurité critique** (C1, C2) et la **sauvegard
 - Un dossier client déplacé hors de « DHB — Clients » reste utilisé ; un dossier mis à la corbeille est recréé.
 
 **À faire plus tard (mise en production)** : `supabase/full-setup.sql` ; déployer `drive-sync` et redéployer `worker` ; Système → Intégrations → Google Drive : valider les sous-dossiers, activer, « Créer les dossiers des clients existants » (`docs/GOOGLE.md` §3).
+
+### Lot 12 — Google Search Console ✅ VALIDÉ (environnement de test)
+
+**Modifié**
+- **Propriétés Search Console** déclarées dans Système → Intégrations (carte *Google Search Console*, une par ligne, 10 au plus) ; la base **refuse** une adresse mal formée (ex. `dhb-groupe.fr` au lieu de `sc-domain:dhb-groupe.fr`) avec un message clair.
+- **Copie quotidienne** (`seo-sync`, planification ou bouton « Copier maintenant ») : par propriété, clics / impressions / position **par jour sur 30 jours** (jusqu'à J-2 : Google publie avec retard) et **100 premières requêtes et pages** des 28 derniers jours. Recopie sans doublon ; les « tops » sont remplacés.
+- **Erreurs expliquées** par propriété (compte sans accès, propriété inconnue) dans la carte et au journal ; une propriété en erreur n'empêche pas la copie des autres ; tout en erreur → statut « erreur », chiffres déjà copiés conservés.
+- **Pilotage → SEO** : clics, impressions, taux de clic, **position moyenne pondérée par les impressions** (comme Search Console), clics par jour, requêtes et pages ; choix du site s'il y en a plusieurs ; sans données → explication et lien vers Intégrations, **aucun chiffre inventé**.
+- Chiffres **lisibles par l'équipe seulement**, écrits par le serveur seul.
+- **Correctif découvert** : la boucle de déploiement du `admin-react/README.md` contenait un « \n » littéral (la commande copiée échouait) — corrigée et vérifiée (`bash -n`).
+
+**Fichiers**
+`supabase/full-setup.sql` (section 24) · `supabase/tests/lot12-search-console.sql` (nouveau) · `supabase/functions/seo-sync/index.ts` (nouveau) · `admin-react/src/pages/pilotage/seo.tsx` (nouveau) · `src/pages/systeme/integrations.tsx` · `src/App.tsx` · `src/components/layout/nav.tsx` · `admin-react/README.md` · `docs/GOOGLE.md` §4 et §6.
+
+**Tests**
+- `full-setup.sql` rejoué : 0 erreur. **SQL `lot12-search-console.sql` : 11 / 11** — administrateur : déclare un domaine et un préfixe d'URL ; adresse sans protocole et plus de 10 propriétés refusées ; collaborateur sans effet ; équipe en lecture des chiffres ; compte en attente et anonyme : rien ; modification / ajout de chiffres refusés même à l'administrateur ; seul le serveur écrit.
+- **Bout en bout** (vraie base + PostgREST + `seo-sync` exécuté par Deno + faux Search Console) : **12 / 12** — sans secret → 401 ; aucune propriété / Google non connecté → 409 explicites ; copie (3 jours, 3 requêtes, 1 page) ; période 30 j jusqu'à J-2, tops 28 j / 100 lignes ; arrondis ; accents conservés ; statut, journal ; 2ᵉ copie sans doublon ; plusieurs propriétés dont 2 en erreur expliquées ; toutes en erreur → 502, chiffres conservés.
+- **Navigateur : 21 / 21** — calculs exacts (30 clics, 500 impressions, 6,0 %, position 6,8 pondérée), changement de site, accents, état vide, carte Intégrations (enregistrement, lignes vides ignorées, copie à la demande, message de refus de la base) ; axe-core sans défaut, 0 débordement (bureau et mobile), 0 erreur JS.
+- Non-régression : navigateur lots 4 à 11 (40, 49, 31, 10, 59, 18, 37, 26 : tous conformes), audit d'accessibilité des vues (inchangé), `deno check`, TypeScript 0 erreur, `npm run build` OK.
+
+**Résultat** : ✅ **VALIDÉ** sur l'environnement de test.
+
+**Risques / points à surveiller**
+- **Aucun appel réel à Search Console** (simulé d'après la documentation de l'API) : première copie à vérifier.
+- Les domaines ne sont pas encore achetés / vérifiés : la page SEO reste vide d'ici là (c'est voulu).
+- Le compte Google déjà connecté avant ce lot doit être **reconnecté** si l'autorisation Search Console n'avait pas été accordée.
+
+**À faire plus tard (mise en production)** : `supabase/full-setup.sql` ; déployer `seo-sync` ; déclarer les propriétés, « Copier maintenant », planifier `dhb-seo` (`docs/GOOGLE.md` §4).
 
 ### Problèmes connus restants
 Voir §3 : I11, I12, A1–A3, A6, A7 (C1, C2, I1, I2, I3, I4 traités au lot 1 ; C3 au lot 2, actif après configuration ; I6, I7, A4, A5 au lot 3 ; I5, I10 au lot 4 ; I9 au lot 6 ; I8 au lot 7). Points mineurs relevés au lot 3 : onglets Ant Design et colonnes « Actions » sans texte.
