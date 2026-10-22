@@ -56,7 +56,7 @@ l'utilisateur connecté ou le secret de cron, d'où `--no-verify-jwt` :
 
 ```bash
 for f in get-devis-public sign-devis send-devis send-invoice invite-user \
-         generate-recurring-invoices send-reminders notify-new-lead create-checkout          render-pdf stripe-webhook email-send worker; do
+         generate-recurring-invoices send-reminders notify-new-lead create-checkout          render-pdf stripe-webhook email-send worker google-oauth google-sync \n         integration-test; do
   supabase functions deploy $f --no-verify-jwt
 done
 ```
@@ -77,6 +77,7 @@ mettre dans le code ou dans `.env` du front.**
 | `EMAIL_REDIRECTION` | **mode test** : tant que le domaine n'est pas vérifié chez Resend, mettez ici **votre** adresse : tous les emails y partent, avec « [TEST → destinataire prévu] » dans le sujet. À supprimer une fois le domaine vérifié. |
 | `WEBHOOK_SECRET` | **obligatoire** pour `notify-new-lead` (sans lui, la fonction refuse tout appel) |
 | `STRIPE_*`, `SITE_URL` | paiement en ligne du site Assistance |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`, `GA_API_SECRET` | connexion Google et Google Analytics (voir `docs/GOOGLE.md`) |
 | `STRIPE_WEBHOOK_SECRET` | secret `whsec_…` du webhook Stripe : enregistre les paiements dans DHB (voir `supabase/STRIPE-SETUP.md` §5) |
 
 Les fonctions **refusent** désormais les appels anonymes (sauf la page publique
