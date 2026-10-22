@@ -153,7 +153,7 @@ Ordre adapté à l'audit : la **sécurité critique** (C1, C2) et la **sauvegard
 | **4** ✅ | **CRM : attribution + timeline** : colonnes d'attribution, captation sur les sites, source modifiable, vue entonnoir ; timeline client complète (journal + notes + appels) ; suppression client → archivage par défaut | I10, I5 | formulaires publics, fiches client/demande, statistiques | — |
 | **5** ✅ | **Tableau de bord commercial** : blocs Commercial, Clients, Finance (données existantes) ; bloc Acquisition = sources des demandes (lot 4), visiteurs ajoutés au lot 10 | — | pilotage, cache | — |
 | **6** ✅ | **Documents** : `render-pdf` (devis/facture), bucket Storage privé, table `documents`, téléchargement depuis les fiches | I9 | devis, factures, envoi email | — |
-| **7** | **Paiements Stripe** : `stripe-webhook` → paiement + facture payée + abonnement démarré | I8 | paiements, factures, abonnements | Webhook + secret `whsec_…` |
+| **7** ✅ | **Paiements Stripe** : `stripe-webhook` → paiement + facture payée + abonnement démarré | I8 | paiements, factures, abonnements | Webhook + secret `whsec_…` |
 | **8** | **Communication** : `email-send` unique et journalisé, historique, modèles à variables, envoi manuel depuis client/demande/devis/facture/ticket | — | envois existants (devis, facture, relances) | Resend (domaine à vérifier ; en attendant : envoi vers sa propre adresse) |
 | **9** | **Automatisations** : `evenements` + `worker`, règles SI → ALORS (bienvenue, relance devis J+5, rappel facture J+7, ticket résolu), migration de `send-reminders` | — | lots 6 à 8 | Planification (cron) |
 | **10** | **Intégrations + Google Analytics** : page Système → Intégrations, connexion Google OAuth, dictionnaire d'événements, conversions serveur, copie quotidienne des chiffres, Pilotage → Acquisition | — | consentement, formulaires, sites | Projet Google Cloud, GA4, secret Measurement Protocol |
@@ -401,5 +401,41 @@ Ordre adapté à l'audit : la **sécurité critique** (C1, C2) et la **sauvegard
 3. Test : télécharger le PDF d'un devis et d'une facture envoyée, puis les retrouver dans l'onglet Documents du client.
 4. (Facultatif, recommandé) Secrets GitHub `SUPABASE_URL` et `SUPABASE_SERVICE_ROLE_KEY` pour inclure les PDF dans la sauvegarde nocturne.
 
+### Lot 7 — Paiements Stripe ✅ VALIDÉ (environnement de test)
+
+**Modifié**
+- **Edge Function `stripe-webhook`** : refuse tout appel sans **signature Stripe valide** (HMAC-SHA256 du secret `whsec_…`, horodatage de moins de 5 min contre le rejeu) ; sans secret configuré → 503, rien n'est lu. Événements utilisés : `checkout.session.completed` / `async_payment_succeeded` (payé, en euros), `invoice.paid` (renouvellement), `customer.subscription.updated` / `deleted` (actif / suspendu / résilié) ; les autres sont journalisés « ignorés ». Erreur de traitement → réponse 500 (Stripe renverra l'événement) et erreur notée.
+- **Fonction SQL `stripe_traiter_evenement`** (clé serveur uniquement), **tout en une seule transaction** : fiche client retrouvée par son email (non archivée, insensible à la casse) ou créée (particulier, DHB Assistance), prospect → client ; **facture numérotée** (numérotation continue) en franchise de TVA, libellé du produit Stripe ; **paiement « stripe »** → la facture passe **payée** par la règle existante ; abonnement créé (montant ramené au mois si annuel), renouvelé ou mis à jour. **Anti-doublon** : par événement (journal `stripe_evenements`) et par référence de paiement (le 1ᵉʳ paiement d'un abonnement, reçu deux fois par Stripe, ne crée qu'une facture). En cas d'erreur, **rien** n'est enregistré.
+- **Pas de double facturation** : la génération mensuelle (`generate-recurring-invoices`), l'alerte « Facture à générer » et le tableau de bord ignorent les abonnements prélevés par Stripe ; mention « Paiement en ligne (Stripe) » dans Abonnements.
+- Tableau de bord tolérant si la base n'est pas encore à jour (colonne Stripe absente).
+- Documentation : `supabase/STRIPE-SETUP.md` §5 (création du webhook, événements, secret), `admin-react/README.md` (déploiement, secret `STRIPE_WEBHOOK_SECRET`).
+
+**Corrigé** : I8.
+
+**Fichiers**
+`supabase/full-setup.sql` (section 19) · `supabase/tests/lot7-stripe.sql` (nouveau) · `supabase/functions/stripe-webhook/index.ts` (nouveau) · `supabase/functions/_shared/stripe.ts` (nouveau) · `supabase/functions/generate-recurring-invoices/index.ts` · `supabase/STRIPE-SETUP.md` · `admin-react/README.md` · `admin-react/src/lib/metrics.ts` · `src/pages/abonnements/index.tsx` · `src/components/forms/AbonnementDrawer.tsx` · `admin-react/.gitignore`.
+
+**Tests**
+- `full-setup.sql` rejoué 4 fois : 0 erreur.
+- **SQL `lot7-stripe.sql` : 33 / 33** (rejouable) — paiement ponctuel (client créé, facture numérotée **payée**, paiement, libellé, adresse, journal) ; même événement / même paiement renvoyés → **aucun doublon** ; client existant retrouvé (majuscules), prospect → client, fiche archivée non réutilisée ; abonnement (création, rattachement, renouvellement sans email, dernière facture, annuel → 10 €/mois, résiliation, inconnu ignoré) ; montant nul et événement non utilisé ignorés ; identifiant invalide refusé ; **erreur en cours de route → rien d'enregistré** ; numéros consécutifs ; fonction inaccessible à l'admin et à l'anonyme ; journal lisible par l'équipe seulement, non falsifiable.
+- **Bout en bout : 27 / 27** — événement signé → `stripe-webhook` exécutée par Deno → **vrai PostgREST** → base de test : GET 405, sans signature, mauvais secret, signature de 15 min (rejeu), contenu modifié après signature, JSON invalide, identifiant invalide → refusés **sans rien écrire** ; paiement ponctuel (facture 59 € payée, adresse, référence) ; renvoi → déjà traité ; abonnement : session + `invoice.paid` du même paiement → **une seule facture**, renouvellement → 2ᵉ facture avec le libellé Stripe, impayé → suspendu, suppression → résilié ; session non payée, devise USD, type non utilisé → ignorés et journalisés ; **panne de la base → 500 + erreur notée, puis nouvel envoi → traité** ; client réutilisé. Secret absent → 503.
+- `generate-recurring-invoices` (Deno) : abonnement classique facturé, abonnement Stripe ignoré (« prélevé par Stripe »). `deno check` des 11 fonctions : OK.
+- **Navigateur : 10 / 10** — mention Stripe, alerte « Facture à générer » uniquement pour les abonnements non Stripe, tableau de bord (Stripe exclu), base non mise à jour → tableau de bord chargé, axe-core sans défaut, 0 erreur JS.
+- Non-régression : SQL lots 1 / 2 / 4 / 6 (73 / 9 / 30 / 16), navigateur lots 4 / 5 / 6 (40 / 49 / 31), audit d'accessibilité des 52 vues (inchangé), TypeScript 0 erreur, `npm run build` OK.
+
+**Résultat** : ✅ **VALIDÉ** sur l'environnement de test.
+
+**Risques / points à surveiller**
+- **Jamais testé avec un vrai compte Stripe** : les événements ont été construits d'après la documentation Stripe (y compris le nouveau format `invoice.parent.subscription_details`). À vérifier en mode test Stripe à la mise en service (voir « À faire »).
+- Remboursements (`charge.refunded`) non traités automatiquement : à saisir à la main (annuler la facture et créer un avoir) — journalisés « ignorés ».
+- Le client est retrouvé par son **email** : un client qui paie avec un autre email aura une nouvelle fiche (fusion manuelle).
+- Les paiements dans une autre devise que l'euro sont ignorés (journalisés).
+
+**À faire plus tard (mise en production)**
+1. SQL Editor → exécuter `supabase/full-setup.sql`.
+2. `supabase functions deploy stripe-webhook --no-verify-jwt` et `supabase functions deploy generate-recurring-invoices --no-verify-jwt`.
+3. Stripe → Webhooks → endpoint + 5 événements (`supabase/STRIPE-SETUP.md` §5) ; secret `STRIPE_WEBHOOK_SECRET`.
+4. Test en **mode test Stripe** (carte 4242…) : une intervention puis un abonnement ; vérifier Factures, Paiements, Abonnements ; puis « Resend » d'un événement dans Stripe → aucun doublon.
+
 ### Problèmes connus restants
-Voir §3 : I8, I11, I12, A1–A3, A6, A7 (C1, C2, I1, I2, I3, I4 traités au lot 1 ; C3 au lot 2, actif après configuration ; I6, I7, A4, A5 au lot 3 ; I5, I10 au lot 4 ; I9 au lot 6). Points mineurs relevés au lot 3 : onglets Ant Design et colonnes « Actions » sans texte.
+Voir §3 : I11, I12, A1–A3, A6, A7 (C1, C2, I1, I2, I3, I4 traités au lot 1 ; C3 au lot 2, actif après configuration ; I6, I7, A4, A5 au lot 3 ; I5, I10 au lot 4 ; I9 au lot 6 ; I8 au lot 7). Points mineurs relevés au lot 3 : onglets Ant Design et colonnes « Actions » sans texte.
