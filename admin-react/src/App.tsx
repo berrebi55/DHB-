@@ -55,7 +55,7 @@ export default function App() {
           routerProvider={routerProvider}
           notificationProvider={useNotificationProvider}
           resources={RESOURCES}
-          options={{ syncWithLocation: false, warnWhenUnsavedChanges: false, liveMode: "off", disableTelemetry: true, reactQuery: { clientConfig: { defaultOptions: { queries: { refetchOnWindowFocus: false } } } } }}
+          options={{ syncWithLocation: false, warnWhenUnsavedChanges: false, liveMode: "off", disableTelemetry: true, reactQuery: { clientConfig: { defaultOptions: { queries: { refetchOnWindowFocus: false, staleTime: 30_000 } } } } }}
         >
           <Routes>
             <Route
