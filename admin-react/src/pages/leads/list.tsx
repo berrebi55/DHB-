@@ -9,11 +9,11 @@ import { DataList } from "../../components/ui/DataList";
 import { EmptyState, PageHeader, Panel, StatusTag } from "../../components/ui";
 import { LeadDrawer, type Lead } from "../../components/forms/LeadDrawer";
 import { cleanSearch, dateFR, fromNow } from "../../lib/format";
-import { ENTITES, LEAD_OUVERTS, LEAD_STATUTS, PRIORITES, TYPES_CLIENT, label, options } from "../../lib/statuts";
+import { ENTITES, LEAD_OUVERTS, LEAD_STATUTS, PRIORITES, SOURCES_LEAD, TYPES_CLIENT, label, options } from "../../lib/statuts";
 import { useDebounced, useUrlState } from "../../lib/hooks";
 import { messageErreurBase } from "../../lib/functions";
 
-const KEYS = ["q", "statut", "priorite", "entite", "type_client", "relance", "page", "tri", "ordre", "creer"] as const;
+const KEYS = ["q", "statut", "priorite", "entite", "source", "type_client", "relance", "page", "tri", "ordre", "creer"] as const;
 const PAGE = 20;
 
 type Onglet = { key: string; label: string; statuts: string[] | null };
@@ -52,6 +52,8 @@ export function LeadsList({ mode }: { mode: "devis" | "question" }) {
     if (onglet.statuts) out.push({ field: "status", operator: "in", value: onglet.statuts });
     if (f.priorite) out.push({ field: "priorite", operator: "eq", value: f.priorite });
     if (f.entite) out.push({ field: "entity", operator: "eq", value: f.entite });
+    if (f.source === "inconnue") out.push({ field: "source", operator: "null", value: null });
+    else if (f.source) out.push({ field: "source", operator: "eq", value: f.source });
     if (f.type_client) out.push({ field: "type_client", operator: "eq", value: f.type_client });
     if (f.relance === "due") {
       out.push({ field: "relance_at", operator: "lte", value: dayjs().format("YYYY-MM-DD") });
@@ -65,7 +67,7 @@ export function LeadsList({ mode }: { mode: "devis" | "question" }) {
       });
     }
     return out;
-  }, [mode, onglet, f.priorite, f.entite, f.type_client, f.relance, f.q]);
+  }, [mode, onglet, f.priorite, f.entite, f.source, f.type_client, f.relance, f.q]);
 
   const sorters: CrudSort[] = [{ field: f.tri || "created_at", order: (f.ordre as "asc" | "desc") || "desc" }];
   const { data, isLoading, isError, error, refetch } = useList<Lead>({
@@ -97,7 +99,7 @@ export function LeadsList({ mode }: { mode: "devis" | "question" }) {
       { onSuccess: () => message.success(`Statut : ${label("lead", status)}`), onError: (e) => message.error(messageErreurBase(e)) },
     );
 
-  const filtresActifs = !!(f.q || f.priorite || f.entite || f.type_client || f.relance);
+  const filtresActifs = !!(f.q || f.priorite || f.entite || f.source || f.type_client || f.relance);
   const today = dayjs().format("YYYY-MM-DD");
   const isQ = mode === "question";
 
@@ -122,9 +124,11 @@ export function LeadsList({ mode }: { mode: "devis" | "question" }) {
             value={q} onChange={(e) => setQ(e.target.value)} aria-label="Rechercher" />
           <Select allowClear placeholder="Priorité" aria-label="Filtrer : priorité" value={f.priorite || undefined} onChange={(v) => setF({ priorite: v })} options={options(PRIORITES)} />
           <Select allowClear placeholder="Site d'origine" aria-label="Filtrer : site d'origine" value={f.entite || undefined} onChange={(v) => setF({ entite: v })} options={options(ENTITES)} />
+          {!isQ && <Select allowClear placeholder="Origine du contact" aria-label="Filtrer : origine du contact" value={f.source || undefined} onChange={(v) => setF({ source: v })}
+            options={[...options(SOURCES_LEAD), { value: "inconnue", label: "Non renseignée" }]} popupMatchSelectWidth={false} />}
           {!isQ && <Select allowClear placeholder="Type de client" aria-label="Filtrer : type de client" value={f.type_client || undefined} onChange={(v) => setF({ type_client: v })} options={options(TYPES_CLIENT)} />}
           {!isQ && <Checkbox checked={f.relance === "due"} onChange={(e) => setF({ relance: e.target.checked ? "due" : null })}>Relance due</Checkbox>}
-          {filtresActifs && <Button type="link" onClick={() => { setQ(""); setF({ q: null, priorite: null, entite: null, type_client: null, relance: null }); }}>Réinitialiser</Button>}
+          {filtresActifs && <Button type="link" onClick={() => { setQ(""); setF({ q: null, priorite: null, entite: null, source: null, type_client: null, relance: null }); }}>Réinitialiser</Button>}
         </div>
         <DataList<Lead>
           rows={rows}
@@ -168,7 +172,12 @@ export function LeadsList({ mode }: { mode: "devis" | "question" }) {
               title: "Besoin", dataIndex: "message",
               render: (v: string) => <Typography.Paragraph ellipsis={{ rows: 2 }} style={{ margin: 0, maxWidth: 260, minWidth: 180, color: "#5b6576", fontSize: 13 }}>{v || "—"}</Typography.Paragraph>,
             },
-            { title: "Origine", dataIndex: "entity", render: (v: string, r: Lead) => <span style={{ fontSize: 13, whiteSpace: "nowrap" }}>{r.source_url === "saisie manuelle" ? "Saisie manuelle" : label("entite", v)}</span> },
+            { title: "Origine", dataIndex: "entity", render: (v: string, r: Lead) => (
+              <span style={{ fontSize: 13, whiteSpace: "nowrap" }}>
+                {r.source_url === "saisie manuelle" ? "Saisie manuelle" : label("entite", v)}
+                {r.source && <span className="cell-sub" style={{ display: "block" }}>{label("source", r.source)}</span>}
+              </span>
+            ) },
             { title: "Priorité", dataIndex: "priorite", sorter: true, render: (v: string) => ["haute", "urgente"].includes(v) ? <StatusTag kind="priorite" value={v} /> : <span className="faint" style={{ fontSize: 13 }}>{label("priorite", v)}</span> },
             {
               title: "Statut", dataIndex: "status", width: 160,

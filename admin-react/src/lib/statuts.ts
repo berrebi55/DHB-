@@ -85,6 +85,28 @@ export const TYPES_CLIENT: StatutDef[] = [
   { value: "particulier", label: "Particulier", tone: "purple" },
 ];
 
+// Origine d'une demande : calculée par la base pour les formulaires des sites
+// (supabase/full-setup.sql, classer_source_lead), choisie à la main sinon.
+export const SOURCES_LEAD: StatutDef[] = [
+  { value: "recherche", label: "Recherche Google / Bing", tone: "info" },
+  { value: "publicite", label: "Publicité en ligne", tone: "warning" },
+  { value: "reseaux_sociaux", label: "Réseaux sociaux", tone: "purple" },
+  { value: "email", label: "Campagne email", tone: "primary" },
+  { value: "site_referent", label: "Lien depuis un autre site", tone: "info" },
+  { value: "site_dhb", label: "Autre site DHB", tone: "neutral" },
+  { value: "direct", label: "Accès direct", tone: "neutral" },
+  { value: "telephone", label: "Appel téléphonique", tone: "success" },
+  { value: "recommandation", label: "Recommandation", tone: "success" },
+  { value: "autre", label: "Autre", tone: "neutral" },
+];
+
+export const TYPES_NOTE: StatutDef[] = [
+  { value: "note", label: "Note", tone: "neutral" },
+  { value: "appel", label: "Appel", tone: "success" },
+  { value: "email", label: "Email", tone: "info" },
+  { value: "rendez_vous", label: "Rendez-vous", tone: "purple" },
+];
+
 export const MAPS = {
   lead: toMap(LEAD_STATUTS),
   priorite: toMap(PRIORITES),
@@ -96,6 +118,8 @@ export const MAPS = {
   moyen: toMap(MOYENS_PAIEMENT),
   entite: toMap(ENTITES),
   typeClient: toMap(TYPES_CLIENT),
+  source: toMap(SOURCES_LEAD),
+  note: toMap(TYPES_NOTE),
 };
 export type StatutKind = keyof typeof MAPS;
 

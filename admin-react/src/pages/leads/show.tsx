@@ -21,7 +21,7 @@ import { ActivityFeed } from "../../components/activity/ActivityFeed";
 import { LeadDrawer, type Lead } from "../../components/forms/LeadDrawer";
 import { ClientDrawer, type Client } from "../../components/forms/ClientDrawer";
 import { dateFR, dateTimeFR, eur } from "../../lib/format";
-import { PRIORITES, label, options } from "../../lib/statuts";
+import { PRIORITES, SOURCES_LEAD, label, options } from "../../lib/statuts";
 import { useRole } from "../../lib/hooks";
 import { messageErreurBase, estIntrouvable } from "../../lib/functions";
 
@@ -143,7 +143,7 @@ export function LeadShow() {
             <Typography.Paragraph style={{ whiteSpace: "pre-wrap", marginBottom: 12 }}>{lead.message || <span className="faint">Aucun message.</span>}</Typography.Paragraph>
             <dl className="kv">
               {lead.service && <><dt>Service</dt><dd>{lead.service}</dd></>}
-              <dt>Origine</dt><dd>{label("entite", lead.entity)}{lead.source_url ? ` · ${lead.source_url === "saisie manuelle" ? "saisie manuelle" : lead.source_url}` : ""}</dd>
+              <dt>Site</dt><dd>{label("entite", lead.entity)}{lead.source_url ? ` · ${lead.source_url === "saisie manuelle" ? "saisie manuelle" : lead.source_url}` : ""}</dd>
             </dl>
           </Panel>
           {!isQ && (
@@ -174,6 +174,21 @@ export function LeadShow() {
               <dt>Téléphone</dt><dd>{lead.telephone ? <a href={`tel:${lead.telephone}`}><PhoneOutlined /> {lead.telephone}</a> : "—"}</dd>
               <dt>Type</dt><dd>{label("typeClient", lead.type_client)}</dd>
               <dt>Client lié</dt><dd>{lead.client_id ? <Link to={`/clients/${lead.client_id}`}>Ouvrir la fiche</Link> : <span className="faint">Pas encore</span>}</dd>
+            </dl>
+          </Panel>
+          <Panel title="Origine du contact" hint="Comment cette personne a trouvé DHB.">
+            <label className="muted" style={{ fontSize: 13, display: "block" }}>Origine
+              <Select allowClear placeholder="Non renseignée" value={lead.source ?? undefined} options={options(SOURCES_LEAD)} style={{ width: "100%", marginTop: 4 }}
+                onChange={(v) => maj({ source: v ?? null }, v ? `Origine : ${label("source", v)}` : "Origine effacée")} />
+            </label>
+            <dl className="kv" style={{ marginTop: 12 }}>
+              {lead.utm_campaign && <><dt>Campagne</dt><dd>{lead.utm_campaign}</dd></>}
+              {(lead.utm_source || lead.utm_medium) && <><dt>Source / support</dt><dd>{[lead.utm_source, lead.utm_medium].filter(Boolean).join(" / ")}</dd></>}
+              {lead.utm_term && <><dt>Mot-clé</dt><dd>{lead.utm_term}</dd></>}
+              {lead.utm_content && <><dt>Contenu</dt><dd>{lead.utm_content}</dd></>}
+              {lead.gclid && <><dt>Clic Google Ads</dt><dd>Oui</dd></>}
+              <dt>Venu de</dt><dd>{lead.referrer || <span className="faint">—</span>}</dd>
+              <dt>Page d'arrivée</dt><dd>{lead.landing_page || <span className="faint">—</span>}</dd>
             </dl>
           </Panel>
           <Panel title="Suivi">

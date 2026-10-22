@@ -56,6 +56,7 @@ export function messageErreurBase(err: unknown): string {
     return "Action non autorisée pour votre rôle. Contactez un administrateur.";
   if (/does not exist|relation .* does not exist|schema cache/i.test(m))
     return "La base n'est pas à jour : exécutez supabase/full-setup.sql dans Supabase.";
+  if (/archivez-le|ne peut pas être supprimée|ne peut plus être modifiée|ne peut pas repasser|ne peut pas être réactivée/i.test(m)) return m;
   if (/violates check constraint/i.test(m)) return "Une valeur saisie n'est pas acceptée. Vérifiez le formulaire.";
   if (/Failed to fetch|NetworkError|Load failed/i.test(m)) return "Connexion impossible. Vérifiez votre accès Internet.";
   if (/Délai dépassé|TimeoutError|aborted|timeout/i.test(m)) return "Le serveur met trop de temps à répondre. Réessayez dans un instant.";

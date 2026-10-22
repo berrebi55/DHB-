@@ -8,7 +8,7 @@ import { EmptyState, Kpi, PageHeader, Panel } from "../../components/ui";
 import { TooltipEur } from "../dashboard";
 import { eur, eur0, num, variation } from "../../lib/format";
 import { caEncaisse, caFacture, dateEncaissement, mrr, serieMensuelle, useDonnees, type Donnees, type F } from "../../lib/metrics";
-import { ENTITES } from "../../lib/statuts";
+import { ENTITES, SOURCES_LEAD } from "../../lib/statuts";
 import { COULEURS } from "../../theme";
 
 type Periode = "annee" | "12m" | "tout";
@@ -249,6 +249,14 @@ export function StatsCommercial() {
         const delaiMoyen = delais.length ? delais.reduce((a, c) => a + c, 0) / delais.length : null;
         const convertis = leads.filter((l) => l.client_id);
         const parSource = ENTITES.map((e) => ({ label: e.label, value: leads.filter((l) => l.entity === e.value).length }));
+        // Origine du contact : demandes reçues, gagnées et taux de transformation par origine.
+        const parOrigine = [...SOURCES_LEAD.map((s) => ({ cle: s.value, label: s.label })), { cle: null as string | null, label: "Non renseignée" }]
+          .map((o) => {
+            const ls = leads.filter((l) => (l.source ?? null) === o.cle);
+            return { ...o, demandes: ls.length, gagnees: ls.filter((l) => l.status === "gagne").length };
+          })
+          .filter((o) => o.demandes > 0)
+          .sort((a, b) => b.demandes - a.demandes);
         const parType = [
           { label: "Entreprises", value: leads.filter((l) => l.type_client === "entreprise").length },
           { label: "Particuliers", value: leads.filter((l) => l.type_client === "particulier").length },
@@ -306,6 +314,23 @@ export function StatsCommercial() {
               <Panel title="Demandes par site d'origine"><Repartition items={parSource} format={(n) => num(n)} /></Panel>
               <Panel title="Demandes : entreprises / particuliers"><Repartition items={parType} format={(n) => num(n)} /></Panel>
             </div>
+            <Panel title="Demandes par origine du contact" hint="D'où viennent vos demandes et lesquelles se transforment." flush>
+              {parOrigine.length ? (
+                <table className="lines-table origine-table">
+                  <thead><tr><th>Origine</th><th className="num">Demandes</th><th className="num">Gagnées</th><th className="num">Transformation</th></tr></thead>
+                  <tbody>
+                    {parOrigine.map((o) => (
+                      <tr key={o.cle ?? "inconnue"}>
+                        <td>{o.label}</td>
+                        <td className="num">{num(o.demandes)}</td>
+                        <td className="num">{num(o.gagnees)}</td>
+                        <td className="num">{tauxTxt(o.gagnees, o.demandes)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : <EmptyState compact icon={<InboxOutlined />} title="Aucune demande sur la période" />}
+            </Panel>
             <p className="faint" style={{ fontSize: 12.5, margin: 0 }}>Les questions reçues (support) ne sont pas comptées dans l'entonnoir commercial.</p>
           </div>
         );

@@ -12,7 +12,7 @@ import { messageErreurBase } from "./functions";
 
 export interface F { id: string; numero: string | null; status: string; total_ht: number; total_ttc: number; date_facture: string; date_echeance: string | null; paid_at: string | null; client_id: string | null; client_nom: string | null; entity: string; en_retard: boolean; reste_a_payer: number; abonnement_id: string | null; devis_id: string | null; created_at: string }
 export interface D { id: string; numero: string | null; statut: string; total_ht: number; total_ttc: number; date_devis: string; created_at: string; envoye_at: string | null; signed_at: string | null; client_id: string | null; client_nom: string | null; lead_id: string | null; derniere_relance_le: string | null; entity: string }
-export interface L { id: string; nom: string | null; entreprise: string | null; status: string; type: string; created_at: string; relance_at: string | null; priorite: string; client_id: string | null; entity: string; type_client: string | null }
+export interface L { id: string; nom: string | null; entreprise: string | null; status: string; type: string; created_at: string; relance_at: string | null; priorite: string; client_id: string | null; entity: string; type_client: string | null; source?: string | null }
 export interface A { id: string; client_nom: string | null; client_id: string | null; libelle: string | null; montant_mensuel: number; statut: string; date_debut: string; date_renouvellement: string | null; derniere_facture_le: string | null; jour_facturation: number | null; entity: string }
 export interface T { id: string; sujet: string; status: string; priorite: string; created_at: string; client_nom: string | null }
 export interface C { id: string; type: string; statut: string; archived_at: string | null; created_at: string; entity: string }
@@ -20,12 +20,21 @@ export interface C { id: string; type: string; statut: string; archived_at: stri
 export interface Donnees { factures: F[]; devis: D[]; leads: L[]; abonnements: A[]; tickets: T[]; clients: C[] }
 
 const MAX = 5000;
+const COLONNES_LEADS = "id, nom, entreprise, status, type, created_at, relance_at, priorite, client_id, entity, type_client";
+
+// L'origine (« source ») n'existe qu'après la mise à jour de la base du lot 4 :
+// si la colonne manque encore, on charge les demandes sans elle.
+async function chargerLeads() {
+  const r = await supabaseClient.from("leads").select(`${COLONNES_LEADS}, source`).limit(MAX);
+  if (r.error && /source/.test(r.error.message ?? "")) return supabaseClient.from("leads").select(COLONNES_LEADS).limit(MAX);
+  return r;
+}
 
 async function chargerDonnees(): Promise<Donnees> {
   const [f, d, l, a, t, c] = await Promise.all([
     supabaseClient.from("factures_vue").select("id, numero, status, total_ht, total_ttc, date_facture, date_echeance, paid_at, client_id, client_nom, entity, en_retard, reste_a_payer, abonnement_id, devis_id, created_at").limit(MAX),
     supabaseClient.from("devis").select("id, numero, statut, total_ht, total_ttc, date_devis, created_at, envoye_at, signed_at, client_id, client_nom, lead_id, derniere_relance_le, entity").limit(MAX),
-    supabaseClient.from("leads").select("id, nom, entreprise, status, type, created_at, relance_at, priorite, client_id, entity, type_client").limit(MAX),
+    chargerLeads(),
     supabaseClient.from("abonnements").select("id, client_nom, client_id, libelle, montant_mensuel, statut, date_debut, date_renouvellement, derniere_facture_le, jour_facturation, entity").limit(MAX),
     supabaseClient.from("tickets").select("id, sujet, status, priorite, created_at, client_nom").limit(MAX),
     supabaseClient.from("clients").select("id, type, statut, archived_at, created_at, entity").limit(MAX),

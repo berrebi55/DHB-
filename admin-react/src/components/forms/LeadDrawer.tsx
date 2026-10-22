@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { App, Button, Col, DatePicker, Drawer, Form, Input, Row, Segmented, Select } from "antd";
 import dayjs from "dayjs";
 import { useCreate, useUpdate } from "@refinedev/core";
-import { ENTITES, LEAD_STATUTS, PRIORITES, TYPES_CLIENT, options } from "../../lib/statuts";
+import { ENTITES, LEAD_STATUTS, PRIORITES, SOURCES_LEAD, TYPES_CLIENT, options } from "../../lib/statuts";
 import { messageErreurBase } from "../../lib/functions";
 
 export interface Lead {
@@ -25,6 +25,15 @@ export interface Lead {
   relance_at: string | null;
   client_id: string | null;
   notes: string | null;
+  source?: string | null;
+  utm_source?: string | null;
+  utm_medium?: string | null;
+  utm_campaign?: string | null;
+  utm_term?: string | null;
+  utm_content?: string | null;
+  gclid?: string | null;
+  referrer?: string | null;
+  landing_page?: string | null;
 }
 
 /** Saisie manuelle d'une demande (appel, salon, recommandation…) ou modification. */
@@ -93,6 +102,9 @@ export function LeadDrawer(props: { open: boolean; onClose: () => void; lead?: L
           <Col xs={12}><Form.Item name="type_client" label="Type de client"><Select allowClear options={options(TYPES_CLIENT)} /></Form.Item></Col>
           <Col xs={12}><Form.Item name="entity" label="Activité"><Select options={options(ENTITES)} /></Form.Item></Col>
         </Row>
+        <Form.Item name="source" label="Origine du contact" extra="Comment cette personne a connu DHB (laisser vide si vous ne savez pas).">
+          <Select allowClear placeholder="Non renseignée" options={options(SOURCES_LEAD)} />
+        </Form.Item>
         <Form.Item name="relance_at" label="Date de relance"><DatePicker format="DD/MM/YYYY" style={{ width: "100%" }} /></Form.Item>
       </Form>
     </Drawer>

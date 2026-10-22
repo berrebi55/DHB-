@@ -53,10 +53,12 @@ const RESOURCES = [
   "paiements", "abonnements", "tickets", "notes", "activites", "profiles", "settings", "entreprise", "sauvegardes",
 ].map((name) => ({ name, list: name === "dashboard" ? "/" : undefined }));
 
+const zoneNotifications = () => document.getElementById("notifications") ?? document.body;
+
 export default function App() {
   return (
     <ConfigProvider theme={themeConfig} locale={frFR}>
-      <AntdApp>
+      <AntdApp message={{ getContainer: zoneNotifications }} notification={{ getContainer: zoneNotifications }}>
         <Refine
           dataProvider={dataProvider(supabaseClient)}
           liveProvider={liveProvider(supabaseClient)}

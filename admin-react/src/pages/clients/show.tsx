@@ -20,6 +20,7 @@ import {
 import { useDelete, useList, useOne, useUpdate } from "@refinedev/core";
 import { EmptyState, PageHeader, Panel, StatusTag, ErrorState } from "../../components/ui";
 import { NotesPanel } from "../../components/activity/NotesPanel";
+import { ClientTimeline } from "../../components/activity/ClientTimeline";
 import { ActivityFeed } from "../../components/activity/ActivityFeed";
 import { ClientDrawer, adresseComplete } from "../../components/forms/ClientDrawer";
 import { TicketDrawer } from "../../components/forms/TicketDrawer";
@@ -88,7 +89,7 @@ export function ClientShow() {
       key: "del", icon: <DeleteOutlined />, danger: true, label: "Supprimer définitivement",
       onClick: () => Modal.confirm({
         title: `Supprimer ${nom} ?`,
-        content: "La fiche et ses notes seront supprimées. Les devis et factures sont conservés mais ne seront plus rattachés. Préférez l'archivage si vous avez un doute.",
+        content: "Possible uniquement pour une fiche vide (créée par erreur). Si ce client a déjà un historique (demandes, devis, factures, notes…), la suppression sera refusée : archivez-le.",
         okText: "Supprimer", okButtonProps: { danger: true }, cancelText: "Annuler",
         onOk: () => remove({ resource: "clients", id: c.id, successNotification: false }, { onSuccess: () => { message.success("Client supprimé"); navigate("/clients"); }, onError: (e) => message.error(messageErreurBase(e)) }),
       }),
@@ -217,7 +218,7 @@ export function ClientShow() {
               ),
             },
             { key: "notes", label: "Notes", children: <div style={{ paddingBottom: 18, maxWidth: 760 }}><NotesPanel clientId={c.id} /></div> },
-            { key: "historique", label: "Historique", children: <div style={{ marginInline: -18, paddingBottom: 8 }}><ActivityFeed clientId={c.id} limit={50} /></div> },
+            { key: "historique", label: "Historique", children: <div style={{ marginInline: -18, paddingBottom: 8 }}><ClientTimeline clientId={c.id} /></div> },
           ]}
         />
       </div>
