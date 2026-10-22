@@ -106,7 +106,7 @@ export function GlobalSearch({ open, onClose }: { open: boolean; onClose: () => 
       <Input
         ref={inputRef}
         className="cmdk-input"
-        prefix={<SearchOutlined style={{ color: "#8a93a3", marginRight: 6 }} />}
+        prefix={<SearchOutlined style={{ color: "#667085", marginRight: 6 }} />}
         placeholder="Rechercher un client, un devis, une facture, un ticket… ou un écran"
         value={q}
         onChange={(e) => setQ(e.target.value)}
@@ -120,7 +120,7 @@ export function GlobalSearch({ open, onClose }: { open: boolean; onClose: () => 
           <div style={{ padding: "22px 18px", color: "#5b6576" }}>Aucun résultat pour « {q.trim()} ».</div>
         )}
         {!loading && q.trim().length < 2 && (
-          <div style={{ padding: "18px 18px", color: "#8a93a3", fontSize: 13 }}>
+          <div style={{ padding: "18px 18px", color: "#667085", fontSize: 13 }}>
             Tapez au moins 2 caractères : nom, entreprise, email, numéro de devis ou de facture…
           </div>
         )}

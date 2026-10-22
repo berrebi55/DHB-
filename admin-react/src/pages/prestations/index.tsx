@@ -59,7 +59,7 @@ export function PrestationsList() {
       />
       <Panel flush>
         <div className="filterbar">
-          <Input className="grow" allowClear prefix={<SearchOutlined style={{ color: "#8a93a3" }} />} placeholder="Rechercher une prestation…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Rechercher une prestation" />
+          <Input className="grow" allowClear prefix={<SearchOutlined style={{ color: "#667085" }} />} placeholder="Rechercher une prestation…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Rechercher une prestation" />
           <span style={{ display: "inline-flex", gap: 8, alignItems: "center" }}><Switch size="small" checked={inactives} onChange={setInactives} /> Afficher les prestations désactivées</span>
         </div>
         <DataList<Prestation>

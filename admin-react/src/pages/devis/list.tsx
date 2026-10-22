@@ -116,8 +116,8 @@ export function DevisList() {
               ...DEVIS_STATUTS.map((s) => ({ key: s.value, label: <span>{s.label}<span className="tab-count">{counts[s.value] ?? 0}</span></span> }))]} />
         </div>
         <div className="filterbar">
-          <Input className="grow" allowClear prefix={<SearchOutlined style={{ color: "#8a93a3" }} />} placeholder="N° de devis ou client…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Rechercher un devis" />
-          <Select allowClear placeholder="Activité" value={f.entite || undefined} onChange={(v) => setF({ entite: v })} options={options(ENTITES)} />
+          <Input className="grow" allowClear prefix={<SearchOutlined style={{ color: "#667085" }} />} placeholder="N° de devis ou client…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Rechercher un devis" />
+          <Select allowClear placeholder="Activité" aria-label="Filtrer : activité" value={f.entite || undefined} onChange={(v) => setF({ entite: v })} options={options(ENTITES)} />
           <Checkbox checked={f.relance === "due"} onChange={(e) => setF({ relance: e.target.checked ? "due" : null })}>À relancer</Checkbox>
           <Checkbox checked={f.facture === "aucune"} onChange={(e) => setF({ facture: e.target.checked ? "aucune" : null, statut: e.target.checked ? "accepte" : null })}>Acceptés non facturés</Checkbox>
           {filtres && <Button type="link" onClick={reset}>Réinitialiser</Button>}

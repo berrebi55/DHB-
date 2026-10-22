@@ -35,6 +35,7 @@ export function ClientSelect(props: {
   allowCreate?: boolean;
   placeholder?: string;
   status?: "error";
+  id?: string;
 }) {
   const [q, setQ] = useState("");
   const dq = useDebounced(q, 200);
@@ -69,6 +70,7 @@ export function ClientSelect(props: {
     <>
       <Space.Compact style={{ width: "100%" }}>
         <Select
+          id={props.id}
           showSearch
           allowClear
           value={props.value || undefined}

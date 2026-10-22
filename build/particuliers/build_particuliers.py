@@ -148,13 +148,15 @@ def lead_magnet(depth):
     </div></div>"""
 
 
-def offres_cards(depth):
+def offres_cards(depth, niveau=3):
+    """niveau : 3 sous un titre de section (accueil), 2 directement sous le h1 (page tarifs)."""
     R = "../" * depth
+    o, f = ("h3", "h3") if niveau == 3 else ('h2 class="h3"', "h2")
     return f"""
     <div class="offers">
       <div class="offer offer--main">
         <span class="offer-badge">Le plus serein</span>
-        <h3>Abonnement sérénité</h3>
+        <{o}>Abonnement sérénité</{f}>
         <p>Une assistance toute l'année pour ne plus rester bloqué(e). Idéal pour être tranquille, et pour aider un proche.</p>
         <span class="price-from">À partir de</span>
         <div class="price-tag"><span data-setting="abonnement_prix">{PRIX_ABO}</span> €<small> / mois</small></div>
@@ -167,7 +169,7 @@ def offres_cards(depth):
         <a class="btn btn--primary btn--lg btn--block" href="{R}contact/" data-checkout="abonnement">Je m'abonne</a>
       </div>
       <div class="offer">
-        <h3>Intervention ponctuelle</h3>
+        <{o}>Intervention ponctuelle</{f}>
         <p>Un souci précis à régler, sans abonnement. À domicile (Île-de-France) ou à distance (partout en France).</p>
         <span class="price-from">À partir de</span>
         <div class="price-tag"><span data-setting="intervention_prix">{PRIX_INT}</span> €</div>
@@ -308,7 +310,7 @@ def abonnement():
   <h1>Abonnement & tarifs : des prix clairs, sans surprise</h1>
   <p>Choisissez la formule qui vous convient. Le tarif exact vous est toujours annoncé avant toute intervention.</p>
 </div></section>
-<section class="section"><div class="wrap">{offres_cards(1)}
+<section class="section"><div class="wrap">{offres_cards(1, niveau=2)}
   <p class="center muted" style="max-width:720px;margin:24px auto 0;color:var(--gris-600)">Les montants affichés sont des exemples de départ. <span class="a-completer">[À COMPLÉTER : grille détaillée + mise en place du paiement en ligne (abonnement + intervention).]</span></p>
 </div></section>
 <section class="section section--tint"><div class="wrap" style="max-width:800px">
@@ -338,7 +340,7 @@ def aide_index():
     for k, label in ad.CATEGORIES.items():
         for a in cats[k]:
             kw = (a["q"] + " " + a["sym"]).lower().replace('"', "")
-            items += f"""<a class="pb-card" href="{a['slug']}/" data-cat="{k}" data-kw="{kw}"><span class="pb-cat">{label}</span><h3>{a['q']}</h3><p>{a['sym'][:110]}…</p><span class="pb-link">Voir l'aide</span></a>"""
+            items += f"""<a class="pb-card" href="{a['slug']}/" data-cat="{k}" data-kw="{kw}"><span class="pb-cat">{label}</span><h2 class="h3">{a['q']}</h2><p>{a['sym'][:110]}…</p><span class="pb-link">Voir l'aide</span></a>"""
     js = """<script>(function(){var s=document.getElementById('pb-search'),c=[].slice.call(document.querySelectorAll('.pb-card')),f=[].slice.call(document.querySelectorAll('.pb-filter')),e=document.getElementById('pb-empty'),cat='all';function n(x){return(x||'').toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'')}function a(){var q=n(s.value.trim()),k=0;c.forEach(function(x){var okc=(cat==='all'||x.getAttribute('data-cat')===cat),okq=(!q||n(x.getAttribute('data-kw')).indexOf(q)>-1),sh=okc&&okq;x.style.display=sh?'':'none';if(sh)k++});if(e)e.classList.toggle('show',k===0)}s.addEventListener('input',a);f.forEach(function(b){b.addEventListener('click',function(){f.forEach(function(y){y.classList.remove('active')});b.classList.add('active');cat=b.getAttribute('data-cat');a()})})})();</script>"""
     body = f"""
 <section class="page-hero"><div class="wrap">
@@ -386,8 +388,8 @@ def aide_page(a):
 </div></section>
 <section class="section"><div class="wrap">
   <div class="grid grid-2" style="gap:30px;align-items:start">
-    <div class="card reveal"><h3>Pourquoi ça arrive</h3><ul class="check-list">{causes}</ul></div>
-    <div class="card reveal"><h3>Ce que vous pouvez essayer</h3><ul class="check-list">{checks}</ul></div>
+    <div class="card reveal"><h2 class="h3">Pourquoi ça arrive</h2><ul class="check-list">{causes}</ul></div>
+    <div class="card reveal"><h2 class="h3">Ce que vous pouvez essayer</h2><ul class="check-list">{checks}</ul></div>
   </div>
   <div class="article-body" style="max-width:820px;margin-top:40px">
     <div class="callout"><strong>On peut s'en occuper pour vous</strong><br>{a['call']}</div>

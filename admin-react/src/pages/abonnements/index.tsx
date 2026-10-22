@@ -95,7 +95,7 @@ export function AbonnementsList() {
             ]} />
         </div>
         <div className="filterbar">
-          <Input className="grow" allowClear prefix={<SearchOutlined style={{ color: "#8a93a3" }} />} placeholder="Client ou formule…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Rechercher un abonnement" />
+          <Input className="grow" allowClear prefix={<SearchOutlined style={{ color: "#667085" }} />} placeholder="Client ou formule…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Rechercher un abonnement" />
           <Space wrap>
             {[{ cle: "facture", txt: "Facture à générer" }, { cle: "renouvellement", txt: "Renouvellement proche" }, { cle: "retard", txt: "Paiement en retard" }].map((x) => (
               <Tag.CheckableTag key={x.cle} checked={f.alerte === x.cle} onChange={(c) => setF({ alerte: c ? x.cle : null })} style={{ border: "1px solid #e3e7ed", padding: "3px 10px" }}>

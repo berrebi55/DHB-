@@ -99,11 +99,11 @@ export function TicketsList() {
             items={ONGLETS.map((o) => ({ key: o.key || "_", label: <span>{o.label}<span className="tab-count">{counts[o.key] ?? 0}</span></span> }))} />
         </div>
         <div className="filterbar">
-          <Input className="grow" allowClear prefix={<SearchOutlined style={{ color: "#8a93a3" }} />} placeholder="Sujet, client, description…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Rechercher un ticket" />
-          <Select allowClear placeholder="Priorité" value={f.priorite || undefined} onChange={(v) => setF({ priorite: v })} options={options(PRIORITES)} />
-          <Select allowClear placeholder="Responsable" value={f.responsable || undefined} onChange={(v) => setF({ responsable: v })}
+          <Input className="grow" allowClear prefix={<SearchOutlined style={{ color: "#667085" }} />} placeholder="Sujet, client, description…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Rechercher un ticket" />
+          <Select allowClear placeholder="Priorité" aria-label="Filtrer : priorité" value={f.priorite || undefined} onChange={(v) => setF({ priorite: v })} options={options(PRIORITES)} />
+          <Select allowClear placeholder="Responsable" aria-label="Filtrer : responsable" value={f.responsable || undefined} onChange={(v) => setF({ responsable: v })}
             options={[{ value: "aucun", label: "Non attribué" }, ...profils.map((p) => ({ value: p.id, label: p.nom || p.email || "—" }))]} />
-          <DatePicker.RangePicker format="DD/MM/YYYY" value={periode} allowEmpty={[true, true]} placeholder={["Ouvert du", "au"]}
+          <DatePicker.RangePicker format="DD/MM/YYYY" value={periode} allowEmpty={[true, true]} placeholder={["Ouvert du", "au"]} aria-label="Filtrer : période d'ouverture"
             onChange={(v) => setF({ du: v?.[0]?.format("YYYY-MM-DD") ?? null, au: v?.[1]?.format("YYYY-MM-DD") ?? null })} />
           {filtres && <Button type="link" onClick={reset}>Réinitialiser</Button>}
         </div>

@@ -94,11 +94,11 @@ export function ClientsList() {
             items={ONGLETS.map((o) => ({ key: o.key || "_", label: <span>{o.label}<span className="tab-count">{counts[o.key] ?? 0}</span></span> }))} />
         </div>
         <div className="filterbar">
-          <Input className="grow" allowClear prefix={<SearchOutlined style={{ color: "#8a93a3" }} />} placeholder="Nom, entreprise, email, téléphone, ville…"
+          <Input className="grow" allowClear prefix={<SearchOutlined style={{ color: "#667085" }} />} placeholder="Nom, entreprise, email, téléphone, ville…"
             value={q} onChange={(e) => setQ(e.target.value)} aria-label="Rechercher un client" />
           <Segmented value={f.type || ""} onChange={(v) => setF({ type: String(v) || null })}
             options={[{ value: "", label: "Tous" }, { value: "entreprise", label: "Entreprises" }, { value: "particulier", label: "Particuliers" }]} />
-          <Select allowClear placeholder="Activité" value={f.entite || undefined} onChange={(v) => setF({ entite: v })} options={options(ENTITES)} />
+          <Select allowClear placeholder="Activité" aria-label="Filtrer : activité" value={f.entite || undefined} onChange={(v) => setF({ entite: v })} options={options(ENTITES)} />
           {filtres && <Button type="link" onClick={reset}>Réinitialiser</Button>}
         </div>
         <DataList<ClientVue>

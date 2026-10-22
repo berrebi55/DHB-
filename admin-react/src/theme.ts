@@ -8,7 +8,7 @@ export const COULEURS = {
   ink: "#0E1B2E",
   text: "#101828",
   textSecondary: "#5B6576",
-  textTertiary: "#8A93A3",
+  textTertiary: "#667085",
   border: "#E3E7ED",
   bg: "#F5F7FA",
   success: "#15803D",
@@ -63,7 +63,7 @@ export const themeConfig: ThemeConfig = {
       itemMarginInline: 8,
       iconSize: 16,
       collapsedIconSize: 17,
-      groupTitleColor: "#98A2B3",
+      groupTitleColor: "#667085",
       groupTitleFontSize: 11,
     },
     Table: {

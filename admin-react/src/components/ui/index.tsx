@@ -65,7 +65,7 @@ export function ErrorState(props: { error: unknown; onRetry?: () => void; compac
   return (
     <div className={`empty error-state${props.compact ? " compact" : ""}`} role="alert">
       <div className="ico"><WarningOutlined /></div>
-      <h4>{props.titre ?? "Impossible de charger ces données"}</h4>
+      <p className="empty-title">{props.titre ?? "Impossible de charger ces données"}</p>
       <p>{messageErreurBase(props.error)}</p>
       {props.onRetry && <Button icon={<ReloadOutlined />} onClick={props.onRetry}>Réessayer</Button>}
     </div>
@@ -82,7 +82,7 @@ export function EmptyState(props: {
   return (
     <div className={`empty${props.compact ? " compact" : ""}`}>
       <div className="ico">{props.icon}</div>
-      <h4>{props.title}</h4>
+      <p className="empty-title">{props.title}</p>
       {props.description && <p>{props.description}</p>}
       {props.action}
     </div>
@@ -104,7 +104,7 @@ export function Panel(props: {
       {(props.title || props.extra) && (
         <div className="panel-head">
           <div>
-            {props.title && <h3>{props.title}</h3>}
+            {props.title && <h2>{props.title}</h2>}
             {props.hint && <div className="hint">{props.hint}</div>}
           </div>
           {props.extra}

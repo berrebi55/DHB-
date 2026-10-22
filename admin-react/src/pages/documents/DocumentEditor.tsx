@@ -217,18 +217,18 @@ export function DocumentEditor({ kind }: { kind: Kind }) {
   const nomClientForm = (
     <Row gutter={12}>
       <Col xs={24} md={12}>
-        <Form.Item label="Nom affiché sur le document" validateStatus={erreurs.client ? "error" : undefined} help={erreurs.client}>
-          <Input value={etat.client_nom} onChange={(e) => maj({ client_nom: e.target.value })} placeholder="Entreprise ou nom du client" />
+        <Form.Item label="Nom affiché sur le document" htmlFor="doc-client-nom" validateStatus={erreurs.client ? "error" : undefined} help={erreurs.client}>
+          <Input id="doc-client-nom" value={etat.client_nom} onChange={(e) => maj({ client_nom: e.target.value })} placeholder="Entreprise ou nom du client" />
         </Form.Item>
       </Col>
       <Col xs={24} md={12}>
-        <Form.Item label="Email du client">
-          <Input value={etat.client_email} onChange={(e) => maj({ client_email: e.target.value })} placeholder="Pour l'envoi par email" />
+        <Form.Item label="Email du client" htmlFor="doc-client-email">
+          <Input id="doc-client-email" value={etat.client_email} onChange={(e) => maj({ client_email: e.target.value })} placeholder="Pour l'envoi par email" />
         </Form.Item>
       </Col>
       <Col xs={24}>
-        <Form.Item label="Adresse de facturation" style={{ marginBottom: 0 }}>
-          <Input.TextArea value={etat.client_adresse} onChange={(e) => maj({ client_adresse: e.target.value })} autoSize={{ minRows: 1, maxRows: 3 }} />
+        <Form.Item label="Adresse de facturation" htmlFor="doc-client-adresse" style={{ marginBottom: 0 }}>
+          <Input.TextArea id="doc-client-adresse" value={etat.client_adresse} onChange={(e) => maj({ client_adresse: e.target.value })} autoSize={{ minRows: 1, maxRows: 3 }} />
         </Form.Item>
       </Col>
     </Row>
@@ -254,8 +254,9 @@ export function DocumentEditor({ kind }: { kind: Kind }) {
         <div className="doc-layout">
           <div className="section-gap">
             <Panel title="Client">
-              <Form.Item label="Client du CRM" extra="Choisissez un client pour lier le document à sa fiche (recommandé).">
+              <Form.Item label="Client du CRM" htmlFor="doc-client" extra="Choisissez un client pour lier le document à sa fiche (recommandé).">
                 <ClientSelect
+                  id="doc-client"
                   value={etat.client_id}
                   status={erreurs.client ? "error" : undefined}
                   onChange={(c) =>
@@ -271,34 +272,34 @@ export function DocumentEditor({ kind }: { kind: Kind }) {
               <LinesEditor value={etat.lignes} onChange={(l) => maj({ lignes: l })} error={erreurs.lignes} />
             </Panel>
             <Panel title={isDevis ? "Conditions & notes" : "Mentions & notes"}>
-              <Form.Item label={isDevis ? "Conditions (imprimées sur le devis)" : "Conditions de paiement (imprimées sur la facture)"}
+              <Form.Item htmlFor="doc-conditions" label={isDevis ? "Conditions (imprimées sur le devis)" : "Conditions de paiement (imprimées sur la facture)"}
                 extra={isDevis ? "Acompte, délais d'intervention, modalités de paiement…" : "Ex. Paiement à réception par virement."}>
-                <Input.TextArea value={etat.conditions} onChange={(e) => maj({ conditions: e.target.value })} autoSize={{ minRows: 2, maxRows: 6 }} />
+                <Input.TextArea id="doc-conditions" value={etat.conditions} onChange={(e) => maj({ conditions: e.target.value })} autoSize={{ minRows: 2, maxRows: 6 }} />
               </Form.Item>
-              <Form.Item label="Notes internes (non imprimées)" style={{ marginBottom: 0 }}>
-                <Input.TextArea value={etat.notes} onChange={(e) => maj({ notes: e.target.value })} autoSize={{ minRows: 2, maxRows: 6 }} />
+              <Form.Item label="Notes internes (non imprimées)" htmlFor="doc-notes" style={{ marginBottom: 0 }}>
+                <Input.TextArea id="doc-notes" value={etat.notes} onChange={(e) => maj({ notes: e.target.value })} autoSize={{ minRows: 2, maxRows: 6 }} />
               </Form.Item>
             </Panel>
           </div>
           <div className="detail-side">
             <Panel title="Paramètres">
-              <Form.Item label="Activité">
-                <Select value={etat.entity} onChange={(v) => maj({ entity: v })} options={options(ENTITES)} />
+              <Form.Item label="Activité" htmlFor="doc-activite">
+                <Select id="doc-activite" value={etat.entity} onChange={(v) => maj({ entity: v })} options={options(ENTITES)} />
               </Form.Item>
-              <Form.Item label={isDevis ? "Date du devis" : "Date de facture"}>
-                <DatePicker value={etat.date} onChange={(v) => v && maj({ date: v })} format="DD/MM/YYYY" style={{ width: "100%" }} allowClear={false} />
+              <Form.Item label={isDevis ? "Date du devis" : "Date de facture"} htmlFor="doc-date">
+                <DatePicker id="doc-date" value={etat.date} onChange={(v) => v && maj({ date: v })} format="DD/MM/YYYY" style={{ width: "100%" }} allowClear={false} />
               </Form.Item>
               {isDevis ? (
-                <Form.Item label="Validité">
-                  <InputNumber decimalSeparator="," min={1} max={365} value={etat.validite_jours} onChange={(v) => maj({ validite_jours: Number(v) || 30 })} addonAfter="jours" style={{ width: "100%" }} />
+                <Form.Item label="Validité" htmlFor="doc-validite">
+                  <InputNumber id="doc-validite" decimalSeparator="," min={1} max={365} value={etat.validite_jours} onChange={(v) => maj({ validite_jours: Number(v) || 30 })} addonAfter="jours" style={{ width: "100%" }} />
                 </Form.Item>
               ) : (
-                <Form.Item label="Échéance" extra="Vide = paiement à réception.">
-                  <DatePicker value={etat.date_echeance} onChange={(v) => maj({ date_echeance: v })} format="DD/MM/YYYY" style={{ width: "100%" }} />
+                <Form.Item label="Échéance" htmlFor="doc-echeance" extra="Vide = paiement à réception.">
+                  <DatePicker id="doc-echeance" value={etat.date_echeance} onChange={(v) => maj({ date_echeance: v })} format="DD/MM/YYYY" style={{ width: "100%" }} />
                 </Form.Item>
               )}
-              <Form.Item label="TVA" extra="0 % en franchise de TVA (art. 293 B du CGI)." style={{ marginBottom: 0 }}>
-                <InputNumber decimalSeparator="," min={0} max={100} step={0.5} value={etat.tva_taux} onChange={(v) => maj({ tva_taux: Number(v) || 0 })} addonAfter="%" style={{ width: "100%" }} />
+              <Form.Item label="TVA" htmlFor="doc-tva" extra="0 % en franchise de TVA (art. 293 B du CGI)." style={{ marginBottom: 0 }}>
+                <InputNumber id="doc-tva" decimalSeparator="," min={0} max={100} step={0.5} value={etat.tva_taux} onChange={(v) => maj({ tva_taux: Number(v) || 0 })} addonAfter="%" style={{ width: "100%" }} />
               </Form.Item>
             </Panel>
             <Panel title="Totaux">

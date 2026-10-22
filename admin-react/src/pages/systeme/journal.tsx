@@ -68,8 +68,8 @@ export function JournalPage() {
       <PageHeader title="Journal d'activité" subtitle="Toutes les actions enregistrées automatiquement par la base, par qui et quand." crumbs={[{ label: "Système" }, { label: "Journal d'activité" }]} />
       <Panel flush>
         <div className="filterbar">
-          <Input className="grow" allowClear prefix={<SearchOutlined style={{ color: "#8a93a3" }} />} placeholder="Rechercher (client, n° de document, utilisateur…)" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Rechercher dans le journal" />
-          <Select allowClear placeholder="Type d'élément" value={f.type || undefined} onChange={(v) => setF({ type: v })} options={TYPES} />
+          <Input className="grow" allowClear prefix={<SearchOutlined style={{ color: "#667085" }} />} placeholder="Rechercher (client, n° de document, utilisateur…)" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Rechercher dans le journal" />
+          <Select allowClear placeholder="Type d'élément" aria-label="Filtrer : type d'élément" value={f.type || undefined} onChange={(v) => setF({ type: v })} options={TYPES} />
           <DatePicker.RangePicker format="DD/MM/YYYY" value={periode} allowEmpty={[true, true]}
             onChange={(v) => setF({ du: v?.[0]?.format("YYYY-MM-DD") ?? null, au: v?.[1]?.format("YYYY-MM-DD") ?? null })} />
           {filtres && <Button type="link" onClick={() => { setQ(""); setF({ q: null, type: null, du: null, au: null }); }}>Réinitialiser</Button>}
@@ -83,7 +83,7 @@ export function JournalPage() {
           <>
             {jours.map((j) => (
               <div key={j.jour}>
-                <div style={{ padding: "12px 18px 4px", fontSize: 12, fontWeight: 600, color: "#8a93a3", textTransform: "uppercase", letterSpacing: ".06em" }}>
+                <div style={{ padding: "12px 18px 4px", fontSize: 12, fontWeight: 600, color: "#667085", textTransform: "uppercase", letterSpacing: ".06em" }}>
                   {dayjs(j.jour).isSame(dayjs(), "day") ? "Aujourd'hui" : dayjs(j.jour).isSame(dayjs().subtract(1, "day"), "day") ? "Hier" : dateLongFR(j.jour)}
                 </div>
                 <div className="feed">{j.items.map((a) => <ActivityItem key={a.id} a={a} />)}</div>

@@ -42,7 +42,7 @@ def build():
             items += f"""
             <a class="pb-card" href="{p['slug']}/" data-cat="{key}" data-kw="{kws}">
               <span class="pb-cat">{label}</span>
-              <h3>{p['q']}</h3>
+              <h2 class="h3">{p['q']}</h2>
               <p>{p['sym']}</p>
               <span class="pb-link">Voir les causes et solutions →</span>
             </a>"""
@@ -157,12 +157,12 @@ def build():
   <div class="grid grid-2" style="gap:30px;align-items:start">
     <div class="card reveal">
       <div class="icon-box" style="background:linear-gradient(145deg,#f59e0b,#f97316)">{IC['wrench']}</div>
-      <h3>{lbl_causes}</h3>
+      <h2 class="h3">{lbl_causes}</h2>
       <ul class="check-list">{causes}</ul>
     </div>
     <div class="card reveal">
       <div class="icon-box">{IC['check']}</div>
-      <h3>{lbl_check}</h3>
+      <h2 class="h3">{lbl_check}</h2>
       <ul class="check-list">{checks}</ul>
     </div>
   </div>

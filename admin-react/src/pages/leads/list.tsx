@@ -118,11 +118,11 @@ export function LeadsList({ mode }: { mode: "devis" | "question" }) {
           />
         </div>
         <div className="filterbar">
-          <Input className="grow" allowClear prefix={<SearchOutlined style={{ color: "#8a93a3" }} />} placeholder="Nom, entreprise, email, téléphone, message…"
+          <Input className="grow" allowClear prefix={<SearchOutlined style={{ color: "#667085" }} />} placeholder="Nom, entreprise, email, téléphone, message…"
             value={q} onChange={(e) => setQ(e.target.value)} aria-label="Rechercher" />
-          <Select allowClear placeholder="Priorité" value={f.priorite || undefined} onChange={(v) => setF({ priorite: v })} options={options(PRIORITES)} />
-          <Select allowClear placeholder="Site d'origine" value={f.entite || undefined} onChange={(v) => setF({ entite: v })} options={options(ENTITES)} />
-          {!isQ && <Select allowClear placeholder="Type de client" value={f.type_client || undefined} onChange={(v) => setF({ type_client: v })} options={options(TYPES_CLIENT)} />}
+          <Select allowClear placeholder="Priorité" aria-label="Filtrer : priorité" value={f.priorite || undefined} onChange={(v) => setF({ priorite: v })} options={options(PRIORITES)} />
+          <Select allowClear placeholder="Site d'origine" aria-label="Filtrer : site d'origine" value={f.entite || undefined} onChange={(v) => setF({ entite: v })} options={options(ENTITES)} />
+          {!isQ && <Select allowClear placeholder="Type de client" aria-label="Filtrer : type de client" value={f.type_client || undefined} onChange={(v) => setF({ type_client: v })} options={options(TYPES_CLIENT)} />}
           {!isQ && <Checkbox checked={f.relance === "due"} onChange={(e) => setF({ relance: e.target.checked ? "due" : null })}>Relance due</Checkbox>}
           {filtresActifs && <Button type="link" onClick={() => { setQ(""); setF({ q: null, priorite: null, entite: null, type_client: null, relance: null }); }}>Réinitialiser</Button>}
         </div>

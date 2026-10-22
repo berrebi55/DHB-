@@ -64,9 +64,10 @@ def brandbar(site, depth, phone_display=None, phone_link=None):
         cur = ' aria-current="page"' if cle == site else ""
         href = f"{root(depth)}" if cle == site else lien_site(cle, depth)
         liens.append(f'<a href="{href}"{cur}>{s["nom"]}<span>{s["pour"]}</span></a>')
-    tel = (f'<a class="brandbar-tel" href="tel:{phone_link}">{ICONES["phone"]}<span>{phone_display}</span></a>'
+    # aria-label : sur mobile le numéro est masqué, le lien garde un nom lisible.
+    tel = (f'<a class="brandbar-tel" href="tel:{phone_link}" aria-label="Appeler le {phone_display}">{ICONES["phone"]}<span>{phone_display}</span></a>'
            if phone_display else "")
-    return f"""<div class="brandbar"><div class="wrap brandbar-inner">
+    return f"""<div class="brandbar" role="region" aria-label="Groupe DHB"><div class="wrap brandbar-inner">
   <nav aria-label="Sites du groupe DHB">{''.join(liens)}</nav>
   {tel}
 </div></div>"""
@@ -100,7 +101,7 @@ def footer(site, depth, description, colonnes, contact, legal_extra=""):
     cols = ""
     for titre, liens in colonnes:
         items = "".join(f'<a href="{h}">{l}</a>' for h, l in liens)
-        cols += f'<div class="footer-col"><h4>{titre}</h4>{items}</div>'
+        cols += f'<div class="footer-col"><h2>{titre}</h2>{items}</div>'
     autres = " · ".join(
         f'<a href="{lien_site(c, depth)}">{SITES[c]["nom"]}</a>' for c in ("groupe", "pro", "assistance") if c != site)
     return f"""<footer class="site-footer">

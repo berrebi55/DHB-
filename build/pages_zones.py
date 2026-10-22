@@ -213,7 +213,7 @@ def build():
         cards += f"""
         <div class="card reveal">
           <div class="icon-box">{IC['map']}</div>
-          <h3>{v['ville'] if not v.get('distance') else 'À distance'}</h3>
+          <h2 class="h3">{v['ville'] if not v.get('distance') else 'À distance'}</h2>
           <p>{v['dep']}</p>
           <a class="card-link" href="{slug}/">Voir la page</a>
         </div>"""

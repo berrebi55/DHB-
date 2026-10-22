@@ -99,8 +99,8 @@ export function PaiementsList() {
       </div>
       <Panel flush>
         <div className="filterbar">
-          <Input className="grow" allowClear prefix={<SearchOutlined style={{ color: "#8a93a3" }} />} placeholder="Référence (n° de virement, chèque…)" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Rechercher un paiement" />
-          <Select allowClear placeholder="Moyen" value={f.moyen || undefined} onChange={(v) => setF({ moyen: v })} options={options(MOYENS_PAIEMENT)} />
+          <Input className="grow" allowClear prefix={<SearchOutlined style={{ color: "#667085" }} />} placeholder="Référence (n° de virement, chèque…)" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Rechercher un paiement" />
+          <Select allowClear placeholder="Moyen" aria-label="Filtrer : moyen de paiement" value={f.moyen || undefined} onChange={(v) => setF({ moyen: v })} options={options(MOYENS_PAIEMENT)} />
           <DatePicker.RangePicker format="DD/MM/YYYY" value={periode} allowEmpty={[true, true]}
             onChange={(v) => setF({ du: v?.[0]?.format("YYYY-MM-DD") ?? null, au: v?.[1]?.format("YYYY-MM-DD") ?? null })} />
           {filtres && <Button type="link" onClick={() => { setQ(""); setF({ q: null, moyen: null, du: null, au: null }); }}>Réinitialiser</Button>}
@@ -147,7 +147,7 @@ export function PaiementsList() {
         {aPayer.length === 0 ? (
           <EmptyState compact icon={<WalletOutlined />} title="Aucune facture en attente de paiement" description="Seules les factures envoyées et non soldées peuvent recevoir un paiement." />
         ) : (
-          <Select showSearch style={{ width: "100%" }} placeholder="Choisir une facture…" optionFilterProp="label"
+          <Select showSearch style={{ width: "100%" }} placeholder="Choisir une facture…" aria-label="Facture réglée" optionFilterProp="label"
             options={aPayer.map((x) => ({ value: x.id, label: `${x.numero} — ${x.client_nom ?? ""} — reste ${eur(x.reste_a_payer)}` }))}
             onChange={(id) => { setFacture(aPayer.find((x) => x.id === id) ?? null); setChoix(false); }} />
         )}

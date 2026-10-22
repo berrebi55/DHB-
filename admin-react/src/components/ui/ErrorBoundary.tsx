@@ -37,7 +37,7 @@ export class ErrorBoundary extends Component<
     return (
       <div className={`empty error-state${this.props.compact ? " compact" : ""}`} role="alert">
         <div className="ico"><WarningOutlined /></div>
-        <h4>{chunk ? "Une nouvelle version est disponible" : this.props.titre ?? "Cette partie n'a pas pu s'afficher"}</h4>
+        <p className="empty-title">{chunk ? "Une nouvelle version est disponible" : this.props.titre ?? "Cette partie n'a pas pu s'afficher"}</p>
         <p>
           {chunk
             ? "Rechargez la page pour utiliser la dernière version du back-office."

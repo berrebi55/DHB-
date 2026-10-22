@@ -82,6 +82,7 @@ export function LinesEditor({ value, onChange, error }: { value: Ligne[]; onChan
         <Button icon={<PlusOutlined />} onClick={() => onChange([...value, ligneVide()])}>Ajouter une ligne</Button>
         <Select
           placeholder={catalogue.length ? "Ajouter depuis le catalogue…" : "Catalogue vide"}
+          aria-label="Ajouter une prestation du catalogue"
           disabled={!catalogue.length}
           value={null}
           style={{ minWidth: 260 }}

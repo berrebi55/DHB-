@@ -185,7 +185,7 @@ export function DevisShow() {
       </div>
       <Modal open={!!lienManuel} onCancel={() => setLienManuel(null)} footer={<Button onClick={() => setLienManuel(null)}>Fermer</Button>} title="Lien de signature du devis">
         <p className="muted">Copiez ce lien et envoyez-le au client :</p>
-        <Input.TextArea value={lienManuel ?? ""} readOnly autoSize onFocus={(e) => e.target.select()} />
+        <Input.TextArea aria-label="Lien de signature" value={lienManuel ?? ""} readOnly autoSize onFocus={(e) => e.target.select()} />
       </Modal>
     </>
   );

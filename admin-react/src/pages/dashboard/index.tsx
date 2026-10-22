@@ -178,8 +178,8 @@ export function DashboardPage() {
               <ResponsiveContainer>
                 <BarChart data={serie} margin={{ top: 8, right: 8, left: 8, bottom: 0 }} barGap={2}>
                   <CartesianGrid vertical={false} stroke="#EEF0F3" />
-                  <XAxis dataKey="mois" tickLine={false} axisLine={false} tick={{ fill: "#8A93A3", fontSize: 12 }} />
-                  <YAxis tickLine={false} axisLine={false} width={64} tick={{ fill: "#8A93A3", fontSize: 12 }} tickFormatter={(v) => eur0(v)} />
+                  <XAxis dataKey="mois" tickLine={false} axisLine={false} tick={{ fill: "#667085", fontSize: 12 }} />
+                  <YAxis tickLine={false} axisLine={false} width={64} tick={{ fill: "#667085", fontSize: 12 }} tickFormatter={(v) => eur0(v)} />
                   <Tooltip content={<TooltipEur />} cursor={{ fill: "#F2F4F7" }} />
                   <Bar isAnimationActive={false} dataKey="facture" name="Facturé" fill="#C7D2FE" radius={[4, 4, 0, 0]} maxBarSize={22} />
                   <Bar isAnimationActive={false} dataKey="encaisse" name="Encaissé" fill={COULEURS.series[0]} radius={[4, 4, 0, 0]} maxBarSize={22} />

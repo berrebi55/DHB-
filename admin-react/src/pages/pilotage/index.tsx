@@ -64,8 +64,8 @@ function GraphMensuel({ serie }: { serie: { mois: string; encaisse: number; fact
         <ResponsiveContainer>
           <BarChart data={serie} margin={{ top: 8, right: 8, left: 8, bottom: 0 }} barGap={2}>
             <CartesianGrid vertical={false} stroke="#EEF0F3" />
-            <XAxis dataKey="mois" tickLine={false} axisLine={false} tick={{ fill: "#8A93A3", fontSize: 12 }} />
-            <YAxis tickLine={false} axisLine={false} width={64} tick={{ fill: "#8A93A3", fontSize: 12 }} tickFormatter={(v) => eur0(v)} />
+            <XAxis dataKey="mois" tickLine={false} axisLine={false} tick={{ fill: "#667085", fontSize: 12 }} />
+            <YAxis tickLine={false} axisLine={false} width={64} tick={{ fill: "#667085", fontSize: 12 }} tickFormatter={(v) => eur0(v)} />
             <Tooltip content={<TooltipEur />} cursor={{ fill: "#F2F4F7" }} />
             <Bar isAnimationActive={false} dataKey="facture" name="Facturé" fill="#C7D2FE" radius={[4, 4, 0, 0]} maxBarSize={22} />
             <Bar isAnimationActive={false} dataKey="encaisse" name="Encaissé" fill={COULEURS.series[0]} radius={[4, 4, 0, 0]} maxBarSize={22} />
@@ -133,7 +133,7 @@ export function StatsCA() {
   const [annee, setAnnee] = useState(dayjs().year());
   return (
     <Cadre titre="Chiffre d'affaires" sousTitre="Encaissé = factures payées (date de paiement). Facturé = factures envoyées ou payées (date de facture)."
-      actions={<Select value={annee} onChange={setAnnee} style={{ width: 120 }} options={Array.from({ length: 5 }, (_, i) => dayjs().year() - i).map((y) => ({ value: y, label: String(y) }))} />}>
+      actions={<Select value={annee} onChange={setAnnee} style={{ width: 120 }} aria-label="Année" options={Array.from({ length: 5 }, (_, i) => dayjs().year() - i).map((y) => ({ value: y, label: String(y) }))} />}>
       {(d) => {
         const debut = dayjs(`${annee}-01-01`);
         const mois = Array.from({ length: 12 }, (_, i) => {

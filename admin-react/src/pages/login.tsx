@@ -58,10 +58,10 @@ export const LoginPage = () => {
           {info && <Alert type="success" showIcon message={info} style={{ marginBottom: 16 }} />}
           <Form form={form} layout="vertical" onFinish={onFinish} requiredMark={false} size="large">
             <Form.Item name="email" label="Adresse email" rules={[{ required: true, message: "Saisissez votre email." }, { type: "email", message: "Adresse email invalide." }]}>
-              <Input prefix={<MailOutlined style={{ color: "#8a93a3" }} />} autoComplete="email" placeholder="vous@exemple.fr" />
+              <Input prefix={<MailOutlined style={{ color: "#667085" }} />} autoComplete="email" placeholder="vous@exemple.fr" />
             </Form.Item>
             <Form.Item name="password" label="Mot de passe" rules={[{ required: true, message: "Saisissez votre mot de passe." }]}>
-              <Input.Password prefix={<LockOutlined style={{ color: "#8a93a3" }} />} autoComplete="current-password" />
+              <Input.Password prefix={<LockOutlined style={{ color: "#667085" }} />} autoComplete="current-password" />
             </Form.Item>
             <Button type="primary" htmlType="submit" block loading={isLoading}>Se connecter</Button>
           </Form>

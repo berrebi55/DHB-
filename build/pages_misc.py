@@ -187,7 +187,7 @@ def build():
   <div class="wrap"><h1>Plan du site</h1><p>Toutes les pages du site DHB, en un coup d'œil.</p></div>
 </section>
 <section class="section"><div class="wrap"><div class="grid grid-2">
-  <div class="card"><h3>Pages principales</h3><ul class="check-list">
+  <div class="card"><h2 class="h3">Pages principales</h2><ul class="check-list">
     <li><a href="{root(1)}">Accueil</a></li>
     <li><a href="{root(1)}services/">Services</a></li>
     <li><a href="{root(1)}zones/">Zones d'intervention</a></li>
@@ -196,11 +196,11 @@ def build():
     <li><a href="{root(1)}a-propos/">À propos</a></li>
     <li><a href="{root(1)}contact/">Contact</a></li>
   </ul></div>
-  <div class="card"><h3>Services</h3><ul class="check-list">{serv_links}</ul></div>
-  <div class="card"><h3>Zones d'intervention</h3><ul class="check-list">{ville_links}</ul></div>
-  <div class="card"><h3>Pannes fréquentes</h3><ul class="check-list">{pb_links}</ul></div>
-  <div class="card"><h3>Articles du blog</h3><ul class="check-list">{blog_links}</ul></div>
-  <div class="card"><h3>Pages légales</h3><ul class="check-list">
+  <div class="card"><h2 class="h3">Services</h2><ul class="check-list">{serv_links}</ul></div>
+  <div class="card"><h2 class="h3">Zones d'intervention</h2><ul class="check-list">{ville_links}</ul></div>
+  <div class="card"><h2 class="h3">Pannes fréquentes</h2><ul class="check-list">{pb_links}</ul></div>
+  <div class="card"><h2 class="h3">Articles du blog</h2><ul class="check-list">{blog_links}</ul></div>
+  <div class="card"><h2 class="h3">Pages légales</h2><ul class="check-list">
     <li><a href="{root(1)}mentions-legales/">Mentions légales</a></li>
     <li><a href="{root(1)}politique-confidentialite/">Politique de confidentialité</a></li>
   </ul></div>

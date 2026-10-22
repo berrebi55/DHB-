@@ -71,7 +71,7 @@ function SiteCard({ site, lectureSeule }: { site: (typeof SITES)[number]; lectur
           <div className="muted" style={{ fontSize: 12.5, marginBottom: 8 }}>Aperçu sur le site</div>
           <div style={{ border: "1px dashed #d5dbe3", borderRadius: 10, overflow: "hidden", marginBottom: 14 }}>
             {valeurs.annonce ? <div style={{ background: "#0E1B2E", color: "#fff", padding: "8px 14px", fontSize: 13, textAlign: "center" }}>{valeurs.annonce}</div>
-              : <div style={{ padding: "8px 14px", fontSize: 12.5, color: "#8a93a3", textAlign: "center" }}>Bandeau masqué</div>}
+              : <div style={{ padding: "8px 14px", fontSize: 12.5, color: "#667085", textAlign: "center" }}>Bandeau masqué</div>}
             {site.champs.some((c) => c.type === "prix") && (
               <div style={{ display: "flex", gap: 24, padding: 14, flexWrap: "wrap", background: "#fff" }}>
                 <div><div className="faint" style={{ fontSize: 12 }}>Abonnement</div><b style={{ fontSize: 18 }}>À partir de {valeurs.abonnement_prix || "—"} €</b><span className="faint"> / mois</span></div>

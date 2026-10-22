@@ -203,7 +203,7 @@ def build():
         cards += f"""
         <div class="card reveal">
           <div class="icon-box">{IC[SERVICE_ICON[slug]]}</div>
-          <h3>{name}</h3>
+          <h2 class="h3">{name}</h2>
           <p>{desc}</p>
           <a class="card-link" href="{slug}/">Découvrir</a>
         </div>"""

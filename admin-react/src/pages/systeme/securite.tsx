@@ -58,8 +58,8 @@ export function SecuritePage() {
               <dt>Rôle</dt><dd><span className={`st ${isAdmin ? "tone-primary" : "tone-neutral"}`}>{isAdmin ? "Administrateur" : "Collaborateur"}</span></dd>
             </dl>
             <Form layout="vertical">
-              <Form.Item label="Nom affiché" extra="Utilisé dans le journal d'activité et l'attribution des tickets.">
-                <Input value={nom} onChange={(e) => setNom(e.target.value)} placeholder="Prénom Nom" />
+              <Form.Item label="Nom affiché" htmlFor="profil-nom" extra="Utilisé dans le journal d'activité et l'attribution des tickets.">
+                <Input id="profil-nom" value={nom} onChange={(e) => setNom(e.target.value)} placeholder="Prénom Nom" />
               </Form.Item>
               <Button onClick={enregistrerNom} loading={savingNom}>Enregistrer le nom</Button>
             </Form>
@@ -67,7 +67,7 @@ export function SecuritePage() {
           <Panel title="Mot de passe">
             <Form form={form} layout="vertical" requiredMark={false}>
               <Form.Item name="password" label="Nouveau mot de passe" rules={[{ required: true, message: "Saisissez un mot de passe." }, { min: 10, message: "10 caractères minimum." }]}>
-                <Input.Password prefix={<LockOutlined style={{ color: "#8a93a3" }} />} autoComplete="new-password" />
+                <Input.Password prefix={<LockOutlined style={{ color: "#667085" }} />} autoComplete="new-password" />
               </Form.Item>
               <Form.Item name="confirm" label="Confirmation" dependencies={["password"]}
                 rules={[{ required: true, message: "Confirmez le mot de passe." }, ({ getFieldValue }) => ({ validator: (_, v) => (!v || getFieldValue("password") === v ? Promise.resolve() : Promise.reject(new Error("Les deux mots de passe sont différents."))) })]}>

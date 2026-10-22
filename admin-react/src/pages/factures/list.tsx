@@ -115,8 +115,8 @@ export function FacturesList() {
             items={ONGLETS.map((o) => ({ key: o.key || "_", label: <span>{o.label}<span className="tab-count" style={o.key === "en_retard" && counts.en_retard ? { color: "var(--danger)" } : undefined}>{counts[o.key] ?? 0}</span></span> }))} />
         </div>
         <div className="filterbar">
-          <Input className="grow" allowClear prefix={<SearchOutlined style={{ color: "#8a93a3" }} />} placeholder="N° de facture ou client…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Rechercher une facture" />
-          <Select allowClear placeholder="Activité" value={f.entite || undefined} onChange={(v) => setF({ entite: v })} options={options(ENTITES)} />
+          <Input className="grow" allowClear prefix={<SearchOutlined style={{ color: "#667085" }} />} placeholder="N° de facture ou client…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Rechercher une facture" />
+          <Select allowClear placeholder="Activité" aria-label="Filtrer : activité" value={f.entite || undefined} onChange={(v) => setF({ entite: v })} options={options(ENTITES)} />
           {filtres && <Button type="link" onClick={reset}>Réinitialiser</Button>}
         </div>
         <DataList<FactureVue>

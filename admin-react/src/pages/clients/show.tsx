@@ -138,7 +138,7 @@ export function ClientShow() {
                 <div className="split" style={{ paddingBottom: 18 }}>
                   <div className="section-gap">
                     <div>
-                      <h3 style={{ fontSize: 15, margin: "4px 0 12px" }}>Informations</h3>
+                      <h2 style={{ fontSize: 15, margin: "4px 0 12px" }}>Informations</h2>
                       <dl className="kv">
                         <dt>Contact</dt><dd>{c.nom || "—"}</dd>
                         <dt>Email</dt><dd>{c.email ? <a href={`mailto:${c.email}`}><MailOutlined /> {c.email}</a> : "—"}</dd>
@@ -151,12 +151,12 @@ export function ClientShow() {
                       <Button size="small" icon={<EditOutlined />} style={{ marginTop: 12 }} onClick={() => setEdit(true)}>Modifier</Button>
                     </div>
                     <div>
-                      <h3 style={{ fontSize: 15, margin: "8px 0 12px" }}>Dernières notes</h3>
+                      <h2 style={{ fontSize: 15, margin: "8px 0 12px" }}>Dernières notes</h2>
                       <NotesPanel clientId={c.id} />
                     </div>
                   </div>
                   <div>
-                    <h3 style={{ fontSize: 15, margin: "4px 0 4px" }}>Activité récente</h3>
+                    <h2 style={{ fontSize: 15, margin: "4px 0 4px" }}>Activité récente</h2>
                     <div style={{ marginInline: -18 }}><ActivityFeed clientId={c.id} limit={10} /></div>
                   </div>
                 </div>

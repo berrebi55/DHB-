@@ -118,12 +118,12 @@ export function documentHtml(kind: DocKind, d: DocData, ent: Entreprise | null):
       </div>
       <div class="p-from">${emetteur}</div>
     </div>
-    <div class="p-to"><span style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#8a93a3">${isDevis ? "Destinataire" : "Facturé à"}</span><br>
+    <div class="p-to"><span style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#667085">${isDevis ? "Destinataire" : "Facturé à"}</span><br>
       <b>${esc(d.client_nom || "—")}</b>${d.client_adresse ? `<br>${nl(d.client_adresse)}` : ""}${d.client_email ? `<br>${esc(d.client_email)}` : ""}
     </div>
     <table>
       <thead><tr><th>Désignation</th><th class="r">Qté</th><th class="r">PU HT</th><th class="r">Total HT</th></tr></thead>
-      <tbody>${rows || `<tr><td colspan="4" style="color:#8a93a3">Aucune ligne</td></tr>`}</tbody>
+      <tbody>${rows || `<tr><td colspan="4" style="color:#667085">Aucune ligne</td></tr>`}</tbody>
     </table>
     ${totaux}
     <div class="p-foot">${pied}</div>`;
@@ -136,7 +136,7 @@ const PRINT_CSS = `
   .p-meta{color:#5b6576;line-height:1.6}.p-from{text-align:right;line-height:1.5;color:#5b6576}.p-from b{color:#0e1b2e}
   .p-to{background:#f9fafb;border:1px solid #eef0f3;border-radius:8px;padding:12px 16px;margin-bottom:22px;line-height:1.5;max-width:360px}
   table{width:100%;border-collapse:collapse;margin-bottom:18px}
-  th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#8a93a3;border-bottom:1px solid #e3e7ed;padding:8px 6px}
+  th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#667085;border-bottom:1px solid #e3e7ed;padding:8px 6px}
   td{border-bottom:1px solid #eef0f3;padding:9px 6px;vertical-align:top}.r{text-align:right;white-space:nowrap}
   .p-totals{margin-left:auto;width:280px;display:flex;flex-direction:column;gap:6px}
   .p-totals .row{display:flex;justify-content:space-between}
