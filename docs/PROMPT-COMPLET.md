@@ -55,7 +55,6 @@ DHB-/
 │  ├─ particuliers/build_particuliers.py (+ aide_data.py)
 │  └─ build_all.py     → régénère les 3 sites + synchronise CSS/JS communs
 ├─ admin-react/        → back-office (Vite + React 18 + TypeScript + Refine + Ant Design)
-├─ admin/              → ANCIENNE admin (dépréciée, ne plus utiliser)
 ├─ supabase/
 │  ├─ full-setup.sql   → schéma complet, idempotent (relançable)
 │  ├─ functions/       → Edge Functions (Deno) + _shared/securite.ts

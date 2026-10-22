@@ -54,7 +54,7 @@ export function TicketsList() {
     return out;
   }, [onglet, f.priorite, f.responsable, f.du, f.au, f.q]);
 
-  const { data, isLoading } = useList<Ticket>({
+  const { data, isLoading, isError, error, refetch } = useList<Ticket>({
     resource: "tickets",
     filters,
     sorters: [{ field: "created_at", order: "desc" }],
@@ -110,6 +110,8 @@ export function TicketsList() {
         <DataList<Ticket>
           rows={rows}
           loading={isLoading}
+          error={isError ? error ?? true : undefined}
+          onRetry={() => void refetch()}
           total={data?.total ?? 0}
           page={page}
           pageSize={PAGE}

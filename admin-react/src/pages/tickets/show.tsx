@@ -2,14 +2,14 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { App, Button, Dropdown, Modal, Select, Skeleton, Space, Typography } from "antd";
 import { CheckOutlined, CustomerServiceOutlined, DeleteOutlined, MoreOutlined, ReloadOutlined, UserOutlined } from "@ant-design/icons";
 import { useDelete, useOne, useUpdate } from "@refinedev/core";
-import { EmptyState, PageHeader, Panel, StatusTag } from "../../components/ui";
+import { EmptyState, PageHeader, Panel, StatusTag, ErrorState } from "../../components/ui";
 import { NotesPanel } from "../../components/activity/NotesPanel";
 import { ActivityFeed } from "../../components/activity/ActivityFeed";
 import { useProfils, type Ticket } from "../../components/forms/TicketDrawer";
 import { dateTimeFR, fromNow } from "../../lib/format";
 import { PRIORITES, TICKET_STATUTS, label, options } from "../../lib/statuts";
 import { useIdentite, useRole } from "../../lib/hooks";
-import { messageErreurBase } from "../../lib/functions";
+import { messageErreurBase, estIntrouvable } from "../../lib/functions";
 
 export function TicketShow() {
   const { id } = useParams();
@@ -18,12 +18,14 @@ export function TicketShow() {
   const { isAdmin } = useRole();
   const { data: me } = useIdentite();
   const profils = useProfils();
-  const { data, isLoading, isError } = useOne<Ticket>({ resource: "tickets", id: id!, liveMode: "auto" });
+  const { data, isLoading, isError, error, refetch } = useOne<Ticket>({ resource: "tickets", id: id!, liveMode: "auto" });
   const t = data?.data;
   const { mutate: update } = useUpdate();
   const { mutate: remove } = useDelete();
 
   if (isLoading) return <Panel><Skeleton active paragraph={{ rows: 8 }} /></Panel>;
+  if (isError && !estIntrouvable(error))
+    return <Panel><ErrorState error={error} onRetry={() => void refetch()} /></Panel>;
   if (isError || !t)
     return <Panel><EmptyState icon={<CustomerServiceOutlined />} title="Ticket introuvable" action={<Button onClick={() => navigate("/tickets")}>Retour aux tickets</Button>} /></Panel>;
 

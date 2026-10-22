@@ -81,7 +81,7 @@ export function FacturesList() {
     return out;
   }, [onglet, f.entite, f.q]);
 
-  const { data, isLoading } = useList<FactureVue>({
+  const { data, isLoading, isError, error, refetch } = useList<FactureVue>({
     resource: "factures_vue",
     filters,
     sorters: [{ field: f.tri || "date_facture", order: (f.ordre as "asc" | "desc") || "desc" }, { field: "numero", order: "desc" }],
@@ -122,6 +122,8 @@ export function FacturesList() {
         <DataList<FactureVue>
           rows={rows}
           loading={isLoading}
+          error={isError ? error ?? true : undefined}
+          onRetry={() => void refetch()}
           total={data?.total ?? 0}
           page={page}
           pageSize={PAGE}

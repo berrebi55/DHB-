@@ -2,7 +2,7 @@ import { type ReactNode } from "react";
 import { Pagination, Table } from "antd";
 import type { ColumnsType, TableProps } from "antd/es/table";
 import { useIsMobile } from "../../lib/hooks";
-import { ListSkeleton } from "./index";
+import { ErrorState, ListSkeleton } from "./index";
 
 export interface SortState {
   field?: string;
@@ -27,10 +27,14 @@ export function DataList<T extends { id: string }>(props: {
   empty: ReactNode;
   footer?: ReactNode;
   rowClassName?: (row: T) => string;
+  /** Erreur de chargement : affichée à la place d'un faux « aucun résultat ». */
+  error?: unknown;
+  onRetry?: () => void;
 }) {
   const isMobile = useIsMobile();
   const { rows, loading, total = rows.length, page = 1, pageSize = 20 } = props;
 
+  if (props.error && rows.length === 0) return <ErrorState error={props.error} onRetry={props.onRetry} />;
   if (loading && rows.length === 0) return <ListSkeleton />;
   if (!loading && rows.length === 0) return <>{props.empty}</>;
 

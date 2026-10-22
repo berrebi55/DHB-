@@ -4,35 +4,36 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>DHB — Portail de développement local</title>
-<link rel="stylesheet" href="sites/groupe/assets/css/style.css">
-<link rel="icon" href="sites/groupe/assets/img/favicon.svg" type="image/svg+xml">
+<title>DHB — Portail local</title>
 <style>
-  body{display:flex;min-height:100vh;align-items:center;justify-content:center;background:linear-gradient(160deg,#0B2A4A,#041628);}
-  .dev{max-width:780px;width:100%;padding:40px 20px;color:#fff;}
-  .dev h1{color:#fff;} .dev .logo__mark{font-size:2rem;color:#fff;} .dev .logo__mark b{color:var(--cyan);}
-  .dev .lead{color:#c3d4e6;}
-  .dev-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:28px;}
-  .dev-card{display:block;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:16px;padding:22px;color:#fff;transition:transform .2s,background .2s;}
-  .dev-card:hover{transform:translateY(-4px);background:rgba(255,255,255,.1);color:#fff;}
-  .dev-card h3{color:#fff;margin:10px 0 6px;} .dev-card p{color:#aec3d8;font-size:.9rem;margin:0;}
-  .tag{display:inline-block;font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;padding:3px 9px;border-radius:999px;background:rgba(46,196,255,.2);color:var(--cyan);}
-  .note{margin-top:28px;font-size:.85rem;color:#8fa9c2;}
-  @media(max-width:680px){.dev-grid{grid-template-columns:1fr;}}
+  :root{--ink:#0F172A;--text:#475569;--line:#E2E8F0;--bg:#F5F7FA;--primary:#2450D3}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);font-family:Inter,system-ui,sans-serif;color:var(--text)}
+  .dev{max-width:860px;width:100%;padding:40px 16px}
+  h1{color:var(--ink);font-size:1.6rem;margin:6px 0 4px}
+  .mark{font-weight:800;letter-spacing:.04em;color:var(--ink)}
+  .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:24px}
+  a.card{display:block;background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px;color:inherit;text-decoration:none}
+  a.card:hover{border-color:var(--primary)}
+  .card h3{margin:6px 0 4px;color:var(--ink);font-size:1.05rem}
+  .card p{margin:0;font-size:.92rem}
+  .tag{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--primary)}
+  .note{margin-top:22px;font-size:.85rem}
+  @media(max-width:640px){.grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
   <div class="dev">
-    <span class="logo__mark">D<b>H</b>B</span>
-    <h1 style="margin-top:12px">Portail de développement</h1>
-    <p class="lead">Environnement local du groupe DHB. Cliquez pour ouvrir chaque site et l'espace d'administration centralisé.</p>
-    <div class="dev-grid">
-      <a class="dev-card" href="sites/groupe/"><span class="tag">Vitrine</span><h3>DHB Groupe</h3><p>Site chapeau du groupe + présentation des filiales.</p></a>
-      <a class="dev-card" href="sites/infogerance/"><span class="tag">Entreprises</span><h3>DHB Infogérance</h3><p>Site complet (services, blog, pannes, zones).</p></a>
-      <a class="dev-card" href="sites/particuliers/"><span class="tag">Grand public</span><h3>DHB Particuliers</h3><p>Assistance à domicile/à distance, centre d'aide, abonnement.</p></a>
-      <a class="dev-card" href="admin/"><span class="tag">Privé</span><h3>Admin centralisé</h3><p>Gestion de toutes les demandes (toutes filiales).</p></a>
+    <span class="mark">DHB</span>
+    <h1>Portail de développement local</h1>
+    <p>Liens vers les trois sites publics et le back-office.</p>
+    <div class="grid">
+      <a class="card" href="sites/groupe/"><span class="tag">Institutionnel</span><h3>DHB Groupe</h3><p>Présentation du groupe et des deux activités.</p></a>
+      <a class="card" href="sites/infogerance/"><span class="tag">Entreprises</span><h3>DHB Pro</h3><p>Services, pannes fréquentes, zones, blog. Sur devis.</p></a>
+      <a class="card" href="sites/particuliers/"><span class="tag">Particuliers</span><h3>DHB Assistance</h3><p>Dépannage, centre d'aide, tarifs et abonnement.</p></a>
+      <a class="card" href="http://localhost:5173/"><span class="tag">Privé</span><h3>Back-office</h3><p>CRM, devis, factures, tickets, pilotage (lancé par <code>npm run dev</code>).</p></a>
     </div>
-    <p class="note">⚙️ Cette page n'est qu'un portail de dev (non référencée). En production, chaque site aura son propre (sous-)domaine. Voir <code>README.md</code>.</p>
+    <p class="note">Page de développement uniquement (non référencée). Voir <code>README.md</code>.</p>
   </div>
 </body>
 </html>

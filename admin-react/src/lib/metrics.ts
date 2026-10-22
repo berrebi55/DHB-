@@ -1,7 +1,8 @@
-import { useEffect, useState, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import dayjs, { type Dayjs } from "dayjs";
 import { supabaseClient } from "../supabaseClient";
 import { LEAD_OUVERTS } from "./statuts";
+import { messageErreurBase } from "./functions";
 
 // ---------------------------------------------------------------------------
 // Données de pilotage : lues telles quelles en base, jamais complétées.
@@ -20,39 +21,34 @@ export interface Donnees { factures: F[]; devis: D[]; leads: L[]; abonnements: A
 
 const MAX = 5000;
 
+async function chargerDonnees(): Promise<Donnees> {
+  const [f, d, l, a, t, c] = await Promise.all([
+    supabaseClient.from("factures_vue").select("id, numero, status, total_ht, total_ttc, date_facture, date_echeance, paid_at, client_id, client_nom, entity, en_retard, reste_a_payer, abonnement_id, devis_id, created_at").limit(MAX),
+    supabaseClient.from("devis").select("id, numero, statut, total_ht, total_ttc, date_devis, created_at, envoye_at, signed_at, client_id, client_nom, lead_id, derniere_relance_le, entity").limit(MAX),
+    supabaseClient.from("leads").select("id, nom, entreprise, status, type, created_at, relance_at, priorite, client_id, entity, type_client").limit(MAX),
+    supabaseClient.from("abonnements").select("id, client_nom, client_id, libelle, montant_mensuel, statut, date_debut, date_renouvellement, derniere_facture_le, jour_facturation, entity").limit(MAX),
+    supabaseClient.from("tickets").select("id, sujet, status, priorite, created_at, client_nom").limit(MAX),
+    supabaseClient.from("clients").select("id, type, statut, archived_at, created_at, entity").limit(MAX),
+  ]);
+  const err = [f, d, l, a, t, c].find((r) => r.error)?.error;
+  if (err) throw err;
+  const n = <X,>(rows: X[] | null) => (rows ?? []).map((r: any) => ({ ...r, total_ht: Number(r.total_ht ?? 0), total_ttc: Number(r.total_ttc ?? 0), montant_mensuel: Number(r.montant_mensuel ?? 0), reste_a_payer: Number(r.reste_a_payer ?? 0) })) as X[];
+  return { factures: n<F>(f.data as F[]), devis: n<D>(d.data as D[]), leads: n<L>(l.data as L[]), abonnements: n<A>(a.data as A[]), tickets: (t.data ?? []) as T[], clients: (c.data ?? []) as C[] };
+}
+
+/**
+ * Données du tableau de bord et du pilotage, mises en cache 30 s et partagées
+ * entre les écrans (pas de nouveau téléchargement à chaque visite). Une erreur
+ * ou un délai dépassé produit un message, jamais un chargement infini.
+ */
 export function useDonnees() {
-  const [data, setData] = useState<Donnees | null>(null);
-  const [erreur, setErreur] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const charger = useCallback(async () => {
-    setLoading(true);
-    const [f, d, l, a, t, c] = await Promise.all([
-      supabaseClient.from("factures_vue").select("id, numero, status, total_ht, total_ttc, date_facture, date_echeance, paid_at, client_id, client_nom, entity, en_retard, reste_a_payer, abonnement_id, devis_id, created_at").limit(MAX),
-      supabaseClient.from("devis").select("id, numero, statut, total_ht, total_ttc, date_devis, created_at, envoye_at, signed_at, client_id, client_nom, lead_id, derniere_relance_le, entity").limit(MAX),
-      supabaseClient.from("leads").select("id, nom, entreprise, status, type, created_at, relance_at, priorite, client_id, entity, type_client").limit(MAX),
-      supabaseClient.from("abonnements").select("id, client_nom, client_id, libelle, montant_mensuel, statut, date_debut, date_renouvellement, derniere_facture_le, jour_facturation, entity").limit(MAX),
-      supabaseClient.from("tickets").select("id, sujet, status, priorite, created_at, client_nom").limit(MAX),
-      supabaseClient.from("clients").select("id, type, statut, archived_at, created_at, entity").limit(MAX),
-    ]);
-    const err = [f, d, l, a, t, c].find((r) => r.error)?.error;
-    if (err) {
-      setErreur(/does not exist|schema cache/i.test(err.message)
-        ? "La base n'est pas à jour : exécutez supabase/full-setup.sql dans Supabase pour activer ces indicateurs."
-        : `Chargement impossible : ${err.message}`);
-      setLoading(false);
-      return;
-    }
-    const n = <X,>(rows: X[] | null) => (rows ?? []).map((r: any) => ({ ...r, total_ht: Number(r.total_ht ?? 0), total_ttc: Number(r.total_ttc ?? 0), montant_mensuel: Number(r.montant_mensuel ?? 0), reste_a_payer: Number(r.reste_a_payer ?? 0) })) as X[];
-    setErreur(null);
-    setData({ factures: n<F>(f.data as F[]), devis: n<D>(d.data as D[]), leads: n<L>(l.data as L[]), abonnements: n<A>(a.data as A[]), tickets: (t.data ?? []) as T[], clients: (c.data ?? []) as C[] });
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    charger();
-  }, [charger]);
-  return { data, erreur, loading, recharger: charger };
+  const q = useQuery({ queryKey: ["dhb", "donnees-pilotage"], queryFn: chargerDonnees, staleTime: 30_000 });
+  const msg = q.error ? String((q.error as { message?: string }).message ?? q.error) : null;
+  const erreur = !msg ? null
+    : /does not exist|schema cache/i.test(msg)
+      ? "La base n'est pas à jour : exécutez supabase/full-setup.sql dans Supabase pour activer ces indicateurs."
+      : messageErreurBase(q.error);
+  return { data: q.data ?? null, erreur, loading: q.isLoading, recharger: () => { void q.refetch(); } };
 }
 
 // ---------------------------------------------------------------------------

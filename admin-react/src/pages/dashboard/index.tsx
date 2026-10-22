@@ -74,7 +74,7 @@ export function DashboardPage() {
         title={prenom ? `Bonjour ${prenom}` : "Tableau de bord"}
         subtitle={`Situation au ${dayjs().format("dddd D MMMM YYYY")}`}
       />
-      {erreur && <Alert type="warning" showIcon message={erreur} style={{ marginBottom: 16 }} />}
+      {erreur && <Alert type="warning" showIcon message={erreur} action={<Button size="small" onClick={recharger}>Réessayer</Button>} style={{ marginBottom: 16 }} />}
 
       <div className="kpi-grid" style={{ marginBottom: 20 }}>
         <Kpi

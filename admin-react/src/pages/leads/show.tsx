@@ -15,7 +15,7 @@ import {
 import dayjs from "dayjs";
 import { useDelete, useList, useOne, useUpdate } from "@refinedev/core";
 import { supabaseClient } from "../../supabaseClient";
-import { EmptyState, PageHeader, Panel, StatusTag } from "../../components/ui";
+import { EmptyState, PageHeader, Panel, StatusTag, ErrorState } from "../../components/ui";
 import { NotesPanel } from "../../components/activity/NotesPanel";
 import { ActivityFeed } from "../../components/activity/ActivityFeed";
 import { LeadDrawer, type Lead } from "../../components/forms/LeadDrawer";
@@ -23,7 +23,7 @@ import { ClientDrawer, type Client } from "../../components/forms/ClientDrawer";
 import { dateFR, dateTimeFR, eur } from "../../lib/format";
 import { PRIORITES, label, options } from "../../lib/statuts";
 import { useRole } from "../../lib/hooks";
-import { messageErreurBase } from "../../lib/functions";
+import { messageErreurBase, estIntrouvable } from "../../lib/functions";
 
 const PARCOURS = ["nouveau", "a_contacter", "contacte", "devis_a_preparer", "devis_envoye", "gagne"];
 
@@ -32,7 +32,7 @@ export function LeadShow() {
   const navigate = useNavigate();
   const { message, modal } = App.useApp();
   const { isAdmin } = useRole();
-  const { data, isLoading, isError } = useOne<Lead>({ resource: "leads", id: id!, liveMode: "auto" });
+  const { data, isLoading, isError, error, refetch } = useOne<Lead>({ resource: "leads", id: id!, liveMode: "auto" });
   const lead = data?.data;
   const { mutate: update } = useUpdate();
   const { mutate: remove } = useDelete();
@@ -61,6 +61,8 @@ export function LeadShow() {
       { onSuccess: () => ok && message.success(ok), onError: (e) => message.error(messageErreurBase(e)) });
 
   if (isLoading) return <Panel><Skeleton active paragraph={{ rows: 8 }} /></Panel>;
+  if (isError && !estIntrouvable(error))
+    return <Panel><ErrorState error={error} onRetry={() => void refetch()} /></Panel>;
   if (isError || !lead)
     return <Panel><EmptyState icon={<InboxOutlined />} title="Demande introuvable" description="Elle a peut-être été supprimée." action={<Button onClick={() => navigate("/leads")}>Retour aux demandes</Button>} /></Panel>;
 

@@ -16,14 +16,14 @@ import {
 import dayjs from "dayjs";
 import { useDelete, useList, useOne } from "@refinedev/core";
 import { supabaseClient } from "../../supabaseClient";
-import { EmptyState, PageHeader, Panel, StatusTag } from "../../components/ui";
+import { EmptyState, PageHeader, Panel, StatusTag, ErrorState } from "../../components/ui";
 import { NotesPanel } from "../../components/activity/NotesPanel";
 import { ActivityFeed } from "../../components/activity/ActivityFeed";
 import { documentHtml, imprimerDocument } from "../../lib/document";
 import { dateFR, dateTimeFR, eur } from "../../lib/format";
 import { label } from "../../lib/statuts";
 import { useEntreprise, useRafraichir, useRole } from "../../lib/hooks";
-import { appelerFonction, messageErreurBase } from "../../lib/functions";
+import { appelerFonction, messageErreurBase, estIntrouvable } from "../../lib/functions";
 import { finValidite, type Devis } from "./list";
 
 const SIGN_BASE = (import.meta.env.VITE_SIGN_BASE as string | undefined) || "";
@@ -35,7 +35,7 @@ export function DevisShow() {
   const { isAdmin } = useRole();
   const { entreprise } = useEntreprise();
   const rafraichir = useRafraichir();
-  const { data, isLoading, isError } = useOne<Devis>({ resource: "devis", id: id! });
+  const { data, isLoading, isError, error, refetch } = useOne<Devis>({ resource: "devis", id: id! });
   const d = data?.data;
   const { data: facts } = useList({ resource: "factures", filters: [{ field: "devis_id", operator: "eq", value: id }], pagination: { mode: "off" }, queryOptions: { enabled: !!id } });
   const facture = (facts?.data ?? []).find((f: any) => f.status !== "annulee") as any;
@@ -44,6 +44,8 @@ export function DevisShow() {
   const [lienManuel, setLienManuel] = useState<string | null>(null);
 
   if (isLoading) return <Panel><Skeleton active paragraph={{ rows: 10 }} /></Panel>;
+  if (isError && !estIntrouvable(error))
+    return <Panel><ErrorState error={error} onRetry={() => void refetch()} /></Panel>;
   if (isError || !d)
     return <Panel><EmptyState icon={<FileTextOutlined />} title="Devis introuvable" description="Il a peut-être été supprimé." action={<Button onClick={() => navigate("/devis")}>Retour aux devis</Button>} /></Panel>;
 

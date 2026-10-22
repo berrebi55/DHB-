@@ -23,7 +23,7 @@ export function AbonnementsList() {
   const [q, setQ] = useState(f.q);
   const [enCours, setEnCours] = useState<string | null>(null);
 
-  const { data, isLoading } = useList<Abonnement>({ resource: "abonnements", sorters: [{ field: "created_at", order: "desc" }], pagination: { mode: "off" } });
+  const { data, isLoading, isError, error, refetch } = useList<Abonnement>({ resource: "abonnements", sorters: [{ field: "created_at", order: "desc" }], pagination: { mode: "off" } });
   const { data: retards } = useList({ resource: "factures_vue", filters: [{ field: "en_retard", operator: "eq", value: true }, { field: "abonnement_id", operator: "nnull", value: null }], pagination: { mode: "off" } });
   const aboEnRetard = useMemo(() => new Set((retards?.data ?? []).map((r: any) => r.abonnement_id)), [retards]);
   const tous = data?.data ?? [];
@@ -107,6 +107,8 @@ export function AbonnementsList() {
         <DataList<Abonnement>
           rows={rows}
           loading={isLoading}
+          error={isError ? error ?? true : undefined}
+          onRetry={() => void refetch()}
           onRowClick={(r) => setF({ ouvrir: r.id })}
           empty={tous.length === 0 ? (
             <EmptyState icon={<SyncOutlined />} title="Aucun abonnement pour le moment"

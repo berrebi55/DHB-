@@ -1,7 +1,11 @@
 import { type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Alert, Button } from "antd";
-import { ArrowLeftOutlined, ArrowDownOutlined, ArrowUpOutlined, RightOutlined } from "@ant-design/icons";
+import { ArrowLeftOutlined, ArrowDownOutlined, ArrowUpOutlined, ReloadOutlined, RightOutlined, WarningOutlined } from "@ant-design/icons";
+import { messageErreurBase } from "../../lib/functions";
+import { ErrorBoundary } from "./ErrorBoundary";
+
+export { ErrorBoundary };
 import { MAPS, type StatutKind, type Tone } from "../../lib/statuts";
 import { pct } from "../../lib/format";
 
@@ -56,6 +60,18 @@ export function Pill({ tone, children, dot = false }: { tone: Tone; children: Re
 }
 
 /* ---------- État vide : explique et propose l'action suivante ---------- */
+/* ---------- Erreur de chargement : jamais une liste vide trompeuse ---------- */
+export function ErrorState(props: { error: unknown; onRetry?: () => void; compact?: boolean; titre?: string }) {
+  return (
+    <div className={`empty error-state${props.compact ? " compact" : ""}`} role="alert">
+      <div className="ico"><WarningOutlined /></div>
+      <h4>{props.titre ?? "Impossible de charger ces données"}</h4>
+      <p>{messageErreurBase(props.error)}</p>
+      {props.onRetry && <Button icon={<ReloadOutlined />} onClick={props.onRetry}>Réessayer</Button>}
+    </div>
+  );
+}
+
 export function EmptyState(props: {
   icon: ReactNode;
   title: string;
@@ -94,7 +110,9 @@ export function Panel(props: {
           {props.extra}
         </div>
       )}
-      <div className={`panel-body${props.flush ? " flush" : ""}`}>{props.children}</div>
+      <div className={`panel-body${props.flush ? " flush" : ""}`}>
+        <ErrorBoundary compact>{props.children}</ErrorBoundary>
+      </div>
     </section>
   );
 }

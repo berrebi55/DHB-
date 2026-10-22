@@ -31,7 +31,7 @@ export function PrestationsList() {
     return out;
   }, [dq, inactives]);
 
-  const { data, isLoading } = useList<Prestation>({ resource: "prestations", filters, sorters: [{ field: "libelle", order: "asc" }], pagination: { mode: "off" } });
+  const { data, isLoading, isError, error, refetch } = useList<Prestation>({ resource: "prestations", filters, sorters: [{ field: "libelle", order: "asc" }], pagination: { mode: "off" } });
   const rows = data?.data ?? [];
 
   useEffect(() => {
@@ -65,6 +65,8 @@ export function PrestationsList() {
         <DataList<Prestation>
           rows={rows}
           loading={isLoading}
+          error={isError ? error ?? true : undefined}
+          onRetry={() => void refetch()}
           onRowClick={(r) => setEdition(r)}
           empty={dq || inactives ? (
             <EmptyState icon={<SearchOutlined />} title="Aucune prestation ne correspond" />

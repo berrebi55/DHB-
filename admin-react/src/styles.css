@@ -220,6 +220,7 @@ button.kpi:focus-visible { outline: 2px solid var(--primary); outline-offset: 2p
 .empty h4 { margin: 0; font-size: 15px; font-weight: 600; color: var(--text); }
 .empty p { margin: 0 0 10px; color: var(--text-2); max-width: 420px; font-size: 14px; }
 .empty.compact { padding: 24px 16px; }
+.error-state .ico { background: var(--danger-soft, #FDECEC); color: var(--danger, #C0362C); }
 .empty.compact .ico { width: 36px; height: 36px; font-size: 16px; }
 
 /* ---------- À faire / activité ---------- */

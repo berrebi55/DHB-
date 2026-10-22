@@ -5,9 +5,8 @@ interface claire façon SaaS, CRM (demandes → clients → devis → factures �
 paiements), abonnements, tickets, pilotage (CA, MRR/ARR, performance),
 contenu du site, utilisateurs et journal d'activité.
 
-> L'ancienne admin « un seul fichier » (`../admin/index.html`) est
-> **dépréciée** : elle ne connaît pas les nouveaux statuts, paiements et
-> notes. Utilise uniquement cette application.
+> L'ancienne admin « un seul fichier » (`admin/`) a été supprimée : cette
+> application est le seul back-office.
 
 ## 1. Prérequis
 

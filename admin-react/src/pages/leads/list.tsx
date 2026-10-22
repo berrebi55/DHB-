@@ -68,7 +68,7 @@ export function LeadsList({ mode }: { mode: "devis" | "question" }) {
   }, [mode, onglet, f.priorite, f.entite, f.type_client, f.relance, f.q]);
 
   const sorters: CrudSort[] = [{ field: f.tri || "created_at", order: (f.ordre as "asc" | "desc") || "desc" }];
-  const { data, isLoading } = useList<Lead>({
+  const { data, isLoading, isError, error, refetch } = useList<Lead>({
     resource: "leads",
     filters,
     sorters,
@@ -129,6 +129,8 @@ export function LeadsList({ mode }: { mode: "devis" | "question" }) {
         <DataList<Lead>
           rows={rows}
           loading={isLoading}
+          error={isError ? error ?? true : undefined}
+          onRetry={() => void refetch()}
           total={total}
           page={page}
           pageSize={PAGE}

@@ -58,7 +58,7 @@ export function PaiementsList() {
     return out;
   }, [f.moyen, f.du, f.au, f.q]);
 
-  const { data, isLoading } = useList<Paiement>({
+  const { data, isLoading, isError, error, refetch } = useList<Paiement>({
     resource: "paiements",
     filters,
     sorters: [{ field: "date_paiement", order: "desc" }, { field: "created_at", order: "desc" }],
@@ -108,6 +108,8 @@ export function PaiementsList() {
         <DataList<Paiement>
           rows={rows}
           loading={isLoading}
+          error={isError ? error ?? true : undefined}
+          onRetry={() => void refetch()}
           total={data?.total ?? 0}
           page={page}
           pageSize={PAGE}

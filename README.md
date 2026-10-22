@@ -1,73 +1,45 @@
-# DHB — Groupe multi-sites + admin centralisé
+# DHB — Sites publics + back-office
 
-Monorepo du **groupe DHB** : plusieurs sites (filiales) qui partagent **un seul
-back-office d'administration** et **une seule base de données Supabase**
-(demandes de devis / messages centralisés, filtrables par filiale).
+Projet **DHB** : trois sites publics (DHB Groupe, DHB Pro pour les entreprises,
+DHB Assistance pour les particuliers) et **un back-office** (CRM, devis,
+factures, paiements, abonnements, tickets, pilotage) reliés à **une seule base
+Supabase**.
 
 ## 🗂️ Structure
 
 ```
 DHB-/
-├─ index.html                 ← Portail de DEV local (liens vers tous les sites)
-├─ start.sh                   ← Lance le serveur de dev local
+├─ index.html          ← portail de développement local (non référencé)
+├─ start.bat / start.sh← lanceurs locaux (Windows / macOS-Linux)
 ├─ sites/
-│   ├─ groupe/                ← Site DHB GROUPE (vitrine chapeau)
-│   └─ infogerance/           ← Filiale « DHB Infogérance » (entreprises) — site complet
-│       (ensuite : particuliers/ …)
-├─ admin/                     ← ESPACE ADMIN CENTRALISÉ (toutes filiales)
-├─ supabase/                  ← Base de données partagée (schéma, fonction email, guide)
-└─ build/                     ← Générateurs de sites (Python, sans dépendance)
-    ├─ *.py                   ← générateur du site Infogérance → sites/infogerance/
-    └─ groupe/build_groupe.py ← générateur du site Groupe → sites/groupe/
+│   ├─ groupe/         ← DHB Groupe (institutionnel)
+│   ├─ infogerance/    ← DHB Pro (entreprises) — source des CSS/JS communs
+│   └─ particuliers/   ← DHB Assistance (particuliers)
+├─ build/              ← générateurs Python des 3 sites (build_all.py)
+├─ admin-react/        ← back-office (React + Refine + Ant Design)
+├─ supabase/           ← full-setup.sql (base) + Edge Functions
+└─ docs/               ← REFONTE.md, PLAN-PLATEFORME.md, PROMPT-COMPLET.md
 ```
-
-Chaque site est **autonome** (ses propres `assets/`), donc déployable seul sur son
-(sous-)domaine. Tous pointent vers le **même Supabase** → admin centralisé.
 
 ## ▶️ Lancer en local
 
-```bash
-./start.sh            # (ou : python3 -m http.server 8000)
-```
-Puis ouvrez **http://localhost:8000/** (portail), ou directement :
+- **Windows** : double-cliquer sur `start.bat`.
+- **macOS / Linux** : `./start.sh`.
 
-| | URL locale |
-|---|---|
-| Portail de dev | http://localhost:8000/ |
-| DHB Groupe | http://localhost:8000/sites/groupe/ |
-| DHB Infogérance | http://localhost:8000/sites/infogerance/ |
-| **Admin centralisé** | http://localhost:8000/admin/ |
+Puis : portail http://localhost:8000/ · back-office http://localhost:5173/.
+Après une modification des générateurs : `python3 build/build_all.py`
+(`DHB_LIENS=prod` pour des liens vers les vrais domaines).
 
-> Windows : `py -m http.server 8000`. Il faut Python 3 installé.
-
-## 🔧 Régénérer les sites après modification du contenu
-
-```bash
-python3 build/build.py              # régénère le site Infogérance
-python3 build/groupe/build_groupe.py # régénère le site Groupe
-```
-
-## 🗄️ Base de données & admin (Supabase)
-
-Voir **`supabase/README-SETUP.md`**. En résumé :
-1. Exécuter `supabase/schema.sql` dans le SQL Editor (crée `leads` + colonne `entity` + RLS + temps réel).
-2. Créer votre compte admin (Authentication → Users).
-3. Chaque demande est étiquetée par **filiale** (`entity` : `groupe` / `infogerance` / `particuliers`),
-   et l'admin les filtre par filiale, statut, type, recherche — **en direct**.
-
-Chaque site fixe sa filiale dans `sites/<site>/assets/js/supabase-config.js` (`entity`).
+## 🗄️ Base de données
+Voir **`supabase/README-SETUP.md`** : un seul script, `supabase/full-setup.sql`,
+à exécuter (et ré-exécuter après mise à jour) dans le SQL Editor.
 
 ## 🔐 Sécurité des clés
-- Seule la **clé publique** Supabase est dans le code (normal, protégé par RLS).
-- La **clé secrète** n'est jamais dans le dépôt (uniquement variables d'env Supabase).
-- Pensez à **régénérer** la clé secrète (elle a transité en clair lors de l'échange).
+- Seule la **clé publique** Supabase est dans le code (protégée par RLS).
+- La **clé secrète** n'est jamais dans le dépôt (secrets Supabase uniquement).
 
-## 🌐 Mise en ligne (plus tard)
-En local pour l'instant. En production, chaque dossier `sites/<nom>/` + `admin/`
-se publie sur son propre (sous-)domaine (Netlify, Cloudflare Pages, OVH…), tous
-reliés au même projet Supabase. Le portail `index.html` racine n'est qu'un outil de dev.
-
-## 🚧 Feuille de route
-- **Fait** : site Groupe, filiale Infogérance (complète), admin centralisé, base devis/messages, notif email.
-- **Phase 2** : site Particuliers complet + **paiement en ligne** (abonnement + intervention, Stripe),
-  gestion de contenu depuis l'admin, notifications WhatsApp/SMS.
+## 📚 Documentation
+- `docs/PROMPT-COMPLET.md` : description complète du projet.
+- `docs/PLAN-PLATEFORME.md` : audit, architecture cible et plan par priorité.
+- `docs/REFONTE.md` : refonte, design system, mesure d'audience.
+- `admin-react/README.md` : back-office, Edge Functions, secrets, déploiement.

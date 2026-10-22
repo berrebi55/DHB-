@@ -18,7 +18,7 @@ import {
   WalletOutlined,
 } from "@ant-design/icons";
 import { useDelete, useList, useOne, useUpdate } from "@refinedev/core";
-import { EmptyState, PageHeader, Panel, StatusTag } from "../../components/ui";
+import { EmptyState, PageHeader, Panel, StatusTag, ErrorState } from "../../components/ui";
 import { NotesPanel } from "../../components/activity/NotesPanel";
 import { ActivityFeed } from "../../components/activity/ActivityFeed";
 import { ClientDrawer, adresseComplete } from "../../components/forms/ClientDrawer";
@@ -27,7 +27,7 @@ import { AbonnementDrawer } from "../../components/forms/AbonnementDrawer";
 import { dateFR, eur, eur0, fromNow, initiales } from "../../lib/format";
 import { label } from "../../lib/statuts";
 import { useRole, useUrlState } from "../../lib/hooks";
-import { messageErreurBase } from "../../lib/functions";
+import { messageErreurBase, estIntrouvable } from "../../lib/functions";
 import type { ClientVue } from "./list";
 
 /** Petite liste cliquable utilisée dans les onglets de la fiche. */
@@ -56,7 +56,7 @@ export function ClientShow() {
   const [edit, setEdit] = useState(false);
   const [ticket, setTicket] = useState(false);
   const [abo, setAbo] = useState(false);
-  const { data, isLoading, isError } = useOne<ClientVue>({ resource: "clients_vue", id: id! });
+  const { data, isLoading, isError, error, refetch } = useOne<ClientVue>({ resource: "clients_vue", id: id! });
   const c = data?.data;
   const { mutate: update } = useUpdate();
   const { mutate: remove } = useDelete();
@@ -70,6 +70,8 @@ export function ClientShow() {
   const tickets = useList({ resource: "tickets", ...parClient });
 
   if (isLoading) return <Panel><Skeleton active avatar paragraph={{ rows: 8 }} /></Panel>;
+  if (isError && !estIntrouvable(error))
+    return <Panel><ErrorState error={error} onRetry={() => void refetch()} /></Panel>;
   if (isError || !c)
     return <Panel><EmptyState icon={<TeamOutlined />} title="Client introuvable" description="Il a peut-être été supprimé." action={<Button onClick={() => navigate("/clients")}>Retour aux clients</Button>} /></Panel>;
 

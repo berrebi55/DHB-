@@ -26,11 +26,11 @@ function SelecteurPeriode({ value, onChange }: { value: Periode; onChange: (p: P
 }
 
 function Cadre({ titre, sousTitre, actions, children }: { titre: string; sousTitre: string; actions?: ReactNode; children: (d: Donnees) => ReactNode }) {
-  const { data, erreur, loading } = useDonnees();
+  const { data, erreur, loading, recharger } = useDonnees();
   return (
     <>
       <PageHeader title={titre} subtitle={sousTitre} crumbs={[{ label: "Pilotage" }, { label: titre }]} actions={actions} />
-      {erreur && <Alert type="warning" showIcon message={erreur} style={{ marginBottom: 16 }} />}
+      {erreur && <Alert type="warning" showIcon message={erreur} action={<Button size="small" onClick={recharger}>Réessayer</Button>} style={{ marginBottom: 16 }} />}
       {loading && <div className="kpi-grid">{[0, 1, 2, 3].map((i) => <Kpi key={i} label="…" value="" loading />)}</div>}
       {data && children(data)}
     </>

@@ -1,6 +1,6 @@
+import { lazy } from "react";
 import { Authenticated, Refine } from "@refinedev/core";
-import { useNotificationProvider } from "@refinedev/antd";
-import "@refinedev/antd/dist/reset.css";
+import "antd/dist/reset.css";
 import { dataProvider, liveProvider } from "@refinedev/supabase";
 import routerProvider, { CatchAllNavigate, NavigateToResource } from "@refinedev/react-router-v6";
 import { Outlet, Route, Routes } from "react-router-dom";
@@ -11,32 +11,40 @@ import "./styles.css";
 import { supabaseClient } from "./supabaseClient";
 import { authProvider } from "./providers/authProvider";
 import { accessControlProvider } from "./providers/accessControlProvider";
+import { notificationProvider } from "./providers/notificationProvider";
 import { themeConfig } from "./theme";
+import { queryClient } from "./queryClient";
 import { AppLayout } from "./components/layout/AppLayout";
 
 import { LoginPage } from "./pages/login";
-import { NotFound } from "./pages/NotFound";
-import { DashboardPage } from "./pages/dashboard";
-import { LeadsList } from "./pages/leads/list";
-import { LeadShow } from "./pages/leads/show";
-import { ClientsList } from "./pages/clients/list";
-import { ClientShow } from "./pages/clients/show";
-import { DevisList } from "./pages/devis/list";
-import { DevisShow } from "./pages/devis/show";
-import { DocumentEditor } from "./pages/documents/DocumentEditor";
-import { PrestationsList } from "./pages/prestations";
-import { FacturesList } from "./pages/factures/list";
-import { FactureShow } from "./pages/factures/show";
-import { PaiementsList } from "./pages/paiements";
-import { AbonnementsList } from "./pages/abonnements";
-import { TicketsList } from "./pages/tickets/list";
-import { TicketShow } from "./pages/tickets/show";
-import { StatsOverview, StatsCA, StatsRecurrent, StatsCommercial } from "./pages/pilotage";
-import { PrixPage } from "./pages/contenu/prix";
-import { UtilisateursPage } from "./pages/systeme/utilisateurs";
-import { ParametresPage } from "./pages/systeme/parametres";
-import { SecuritePage } from "./pages/systeme/securite";
-import { JournalPage } from "./pages/systeme/journal";
+
+// Pages chargées à la demande : l'ouverture du back-office ne télécharge
+// que le nécessaire (les graphiques, l'éditeur de documents… arrivent ensuite).
+const NotFound = lazy(() => import("./pages/NotFound").then((m) => ({ default: m.NotFound })));
+const DashboardPage = lazy(() => import("./pages/dashboard").then((m) => ({ default: m.DashboardPage })));
+const LeadsList = lazy(() => import("./pages/leads/list").then((m) => ({ default: m.LeadsList })));
+const LeadShow = lazy(() => import("./pages/leads/show").then((m) => ({ default: m.LeadShow })));
+const ClientsList = lazy(() => import("./pages/clients/list").then((m) => ({ default: m.ClientsList })));
+const ClientShow = lazy(() => import("./pages/clients/show").then((m) => ({ default: m.ClientShow })));
+const DevisList = lazy(() => import("./pages/devis/list").then((m) => ({ default: m.DevisList })));
+const DevisShow = lazy(() => import("./pages/devis/show").then((m) => ({ default: m.DevisShow })));
+const DocumentEditor = lazy(() => import("./pages/documents/DocumentEditor").then((m) => ({ default: m.DocumentEditor })));
+const PrestationsList = lazy(() => import("./pages/prestations").then((m) => ({ default: m.PrestationsList })));
+const FacturesList = lazy(() => import("./pages/factures/list").then((m) => ({ default: m.FacturesList })));
+const FactureShow = lazy(() => import("./pages/factures/show").then((m) => ({ default: m.FactureShow })));
+const PaiementsList = lazy(() => import("./pages/paiements").then((m) => ({ default: m.PaiementsList })));
+const AbonnementsList = lazy(() => import("./pages/abonnements").then((m) => ({ default: m.AbonnementsList })));
+const TicketsList = lazy(() => import("./pages/tickets/list").then((m) => ({ default: m.TicketsList })));
+const TicketShow = lazy(() => import("./pages/tickets/show").then((m) => ({ default: m.TicketShow })));
+const StatsOverview = lazy(() => import("./pages/pilotage").then((m) => ({ default: m.StatsOverview })));
+const StatsCA = lazy(() => import("./pages/pilotage").then((m) => ({ default: m.StatsCA })));
+const StatsRecurrent = lazy(() => import("./pages/pilotage").then((m) => ({ default: m.StatsRecurrent })));
+const StatsCommercial = lazy(() => import("./pages/pilotage").then((m) => ({ default: m.StatsCommercial })));
+const PrixPage = lazy(() => import("./pages/contenu/prix").then((m) => ({ default: m.PrixPage })));
+const UtilisateursPage = lazy(() => import("./pages/systeme/utilisateurs").then((m) => ({ default: m.UtilisateursPage })));
+const ParametresPage = lazy(() => import("./pages/systeme/parametres").then((m) => ({ default: m.ParametresPage })));
+const SecuritePage = lazy(() => import("./pages/systeme/securite").then((m) => ({ default: m.SecuritePage })));
+const JournalPage = lazy(() => import("./pages/systeme/journal").then((m) => ({ default: m.JournalPage })));
 
 const RESOURCES = [
   "dashboard", "leads", "clients", "clients_vue", "devis", "prestations", "factures", "factures_vue",
@@ -53,9 +61,9 @@ export default function App() {
           authProvider={authProvider}
           accessControlProvider={accessControlProvider}
           routerProvider={routerProvider}
-          notificationProvider={useNotificationProvider}
+          notificationProvider={notificationProvider}
           resources={RESOURCES}
-          options={{ syncWithLocation: false, warnWhenUnsavedChanges: false, liveMode: "off", disableTelemetry: true, reactQuery: { clientConfig: { defaultOptions: { queries: { refetchOnWindowFocus: false, staleTime: 30_000 } } } } }}
+          options={{ syncWithLocation: false, warnWhenUnsavedChanges: false, liveMode: "off", disableTelemetry: true, reactQuery: { clientConfig: queryClient } }}
         >
           <Routes>
             <Route

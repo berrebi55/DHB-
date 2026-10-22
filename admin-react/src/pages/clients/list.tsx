@@ -57,7 +57,7 @@ export function ClientsList() {
     return out;
   }, [f.statut, f.type, f.entite, f.q]);
 
-  const { data, isLoading } = useList<ClientVue>({
+  const { data, isLoading, isError, error, refetch } = useList<ClientVue>({
     resource: "clients_vue",
     filters,
     sorters: [{ field: f.tri || "created_at", order: (f.ordre as "asc" | "desc") || "desc" }],
@@ -104,6 +104,8 @@ export function ClientsList() {
         <DataList<ClientVue>
           rows={rows}
           loading={isLoading}
+          error={isError ? error ?? true : undefined}
+          onRetry={() => void refetch()}
           total={data?.total ?? 0}
           page={page}
           pageSize={PAGE}

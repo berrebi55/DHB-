@@ -81,7 +81,7 @@ export function DevisList() {
     return out;
   }, [f.statut, f.entite, f.relance, f.facture, f.q, factures]);
 
-  const { data, isLoading } = useList<Devis>({
+  const { data, isLoading, isError, error, refetch } = useList<Devis>({
     resource: "devis",
     filters,
     sorters: [{ field: f.tri || "created_at", order: (f.ordre as "asc" | "desc") || "desc" }],
@@ -125,6 +125,8 @@ export function DevisList() {
         <DataList<Devis>
           rows={rows}
           loading={isLoading}
+          error={isError ? error ?? true : undefined}
+          onRetry={() => void refetch()}
           total={data?.total ?? 0}
           page={page}
           pageSize={PAGE}

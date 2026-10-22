@@ -164,8 +164,8 @@ site :
   autres sites), personnalités via `<body data-site="groupe|pro|assistance">`.
   Tout régénérer : `python3 build/build_all.py`
   (`DHB_LIENS=prod` pour des liens vers les vrais domaines).
-- **Non modifiés** : `admin/index.html` (ancienne admin, dépréciée) et
-  `sites/groupe/devis.html` (page de signature, autonome).
+- **Non modifié** : `sites/groupe/devis.html` (page de signature, autonome).
+  L'ancienne admin `admin/` a été supprimée (priorité 1 du plan plateforme).
 
 ### Reste à compléter par le propriétaire
 

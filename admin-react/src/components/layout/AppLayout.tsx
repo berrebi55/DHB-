@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Avatar, Button, Drawer, Dropdown, Menu, Tooltip } from "antd";
 import type { MenuProps } from "antd";
@@ -24,6 +24,8 @@ import { useIdentite, useIsMobile } from "../../lib/hooks";
 import { initiales } from "../../lib/format";
 import { NAV, activeKey, type BadgeKey } from "./nav";
 import { GlobalSearch } from "./GlobalSearch";
+import { ErrorBoundary } from "../ui/ErrorBoundary";
+import { ListSkeleton } from "../ui";
 
 const LS_KEY = "dhb-sider-collapsed";
 
@@ -207,7 +209,12 @@ export function AppLayout() {
           </div>
         </header>
         <main className="app-content" id="contenu">
-          <Outlet />
+          {/* Une page en erreur n'emporte ni le menu ni le reste de l'application. */}
+          <ErrorBoundary resetKey={pathname}>
+            <Suspense fallback={<div className="panel"><ListSkeleton /></div>}>
+              <Outlet />
+            </Suspense>
+          </ErrorBoundary>
         </main>
       </div>
       <GlobalSearch open={search} onClose={() => setSearch(false)} />

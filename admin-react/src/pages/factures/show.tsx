@@ -14,7 +14,7 @@ import {
 } from "@ant-design/icons";
 import { useList, useOne } from "@refinedev/core";
 import { supabaseClient } from "../../supabaseClient";
-import { EmptyState, PageHeader, Panel, StatusTag } from "../../components/ui";
+import { EmptyState, PageHeader, Panel, StatusTag, ErrorState } from "../../components/ui";
 import { NotesPanel } from "../../components/activity/NotesPanel";
 import { ActivityFeed } from "../../components/activity/ActivityFeed";
 import { PaiementModal } from "../../components/forms/PaiementModal";
@@ -22,7 +22,7 @@ import { documentHtml, imprimerDocument } from "../../lib/document";
 import { dateFR, eur } from "../../lib/format";
 import { label } from "../../lib/statuts";
 import { useEntreprise, useRafraichir } from "../../lib/hooks";
-import { appelerFonction, messageErreurBase } from "../../lib/functions";
+import { appelerFonction, messageErreurBase, estIntrouvable } from "../../lib/functions";
 import { EtatFacture, type FactureVue } from "./list";
 
 export function FactureShow() {
@@ -31,7 +31,7 @@ export function FactureShow() {
   const { message } = App.useApp();
   const { entreprise } = useEntreprise();
   const rafraichir = useRafraichir();
-  const { data, isLoading, isError } = useOne<FactureVue>({ resource: "factures_vue", id: id! });
+  const { data, isLoading, isError, error, refetch } = useOne<FactureVue>({ resource: "factures_vue", id: id! });
   const f = data?.data;
   const { data: pData } = useList({ resource: "paiements", filters: [{ field: "facture_id", operator: "eq", value: id }], sorters: [{ field: "date_paiement", order: "asc" }], pagination: { mode: "off" }, queryOptions: { enabled: !!id } });
   const paiements = (pData?.data ?? []) as any[];
@@ -39,6 +39,8 @@ export function FactureShow() {
   const [envoi, setEnvoi] = useState(false);
 
   if (isLoading) return <Panel><Skeleton active paragraph={{ rows: 10 }} /></Panel>;
+  if (isError && !estIntrouvable(error))
+    return <Panel><ErrorState error={error} onRetry={() => void refetch()} /></Panel>;
   if (isError || !f)
     return <Panel><EmptyState icon={<FileDoneOutlined />} title="Facture introuvable" action={<Button onClick={() => navigate("/factures")}>Retour aux factures</Button>} /></Panel>;
 

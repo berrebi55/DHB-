@@ -56,6 +56,14 @@ export function messageErreurBase(err: unknown): string {
   if (/does not exist|relation .* does not exist|schema cache/i.test(m))
     return "La base n'est pas à jour : exécutez supabase/full-setup.sql dans Supabase.";
   if (/violates check constraint/i.test(m)) return "Une valeur saisie n'est pas acceptée. Vérifiez le formulaire.";
-  if (/Failed to fetch|NetworkError/i.test(m)) return "Connexion impossible. Vérifiez votre accès Internet.";
+  if (/Failed to fetch|NetworkError|Load failed/i.test(m)) return "Connexion impossible. Vérifiez votre accès Internet.";
+  if (/Délai dépassé|TimeoutError|aborted|timeout/i.test(m)) return "Le serveur met trop de temps à répondre. Réessayez dans un instant.";
+  if (/JWT expired|invalid JWT|not authenticated/i.test(m)) return "Votre session a expiré. Reconnectez-vous.";
   return m ? `Erreur : ${m}` : "Une erreur inattendue est survenue.";
+}
+
+/** Vrai si l'erreur signifie « cet enregistrement n'existe pas » (et non une panne). */
+export function estIntrouvable(err: unknown): boolean {
+  const e = err as { code?: string; message?: string; statusCode?: number } | null;
+  return !!e && (e.code === "PGRST116" || e.statusCode === 406 || /0 rows|JSON object requested|no rows/i.test(String(e.message ?? "")));
 }

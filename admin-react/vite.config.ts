@@ -17,7 +17,7 @@ export default defineConfig({
         manualChunks: {
           "vendor-react": ["react", "react-dom", "react-router-dom"],
           "vendor-antd": ["antd", "@ant-design/icons"],
-          "vendor-refine": ["@refinedev/core", "@refinedev/antd", "@refinedev/supabase", "@refinedev/react-router-v6", "@supabase/supabase-js"],
+          "vendor-refine": ["@refinedev/core", "@refinedev/supabase", "@refinedev/react-router-v6", "@supabase/supabase-js"],
           "vendor-charts": ["recharts"],
         },
       },

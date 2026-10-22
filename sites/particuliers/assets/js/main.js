@@ -43,18 +43,32 @@
     reveals.forEach(function (el) { el.classList.add('visible'); });
   }
 
-  // Formulaires : enregistrement dans Supabase si configuré, sinon démo.
-  var _sbClientPromise = null;
-  function getSupabase() {
-    if (!window.DHB_SUPABASE || !window.DHB_SUPABASE.url) return null;
-    if (!_sbClientPromise) {
-      _sbClientPromise = import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm')
-        .then(function (mod) {
-          return mod.createClient(window.DHB_SUPABASE.url, window.DHB_SUPABASE.anonKey);
-        });
-    }
-    return _sbClientPromise;
+  // Accès Supabase par l'API REST (quelques lignes, au lieu de télécharger la
+  // librairie supabase-js sur chaque page). Clé publique uniquement : la
+  // sécurité réelle est assurée par les règles RLS en base.
+  function supabaseRest(chemin, options) {
+    var cfg = window.DHB_SUPABASE;
+    if (!cfg || !cfg.url || !cfg.anonKey || !window.fetch) return null;
+    options = options || {};
+    var ctrl = window.AbortController ? new AbortController() : null;
+    var minuteur = ctrl ? setTimeout(function () { ctrl.abort(); }, 15000) : null;
+    var headers = { apikey: cfg.anonKey, Authorization: 'Bearer ' + cfg.anonKey };
+    if (options.body) { headers['Content-Type'] = 'application/json'; headers.Prefer = 'return=minimal'; }
+    return fetch(cfg.url + '/rest/v1/' + chemin, {
+      method: options.method || 'GET',
+      headers: headers,
+      body: options.body ? JSON.stringify(options.body) : undefined,
+      signal: ctrl ? ctrl.signal : undefined
+    }).then(function (res) {
+      if (minuteur) clearTimeout(minuteur);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.status === 204 || res.status === 201 ? null : res.json();
+    }, function (err) {
+      if (minuteur) clearTimeout(minuteur);
+      throw err;
+    });
   }
+  var configure = !!(window.DHB_SUPABASE && window.DHB_SUPABASE.url && window.DHB_SUPABASE.anonKey);
 
   function showConfirmation(form) {
     var ok = form.querySelector('.form-ok');
@@ -100,18 +114,11 @@
         source_url: location.pathname + (window.DHBSuivi ? window.DHBSuivi.utm() : '')
       };
 
-      var sb = getSupabase();
-      if (!sb) { showConfirmation(form); return; }  // pas de config → démo
+      if (!configure) { showConfirmation(form); return; }  // pas de config → démo
 
       if (btn) { btn.disabled = true; btn.dataset.label = btn.textContent; btn.textContent = 'Envoi…'; }
-      sb.then(function (client) {
-        return client.from('leads').insert(payload);
-      }).then(function (res) {
+      supabaseRest('leads', { method: 'POST', body: payload }).then(function () {
         if (btn) { btn.disabled = false; btn.textContent = btn.dataset.label || 'Envoyer'; }
-        if (res && res.error) {
-          showError(form, "Une erreur est survenue. Appelez-nous ou réessayez dans un instant.");
-          return;
-        }
         if (window.DHBSuivi) window.DHBSuivi.lead(payload.type, payload.service);
         showConfirmation(form);
       }).catch(function () {
@@ -154,15 +161,12 @@
   // La valeur statique dans le HTML reste le repli (robuste + SEO).
   var setEls = document.querySelectorAll('[data-setting]');
   if (setEls.length) {
-    var sb2 = getSupabase();
     var ent = (window.DHB_SUPABASE && window.DHB_SUPABASE.entity) || '';
-    if (sb2 && ent) {
-      sb2.then(function (client) {
-        return client.from('settings').select('skey,value').eq('entity', ent);
-      }).then(function (res) {
-        if (!res || res.error || !res.data) return;
+    if (configure && ent) {
+      supabaseRest('settings?select=skey,value&entity=eq.' + encodeURIComponent(ent)).then(function (rows) {
+        if (!rows || !rows.length) return;
         var map = {};
-        res.data.forEach(function (r) { map[r.skey] = r.value; });
+        rows.forEach(function (r) { map[r.skey] = r.value; });
         setEls.forEach(function (el) {
           var k = el.getAttribute('data-setting');
           if (map[k] != null && map[k] !== '') { el.textContent = map[k]; el.hidden = false; }
