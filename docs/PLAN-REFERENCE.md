@@ -150,7 +150,7 @@ Ordre adapté à l'audit : la **sécurité critique** (C1, C2) et la **sauvegard
 | **1** ✅ | **Sécurité des accès et des données** : rôle `en_attente` + `is_staff()` dans toutes les règles ; rattrapage sans élévation ; `invite-user` attribue le rôle ; écran « accès en attente » ; demandes publiques : colonnes imposées par un trigger + champ piège anti-robot ; factures émises non supprimables ; `notify-new-lead` : secret obligatoire | C1, C2, I1, I2, I3, I4 | connexion admin/collab, invitation, formulaires publics des 3 sites, création/suppression devis-factures-paiements, journal, statistiques | Désactiver l'inscription libre ; relancer `full-setup.sql` |
 | **2** ✅ | **Sauvegarde indépendante** : GitHub Actions nocturne (`pg_dump` chiffré, 30 jours), table `sauvegardes`, page Système → Sauvegardes, procédure de restauration testée | C3 | aucune donnée modifiée | Secret GitHub `SUPABASE_DB_URL` + clé de chiffrement |
 | **3** ✅ | **Accessibilité et cohérence UI** : couleurs de texte secondaire conformes, libellés des filtres, ordre des titres, liens soulignés | I6, I7, A4, A5 | rendu de toutes les pages (captures avant/après), axe-core | — |
-| **4** | **CRM : attribution + timeline** : colonnes d'attribution, captation sur les sites, source modifiable, vue entonnoir ; timeline client complète (journal + notes + appels) ; suppression client → archivage par défaut | I10, I5 | formulaires publics, fiches client/demande, statistiques | — |
+| **4** ✅ | **CRM : attribution + timeline** : colonnes d'attribution, captation sur les sites, source modifiable, vue entonnoir ; timeline client complète (journal + notes + appels) ; suppression client → archivage par défaut | I10, I5 | formulaires publics, fiches client/demande, statistiques | — |
 | **5** | **Tableau de bord commercial** : blocs Commercial, Clients, Finance (données existantes) ; bloc Acquisition = sources des demandes (lot 4), visiteurs ajoutés au lot 10 | — | pilotage, cache | — |
 | **6** | **Documents** : `render-pdf` (devis/facture), bucket Storage privé, table `documents`, téléchargement depuis les fiches | I9 | devis, factures, envoi email | — |
 | **7** | **Paiements Stripe** : `stripe-webhook` → paiement + facture payée + abonnement démarré | I8 | paiements, factures, abonnements | Webhook + secret `whsec_…` |
@@ -302,5 +302,43 @@ Ordre adapté à l'audit : la **sécurité critique** (C1, C2) et la **sauvegard
 
 **À faire plus tard en production** : rien de spécifique. Les sites (fichiers régénérés) et le back-office (`npm run build`) seront publiés avec le reste, sans action sur Supabase.
 
+### Lot 4 — CRM : origine des demandes et historique client ✅ VALIDÉ (environnement de test)
+
+**Modifié**
+- **Origine des demandes (I10)** : nouvelles colonnes dans `leads` : `source`, `utm_source/medium/campaign/term/content`, `gclid`, `referrer` (domaine seulement), `landing_page`, `ga_client_id`. La **source est calculée par la base** à partir de règles simples et lisibles (`classer_source_lead`) : clic publicitaire → *Publicité en ligne* ; campagne email ; réseaux sociaux ; moteur de recherche ; autre site du groupe ; autre site ; sinon *Accès direct*. Un visiteur **ne peut pas choisir sa source** (valeur ignorée) ; les champs d'origine sont nettoyés et tronqués, **jamais** une raison de refuser une demande. L'équipe choisit ou corrige la source (*Appel téléphonique*, *Recommandation*…).
+- **Rattrapage** des anciennes demandes : paramètres de campagne recopiés depuis `source_url` ; sans information, l'origine reste **vide** (« Non renseignée »), rien n'est inventé.
+- **Sites** (`suivi.js`, `main.js`) : à la première page d'une visite, on retient pour la durée de l'onglet les paramètres de campagne, le **domaine** du site d'où vient le visiteur (jamais l'adresse complète) et la page d'arrivée ; ces informations ne partent qu'avec une demande envoyée. Identifiant GA4 joint **seulement si** la mesure d'audience est acceptée. Si la base n'est pas encore à jour, la demande est **renvoyée sans ces champs** (aucune demande perdue). Politiques de confidentialité des 3 sites complétées.
+- **Back-office** : fiche demande → panneau « Origine du contact » (origine modifiable, campagne, source/support, mot-clé, clic Google Ads, venu de, page d'arrivée) ; liste → filtre par origine (dont « Non renseignée ») et origine sous le site ; saisie manuelle → champ « Origine du contact » ; Pilotage → Performance commerciale → tableau **demandes / gagnées / taux de transformation par origine** (vue entonnoir par source).
+- **Historique client** : onglet Historique = **fil chronologique complet** (journal automatique + notes, appels, emails, rendez-vous) avec filtres (Tout, Échanges, Devis & factures, Paiements, Demandes & tickets) ; une note peut être typée (`notes.type`) : *Note, Appel, Email, Rendez-vous* (fiches client et demande).
+- **Suppression d'un client (I5)** : la base **refuse** de supprimer un client qui a un historique (demandes, devis, factures, paiements, abonnements, tickets, notes) et l'indique ; seule une fiche vide reste supprimable (admin). L'archivage reste l'action normale ; les notes ne peuvent plus disparaître en cascade.
+- Accessibilité : les messages de confirmation/erreur s'affichent dans une zone nommée « Notifications ».
+- Tableau de bord / pilotage : si la colonne `source` n'existe pas encore (base pas à jour), les demandes se chargent sans elle (pas d'écran en erreur).
+
+**Corrigé** : I10, I5.
+
+**Fichiers**
+`supabase/full-setup.sql` (section 17) · `supabase/tests/lot4-crm.sql` (nouveau) · `sites/infogerance/assets/js/suivi.js` et `main.js` (+ copies) · `build/pages_misc.py` · `build/groupe/build_groupe.py` · `build/particuliers/build_particuliers.py` (politiques de confidentialité) · `admin-react/index.html` · `admin-react/src/App.tsx` · `src/lib/statuts.ts` · `src/lib/metrics.ts` · `src/lib/functions.ts` · `src/components/activity/ClientTimeline.tsx` (nouveau) · `src/components/activity/NotesPanel.tsx` · `src/components/forms/LeadDrawer.tsx` · `src/pages/leads/list.tsx` · `src/pages/leads/show.tsx` · `src/pages/clients/show.tsx` · `src/pages/pilotage/index.tsx` · `src/styles.css`.
+
+**Tests**
+- `full-setup.sql` rejoué 4 fois : 0 erreur.
+- **SQL `lot4-crm.sql` : 30 / 30** — classement de l'origine (publicité utm/gclid, recherche Google/Qwant, LinkedIn, Facebook, email, autre site DHB, autre site, accès direct, aucune information → vide) ; source forcée par un visiteur ignorée ; champ trop long tronqué (demande acceptée) ; identifiant GA4 invalide ignoré / valide conservé ; statut toujours imposé ; saisie et correction par l'équipe ; valeur inconnue refusée ; compte en attente sans droit ; rattrapage (recopie et « rien d'inventé ») ; fonction de rattrapage non appelable par l'API ; notes typées (appel accepté, type inconnu refusé) ; suppression d'une fiche vide acceptée, d'un client avec notes ou devis **refusée**, archivage accepté, notes conservées.
+- Non-régression SQL : **lot 1 : 73/73**, **lot 2 : 9/9**.
+- **Navigateur, sites : 13 / 13** — visite par une campagne puis envoi depuis une autre page (paramètres, page d'arrivée, `source_url` propre, pas de source envoyée), arrivée depuis un moteur de recherche (domaine seul), identifiant GA4 absent sans consentement / présent avec, base pas à jour (2ᵉ envoi sans les champs, confirmation affichée), anti-robot inchangé, 0 erreur JS.
+- **Navigateur, back-office : 40 / 40** (ordinateur et mobile, faux Supabase) — fiche demande (affichage, modification de l'origine), liste (filtre, « Non renseignée » → `source is null`), fil client (réunion journal + échanges, pas de doublon, filtre Échanges), saisie d'un appel (`type=appel`), suppression refusée (message de la base affiché, on reste sur la fiche), tableau par origine ; axe-core sans défaut et 0 débordement sur chaque écran ; 0 erreur JS.
+- Non-régression accessibilité (52 vues du lot 3) : identique (seuls les 2 points mineurs hors lot connus). Liens des sites : 14 249, 0 cassé. TypeScript 0 erreur ; `npm run build` OK.
+
+**Résultat** : ✅ **VALIDÉ** sur l'environnement de test.
+
+**Risques / points à surveiller**
+- **Ordre de mise en production** : exécuter `full-setup.sql` **avant** de publier les sites et le back-office. Les deux tolèrent une base pas à jour (formulaire renvoyé sans l'origine, statistiques sans l'origine), mais l'origine n'est enregistrée qu'après la mise à jour.
+- Le classement « autre site du groupe » repose sur la présence de « dhb » dans le domaine d'origine : à vérifier quand les vrais domaines seront achetés.
+- L'origine dépend de ce que le navigateur transmet : certains navigateurs ou applications masquent le site d'origine (classé alors « Accès direct »).
+- La conservation des informations d'origine suit celle des demandes : durée à fixer par le propriétaire (déjà « [À COMPLÉTER] » dans les politiques).
+
+**À faire plus tard sur la vraie Supabase (mise en production)**
+1. SQL Editor → exécuter `supabase/full-setup.sql` (ajoute les colonnes, le classement, le rattrapage et la protection des clients).
+2. Publier les 3 sites régénérés et le back-office (`npm run build`).
+3. Test : ouvrir un site avec `?utm_source=test&utm_medium=email`, envoyer une demande, vérifier « Origine du contact » dans la fiche.
+
 ### Problèmes connus restants
-Voir §3 : I5, I8–I12, A1–A3, A6, A7 (C1, C2, I1, I2, I3, I4 traités au lot 1 ; C3 au lot 2, actif après configuration ; I6, I7, A4, A5 au lot 3). Nouveaux points mineurs relevés au lot 3 : onglets Ant Design et colonnes « Actions » sans texte (voir rapport du lot 3).
+Voir §3 : I8, I9, I11, I12, A1–A3, A6, A7 (C1, C2, I1, I2, I3, I4 traités au lot 1 ; C3 au lot 2, actif après configuration ; I6, I7, A4, A5 au lot 3 ; I5, I10 au lot 4). Points mineurs relevés au lot 3 : onglets Ant Design et colonnes « Actions » sans texte.
