@@ -9,8 +9,9 @@
 //  Déploiement : supabase functions deploy send-reminders --no-verify-jwt
 // =====================================================================
 import {
-  adminClient, cors, envoyerEmail, erreur, esc, json, marque, requireCronOrUser,
+  adminClient, cors, erreur, esc, json, marque, requireCronOrUser,
 } from "../_shared/securite.ts";
+import { envoyerEtJournaliser } from "../_shared/email.ts";
 
 const DELAI_DEVIS = 7; // jours après envoi
 
@@ -18,7 +19,8 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   try {
     const sb = adminClient();
-    await requireCronOrUser(req, sb);
+    const appelant = await requireCronOrUser(req, sb);
+    const par = appelant.type === "utilisateur" ? appelant : null;
     const emailActif = !!Deno.env.get("RESEND_API_KEY");
 
     const now = new Date();
@@ -33,7 +35,7 @@ Deno.serve(async (req) => {
 
     const { data: devis } = await sb
       .from("devis")
-      .select("id, numero, entity, client_nom, client_email, created_at, envoye_at, derniere_relance_le")
+      .select("id, numero, entity, client_id, client_nom, client_email, created_at, envoye_at, derniere_relance_le")
       .eq("statut", "envoye")
       .is("signed_at", null);
     for (const d of devis ?? []) {
@@ -42,31 +44,39 @@ Deno.serve(async (req) => {
       if (d.derniere_relance_le && String(d.derniere_relance_le) > semaine) continue;
       if (!emailActif) continue;
       const societe = ent?.raison_sociale || marque(d.entity);
-      const err = await envoyerEmail(d.client_email, `Votre devis ${d.numero} — ${societe}`, `
+      const r = await envoyerEtJournaliser(sb, {
+        a: d.client_email, sujet: `Votre devis ${d.numero} — ${societe}`, origine: "relance_devis", par,
+        liens: { devis_id: d.id, client_id: d.client_id ?? null },
+        html: `
         <p>Bonjour ${esc(d.client_nom)},</p>
         <p>Nous revenons vers vous au sujet du devis <b>${esc(d.numero)}</b> que nous vous avons transmis.</p>
         <p>Nous restons disponibles pour toute question ou ajustement.</p>
-        <p>Cordialement,<br>${esc(societe)}</p>`);
-      if (err) continue;
+        <p>Cordialement,<br>${esc(societe)}</p>`,
+      });
+      if (!r.ok) continue;
       await sb.from("devis").update({ derniere_relance_le: ymd }).eq("id", d.id);
       relancesDevis++;
     }
 
     const { data: factures } = await sb
       .from("factures_vue")
-      .select("id, numero, entity, client_nom, client_email, derniere_relance_le, reste_a_payer")
+      .select("id, numero, entity, client_id, client_nom, client_email, derniere_relance_le, reste_a_payer")
       .eq("en_retard", true);
     for (const f of factures ?? []) {
       if (!f.client_email) continue;
       if (f.derniere_relance_le && String(f.derniere_relance_le) > semaine) continue;
       if (!emailActif) continue;
       const societe = ent?.raison_sociale || marque(f.entity);
-      const err = await envoyerEmail(f.client_email, `Rappel — facture ${f.numero} — ${societe}`, `
+      const r = await envoyerEtJournaliser(sb, {
+        a: f.client_email, sujet: `Rappel — facture ${f.numero} — ${societe}`, origine: "relance_facture", par,
+        liens: { facture_id: f.id, client_id: f.client_id ?? null },
+        html: `
         <p>Bonjour ${esc(f.client_nom)},</p>
         <p>Sauf erreur de notre part, la facture <b>${esc(f.numero)}</b> reste en attente de règlement.</p>
         <p>Si le paiement a déjà été effectué, merci de ne pas tenir compte de ce message.</p>
-        <p>Cordialement,<br>${esc(societe)}</p>`);
-      if (err) continue;
+        <p>Cordialement,<br>${esc(societe)}</p>`,
+      });
+      if (!r.ok) continue;
       await sb.from("factures").update({ derniere_relance_le: ymd }).eq("id", f.id);
       relancesFactures++;
     }

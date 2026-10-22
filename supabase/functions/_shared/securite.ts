@@ -1,6 +1,7 @@
 // =====================================================================
 //  DHB — utilitaires partagés des Edge Functions : CORS, réponses JSON,
-//  client service role, contrôle d'accès, échappement HTML, envoi d'email.
+//  client service role, contrôle d'accès, échappement HTML.
+//  (Envoi d'email : _shared/email.ts, module unique avec historique.)
 //
 //  Règle : aucune fonction sensible ne fait confiance à la clé publique.
 //  - requireUser()     : exige un membre de l'équipe connecté (admin ou
@@ -92,23 +93,6 @@ export function esc(v: unknown): string {
 export function eur(n: unknown): string {
   const v = Number(n) || 0;
   return v.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";
-}
-
-/** Envoi via Resend. Renvoie null si OK, sinon un code d'erreur. */
-export async function envoyerEmail(to: string, subject: string, html: string): Promise<string | null> {
-  const key = Deno.env.get("RESEND_API_KEY");
-  const from = Deno.env.get("NOTIFY_FROM") ?? "onboarding@resend.dev";
-  if (!key) return "resend_not_configured";
-  const r = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from, to: [to], subject, html }),
-  });
-  if (!r.ok) {
-    const d = await r.json().catch(() => ({}));
-    return (d as { message?: string })?.message ?? "resend_error";
-  }
-  return null;
 }
 
 export function marque(entity: string | null | undefined): string {

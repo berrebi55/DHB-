@@ -11,14 +11,17 @@
 //  (l'authentification est vérifiée dans la fonction elle-même)
 // =====================================================================
 import {
-  adminClient, cors, envoyerEmail, erreur, esc, eur, HttpError, json, marque, requireUser,
+  adminClient, cors, erreur, esc, eur, HttpError, json, marque, requireUser,
 } from "../_shared/securite.ts";
+import { envoyerEtJournaliser } from "../_shared/email.ts";
+import { genererPdf } from "../_shared/pdf.ts";
+import { archiverFacture, nomFichier, obtenirPdf } from "../_shared/documents.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   try {
     const sb = adminClient();
-    await requireUser(req, sb);
+    const moi = await requireUser(req, sb);
 
     const { facture_id } = await req.json().catch(() => ({}));
     if (!facture_id) throw new HttpError(400, "facture_id_manquant");
@@ -29,6 +32,12 @@ Deno.serve(async (req) => {
     if (!f.client_email) throw new HttpError(422, "email_client_manquant");
 
     const { data: ent } = await sb.from("entreprise").select("*").eq("id", 1).maybeSingle();
+    // PDF joint : pour un brouillon, celui de la facture telle qu'elle est émise par cet
+    // envoi (archivé ensuite) ; pour une facture déjà émise, son PDF archivé.
+    const brouillon = f.status === "brouillon";
+    const pdf = brouillon
+      ? { octets: await genererPdf("facture", { ...f, status: "envoyee" }, ent), nom: nomFichier("facture", f.numero) }
+      : await obtenirPdf(sb, "facture", f.id, moi.userId ?? null);
     const societe = ent?.raison_sociale || marque(f.entity);
     const lignes = Array.isArray(f.lignes) && f.lignes.length
       ? f.lignes
@@ -57,13 +66,19 @@ Deno.serve(async (req) => {
         <p>Cordialement,<br>${esc(societe)}</p>
       </div>`;
 
-    const err = await envoyerEmail(f.client_email, `Votre facture ${f.numero ?? ""} — ${societe}`, html);
-    if (err) return json({ error: err }, err === "resend_not_configured" ? 503 : 502);
+    const r = await envoyerEtJournaliser(sb, {
+      a: f.client_email, sujet: `Votre facture ${f.numero ?? ""} — ${societe}`, html, origine: "facture",
+      liens: { facture_id: f.id, client_id: f.client_id ?? null }, par: moi, piece: { nom: pdf.nom, octets: pdf.octets },
+    });
+    if (!r.ok) return json({ error: r.code }, r.code === "resend_not_configured" ? 503 : 502);
 
-    if (f.status === "brouillon") {
+    let archive = true;
+    if (brouillon) {
       await sb.from("factures").update({ status: "envoyee" }).eq("id", f.id);
+      // Le PDF archivé est exactement celui qui vient d'être envoyé.
+      try { await archiverFacture(sb, { ...f, status: "envoyee" }, pdf.octets, moi.userId ?? null); } catch { archive = false; }
     }
-    return json({ ok: true });
+    return json({ ok: true, pdf_archive: archive });
   } catch (e) {
     return erreur(e);
   }

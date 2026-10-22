@@ -13,7 +13,8 @@
 //  Webhook : Database → Webhooks → table public.leads · INSERT ·
 //            Supabase Edge Functions · notify-new-lead · en-tête x-webhook-secret.
 // =====================================================================
-import { envoyerEmail, esc, secretValide } from "../_shared/securite.ts";
+import { adminClient, esc, secretValide } from "../_shared/securite.ts";
+import { envoyerEtJournaliser } from "../_shared/email.ts";
 
 const SITES: Record<string, string> = {
   infogerance: "DHB Pro",
@@ -69,9 +70,11 @@ Deno.serve(async (req) => {
         ${adminUrl ? `<p><a href="${esc(adminUrl)}/leads/${esc(lead.id)}">Ouvrir la demande dans le back-office</a></p>` : ""}
       </div>`;
 
-    const err = await envoyerEmail(to, subject, html);
-    if (err) {
-      console.error("Envoi email :", err);
+    const r = await envoyerEtJournaliser(adminClient(), {
+      a: to, sujet: subject, html, origine: "alerte_demande", liens: { lead_id: lead.id },
+    });
+    if (!r.ok) {
+      console.error("Envoi email :", r.code);
       return repondre(502, "envoi_impossible");
     }
     return repondre(200, "ok");

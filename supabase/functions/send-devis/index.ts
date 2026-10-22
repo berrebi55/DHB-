@@ -14,14 +14,17 @@
 //  Déploiement : supabase functions deploy send-devis --no-verify-jwt
 // =====================================================================
 import {
-  adminClient, cors, envoyerEmail, erreur, esc, eur, HttpError, json, marque, requireUser,
+  adminClient, cors, erreur, esc, eur, HttpError, json, marque, requireUser,
 } from "../_shared/securite.ts";
+import { envoyerEtJournaliser } from "../_shared/email.ts";
+import { genererPdf } from "../_shared/pdf.ts";
+import { nomFichier } from "../_shared/documents.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   try {
     const sb = adminClient();
-    await requireUser(req, sb);
+    const moi = await requireUser(req, sb);
 
     const { devis_id } = await req.json().catch(() => ({}));
     if (!devis_id) throw new HttpError(400, "devis_id_manquant");
@@ -35,7 +38,7 @@ Deno.serve(async (req) => {
     const lien = `${base}?token=${d.public_token}`;
     if (!d.client_email) return json({ error: "email_client_manquant", lien }, 422);
 
-    const { data: ent } = await sb.from("entreprise").select("raison_sociale").eq("id", 1).maybeSingle();
+    const { data: ent } = await sb.from("entreprise").select("*").eq("id", 1).maybeSingle();
     const societe = ent?.raison_sociale || marque(d.entity);
 
     const html = `
@@ -52,8 +55,13 @@ Deno.serve(async (req) => {
         <p>Cordialement,<br>${esc(societe)}</p>
       </div>`;
 
-    const err = await envoyerEmail(d.client_email, `Votre devis ${d.numero ?? ""} — ${societe}`, html);
-    if (err) return json({ error: err, lien }, err === "resend_not_configured" ? 503 : 502);
+    // PDF joint, tel qu'il sera une fois envoyé (pas de bandeau « brouillon »).
+    const pdf = await genererPdf("devis", { ...d, statut: d.statut === "brouillon" ? "envoye" : d.statut }, ent);
+    const r = await envoyerEtJournaliser(sb, {
+      a: d.client_email, sujet: `Votre devis ${d.numero ?? ""} — ${societe}`, html, origine: "devis",
+      liens: { devis_id: d.id, client_id: d.client_id ?? null }, par: moi, piece: { nom: nomFichier("devis", d.numero), octets: pdf },
+    });
+    if (!r.ok) return json({ error: r.code, lien }, r.code === "resend_not_configured" ? 503 : 502);
 
     await sb.from("devis")
       .update({ statut: d.statut === "brouillon" ? "envoye" : d.statut, envoye_at: new Date().toISOString() })
