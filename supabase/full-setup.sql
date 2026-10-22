@@ -1315,3 +1315,142 @@ insert into public.email_modeles (cle, nom, cible, sujet, corps) values
   ('ticket_resolu', 'Ticket résolu', 'ticket', 'Votre demande d''assistance « {{ticket_sujet}} »',
    E'Bonjour {{contact_nom}},\n\nNous vous confirmons que votre demande « {{ticket_sujet}} » est résolue. Si le problème réapparaît, répondez simplement à cet email.\n\nCordialement,\n{{signature}}')
 on conflict (cle) do nothing;
+
+-- =====================================================================
+-- 21) LOT 9 — AUTOMATISATIONS : FILE D'ÉVÉNEMENTS ET RÈGLES (idempotent)
+-- =====================================================================
+-- Une action dans DHB s'enregistre tout de suite ; ses effets externes
+-- (emails automatiques…) passent par la file « evenements », traitée par la
+-- fonction planifiée « worker » avec statut, tentatives, prochaine tentative
+-- et erreur lisible. Une panne d'envoi n'empêche jamais d'utiliser le CRM.
+
+-- ---------- 21.1 File d'événements ----------
+create table if not exists public.evenements (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now(),
+  type text not null,                          -- ex. client_cree, ticket_resolu
+  objet_type text not null,                    -- client, lead, devis, facture, ticket
+  objet_id uuid not null,
+  statut text not null default 'en_attente' check (statut in ('en_attente','traite','erreur','ignore')),
+  tentatives int not null default 0,
+  prochaine_tentative timestamptz not null default now(),
+  traite_le timestamptz,
+  erreur text
+);
+create index if not exists evenements_a_traiter_idx on public.evenements (prochaine_tentative) where statut = 'en_attente';
+create index if not exists evenements_created_idx on public.evenements (created_at desc);
+alter table public.evenements enable row level security;
+drop policy if exists "evenements read" on public.evenements;
+create policy "evenements read" on public.evenements for select to authenticated using (public.is_staff());
+revoke insert, update, delete, truncate on public.evenements from anon, authenticated;
+
+-- Événements émis par la base elle-même (fiable : impossible d'en oublier un).
+create or replace function public.emettre_evenement()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare t text; o text; n jsonb; a jsonb; champ text;
+begin
+  o := case tg_table_name when 'clients' then 'client' when 'leads' then 'lead' when 'devis' then 'devis'
+                          when 'factures' then 'facture' when 'tickets' then 'ticket' end;
+  if tg_op = 'INSERT' then
+    t := case tg_table_name when 'clients' then 'client_cree' when 'leads' then 'lead_cree' end;
+  else
+    -- Lecture en JSON : la colonne d'état s'appelle « statut » (devis) ou « status » (factures, tickets).
+    n := to_jsonb(new); a := to_jsonb(old);
+    champ := case tg_table_name when 'devis' then 'statut' else 'status' end;
+    if (n->>champ) is distinct from (a->>champ) then
+      t := case tg_table_name || ':' || (n->>champ)
+             when 'devis:envoye' then 'devis_envoye' when 'devis:accepte' then 'devis_accepte'
+             when 'factures:envoyee' then 'facture_envoyee' when 'factures:payee' then 'facture_payee'
+             when 'tickets:resolu' then 'ticket_resolu' end;
+    end if;
+  end if;
+  if t is not null then
+    insert into public.evenements (type, objet_type, objet_id) values (t, o, new.id);
+  end if;
+  return null;
+end; $$;
+do $$ declare t text; begin
+  foreach t in array array['clients','leads'] loop
+    execute format('drop trigger if exists trg_%s_evenement on public.%I', t, t);
+    execute format('create trigger trg_%s_evenement after insert on public.%I for each row execute function public.emettre_evenement()', t, t);
+  end loop;
+  foreach t in array array['devis','factures','tickets'] loop
+    execute format('drop trigger if exists trg_%s_evenement on public.%I', t, t);
+    execute format('create trigger trg_%s_evenement after update on public.%I for each row execute function public.emettre_evenement()', t, t);
+  end loop;
+end $$;
+
+-- Réessayer un événement en erreur (administrateur, depuis Système → Automatisations).
+create or replace function public.reessayer_evenement(p_id uuid)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_admin() then raise exception 'Réservé aux administrateurs.' using errcode = '42501'; end if;
+  update public.evenements set statut = 'en_attente', tentatives = 0, prochaine_tentative = now(), erreur = null
+    where id = p_id and statut = 'erreur';
+end; $$;
+revoke execute on function public.reessayer_evenement(uuid) from public, anon;
+grant execute on function public.reessayer_evenement(uuid) to authenticated;
+
+-- ---------- 21.2 Règles « SI … ALORS envoyer l'email … » ----------
+-- Lecture : équipe ; réglage (activer, délai, modèle) : administrateurs.
+create table if not exists public.automatisations (
+  cle text primary key,
+  nom text not null,
+  description text not null,
+  declencheur text not null,                   -- événement, ou « quotidien » (contrôle chaque jour)
+  actif boolean not null default false,
+  delai_jours int not null default 0 check (delai_jours between 0 and 90),
+  modele_cle text references public.email_modeles(cle) on update cascade,
+  updated_at timestamptz not null default now()
+);
+alter table public.automatisations enable row level security;
+drop policy if exists "automatisations read" on public.automatisations;
+drop policy if exists "automatisations admin update" on public.automatisations;
+create policy "automatisations read" on public.automatisations for select to authenticated using (public.is_staff());
+create policy "automatisations admin update" on public.automatisations for update to authenticated using (public.is_admin()) with check (public.is_admin());
+revoke insert, delete, truncate on public.automatisations from anon, authenticated;
+drop trigger if exists trg_automatisations_touch on public.automatisations;
+create trigger trg_automatisations_touch before update on public.automatisations for each row execute function public.touch_updated_at();
+
+insert into public.email_modeles (cle, nom, cible, sujet, corps) values
+  ('bienvenue', 'Bienvenue (nouveau client)', 'client', 'Bienvenue — {{societe}}',
+   E'Bonjour {{contact_nom}},\n\nMerci de votre confiance. Pour toute question, il vous suffit de répondre à cet email.\n\nCordialement,\n{{signature}}')
+on conflict (cle) do nothing;
+
+-- Règles de départ. Relances de devis et rappels de facture : actives, comme les
+-- relances automatiques existantes (send-reminders). Bienvenue et ticket résolu :
+-- désactivées tant que le propriétaire ne les a pas relues et activées.
+insert into public.automatisations (cle, nom, description, declencheur, actif, delai_jours, modele_cle) values
+  ('relance_devis', 'Relance des devis sans réponse',
+   'SI un devis envoyé n''est ni signé ni refusé après le délai ALORS le client reçoit l''email de relance (au plus une fois tous les 7 jours).',
+   'quotidien', true, 5, 'relance_devis'),
+  ('rappel_facture', 'Rappel des factures en retard',
+   'SI une facture envoyée n''est pas réglée après son échéance + le délai ALORS le client reçoit l''email de rappel (au plus une fois tous les 7 jours).',
+   'quotidien', true, 7, 'rappel_facture'),
+  ('bienvenue', 'Bienvenue aux nouveaux clients',
+   'SI une fiche client est créée avec un email ALORS le client reçoit l''email de bienvenue (une seule fois).',
+   'client_cree', false, 0, 'bienvenue'),
+  ('ticket_resolu', 'Ticket résolu',
+   'SI un ticket passe à « résolu » ALORS le client reçoit l''email de confirmation (une seule fois par ticket).',
+   'ticket_resolu', false, 0, 'ticket_resolu')
+on conflict (cle) do nothing;
+
+-- ---------- 21.3 Journal des exécutions ----------
+create table if not exists public.automatisation_runs (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now(),
+  automatisation_cle text not null references public.automatisations(cle),
+  objet_type text not null,
+  objet_id uuid not null,
+  statut text not null check (statut in ('envoye','echec','ignore')),
+  detail text,
+  email_id uuid
+);
+create index if not exists automatisation_runs_created_idx on public.automatisation_runs (created_at desc);
+-- « Une seule fois » : bienvenue par client, confirmation par ticket.
+create unique index if not exists automatisation_runs_unique_unefois on public.automatisation_runs (automatisation_cle, objet_id)
+  where automatisation_cle in ('bienvenue', 'ticket_resolu') and statut = 'envoye';
+alter table public.automatisation_runs enable row level security;
+drop policy if exists "automatisation_runs read" on public.automatisation_runs;
+create policy "automatisation_runs read" on public.automatisation_runs for select to authenticated using (public.is_staff());
+revoke insert, update, delete, truncate on public.automatisation_runs from anon, authenticated;
