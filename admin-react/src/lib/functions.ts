@@ -14,6 +14,10 @@ const MESSAGES: Record<string, string> = {
   devis_clos: "Ce devis est refusé ou expiré : il ne peut plus être envoyé.",
   facture_annulee: "Cette facture est annulée : elle ne peut pas être envoyée.",
   email_invalide: "L'adresse email saisie n'est pas valide.",
+  stockage_indisponible: "Le stockage des documents ne répond pas. Réessayez dans un instant.",
+  document_introuvable: "Ce document est introuvable (il a peut-être été supprimé).",
+  parametres_invalides: "Demande invalide.",
+  archivage_impossible: "Le PDF n'a pas pu être archivé. Réessayez dans un instant.",
 };
 
 const RESEAU = "La fonction serveur ne répond pas. Vérifiez qu'elle est déployée dans Supabase (voir README).";
@@ -22,6 +26,41 @@ export interface ResultatFonction<T> {
   ok: boolean;
   data?: T;
   message?: string;
+}
+
+/**
+ * Télécharge le PDF d'un devis ou d'une facture (ou d'un document archivé),
+ * produit côté serveur par la fonction render-pdf.
+ */
+export async function telechargerPdf(
+  corps: { type: "devis" | "facture"; id: string } | { document_id: string },
+): Promise<ResultatFonction<{ archive: string | null }>> {
+  try {
+    const { data } = await supabaseClient.auth.getSession();
+    const jeton = data.session?.access_token;
+    if (!jeton) return { ok: false, message: MESSAGES.non_authentifie };
+    const r = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/render-pdf`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${jeton}`, apikey: import.meta.env.VITE_SUPABASE_ANON_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify(corps),
+    });
+    if (!r.ok) {
+      const code = String(((await r.json().catch(() => ({}))) as { error?: string }).error ?? "");
+      return { ok: false, message: MESSAGES[code] ?? (code ? `Erreur : ${code}` : RESEAU) };
+    }
+    const nom = /filename="([^"]+)"/.exec(r.headers.get("Content-Disposition") ?? "")?.[1] ?? "document.pdf";
+    const url = URL.createObjectURL(await r.blob());
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = nom;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    return { ok: true, data: { archive: r.headers.get("X-Document-Archive") } };
+  } catch {
+    return { ok: false, message: RESEAU };
+  }
 }
 
 /** Appelle une Edge Function avec la session de l'utilisateur connecté. */

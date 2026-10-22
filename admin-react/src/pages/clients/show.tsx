@@ -20,6 +20,7 @@ import {
 import { useDelete, useList, useOne, useUpdate } from "@refinedev/core";
 import { EmptyState, PageHeader, Panel, StatusTag, ErrorState } from "../../components/ui";
 import { NotesPanel } from "../../components/activity/NotesPanel";
+import { DocumentsClient } from "../../components/documents/DocumentsClient";
 import { ClientTimeline } from "../../components/activity/ClientTimeline";
 import { ActivityFeed } from "../../components/activity/ActivityFeed";
 import { ClientDrawer, adresseComplete } from "../../components/forms/ClientDrawer";
@@ -217,6 +218,7 @@ export function ClientShow() {
                 </div>
               ),
             },
+            { key: "documents", label: "Documents", children: <div style={{ marginInline: -18, paddingBottom: 8 }}><DocumentsClient clientId={c.id} /></div> },
             { key: "notes", label: "Notes", children: <div style={{ paddingBottom: 18, maxWidth: 760 }}><NotesPanel clientId={c.id} /></div> },
             { key: "historique", label: "Historique", children: <div style={{ marginInline: -18, paddingBottom: 8 }}><ClientTimeline clientId={c.id} /></div> },
           ]}

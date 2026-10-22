@@ -18,6 +18,7 @@ import { useDelete, useList, useOne } from "@refinedev/core";
 import { supabaseClient } from "../../supabaseClient";
 import { EmptyState, PageHeader, Panel, StatusTag, ErrorState } from "../../components/ui";
 import { NotesPanel } from "../../components/activity/NotesPanel";
+import { BoutonPdf } from "../../components/documents/BoutonPdf";
 import { ActivityFeed } from "../../components/activity/ActivityFeed";
 import { documentHtml, imprimerDocument } from "../../lib/document";
 import { dateFR, dateTimeFR, eur } from "../../lib/format";
@@ -134,7 +135,8 @@ export function DevisShow() {
         back="/devis"
         actions={
           <>
-            <Button icon={<PrinterOutlined />} onClick={() => imprimerDocument("DEVIS", d, entreprise)}>Imprimer / PDF</Button>
+            <BoutonPdf type="devis" id={d.id} libelle="Télécharger le PDF" />
+            <Button icon={<PrinterOutlined />} onClick={() => imprimerDocument("DEVIS", d, entreprise)}>Imprimer</Button>
             {actionPrincipale}
             <Dropdown menu={{ items: plus }} trigger={["click"]}><Button icon={<MoreOutlined />} aria-label="Plus d'actions" /></Dropdown>
           </>

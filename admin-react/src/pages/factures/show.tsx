@@ -16,6 +16,7 @@ import { useList, useOne } from "@refinedev/core";
 import { supabaseClient } from "../../supabaseClient";
 import { EmptyState, PageHeader, Panel, StatusTag, ErrorState } from "../../components/ui";
 import { NotesPanel } from "../../components/activity/NotesPanel";
+import { BoutonPdf } from "../../components/documents/BoutonPdf";
 import { ActivityFeed } from "../../components/activity/ActivityFeed";
 import { PaiementModal } from "../../components/forms/PaiementModal";
 import { documentHtml, imprimerDocument } from "../../lib/document";
@@ -71,10 +72,6 @@ export function FactureShow() {
   });
 
   const pctPaye = f.total_ttc > 0 ? Math.min(100, Math.round((Number(f.montant_paye) / f.total_ttc) * 100)) : 0;
-  const pdf = () => {
-    message.info("Dans la fenêtre d'impression, choisissez « Enregistrer au format PDF ».");
-    imprimerDocument("FACTURE", f, entreprise);
-  };
 
   const principale =
     f.status === "brouillon" ? <Button type="primary" icon={<SendOutlined />} loading={envoi} onClick={envoyer}>Envoyer au client</Button>
@@ -90,7 +87,6 @@ export function FactureShow() {
       { key: "renvoyer", icon: <SendOutlined />, label: "Renvoyer par email", onClick: envoyer },
       { key: "payee", icon: <CheckOutlined />, label: "Marquer comme payée", onClick: () => setPaiement(true) },
     ] : []),
-    { key: "pdf", icon: <DownloadOutlined />, label: "Télécharger en PDF", onClick: pdf },
     ...(["brouillon", "envoyee"].includes(f.status) ? [{ type: "divider" as const }, { key: "annuler", icon: <StopOutlined />, danger: true, label: "Annuler la facture", onClick: annuler }] : []),
   ];
 
@@ -103,6 +99,7 @@ export function FactureShow() {
         back="/factures"
         actions={
           <>
+            <BoutonPdf type="facture" id={f.id} emise={f.status !== "brouillon"} libelle="Télécharger le PDF" />
             <Button icon={<PrinterOutlined />} onClick={() => imprimerDocument("FACTURE", f, entreprise)}>Imprimer</Button>
             {principale}
             <Dropdown menu={{ items: plus }} trigger={["click"]}><Button icon={<MoreOutlined />} aria-label="Plus d'actions" /></Dropdown>
@@ -129,7 +126,7 @@ export function FactureShow() {
               <div className="row"><span>Déjà payé</span><span className="tabular">{eur(f.montant_paye)}</span></div>
               <div className="row grand" style={{ fontSize: 16 }}><span>Reste à payer</span><span className="tabular">{f.status === "annulee" ? "—" : eur(f.status === "payee" ? 0 : f.reste_a_payer)}</span></div>
             </div>
-            {f.status !== "annulee" && <Progress percent={f.status === "payee" ? 100 : pctPaye} showInfo={false} strokeColor="#15803D" style={{ margin: "12px 0 4px" }} />}
+            {f.status !== "annulee" && <Progress percent={f.status === "payee" ? 100 : pctPaye} showInfo={false} aria-label={`Part payée : ${f.status === "payee" ? 100 : pctPaye} %`} strokeColor="#15803D" style={{ margin: "12px 0 4px" }} />}
             <div className="faint" style={{ fontSize: 13 }}>Échéance : {f.date_echeance ? dateFR(f.date_echeance) : "à réception"}{f.paid_at ? ` · soldée le ${dateFR(f.paid_at)}` : ""}</div>
             {f.status === "envoyee" && <Button block style={{ marginTop: 12 }} icon={<WalletOutlined />} onClick={() => setPaiement(true)}>Enregistrer un paiement</Button>}
             {paiements.length > 0 && (
