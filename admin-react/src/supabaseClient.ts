@@ -27,7 +27,10 @@ const fetchAvecDelai: typeof fetch = (input, init) => {
 };
 
 export const supabaseClient = createClient(url ?? "", anonKey ?? "", {
-  db: { schema: "public" },
+  // Pas de nouvelles tentatives internes à la librairie : elles se cumulaient
+  // avec le délai (jusqu'à 4 × 25 s). Les relances sont gérées en un seul
+  // endroit, par le cache (src/queryClient.ts).
+  db: { schema: "public", retry: false },
   auth: { persistSession: true, autoRefreshToken: true },
   global: { fetch: fetchAvecDelai },
 });

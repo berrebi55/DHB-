@@ -196,13 +196,16 @@ Restauration testée et documentée (une sauvegarde jamais restaurée n'en est p
 
 Chaque lot se termine par : build, tests navigateur desktop + mobile, tests SQL par rôle, commit.
 
-### Priorité 1 — Stabilité (avant tout le reste)
-1. Error Boundary globale + par bloc (un widget en erreur n'efface plus la page).
-2. Gestion d'erreur systématique des 42 requêtes (message clair + bouton Réessayer), délais maximaux, plus aucun chargement infini.
-3. `useDonnees` → React Query (cache, pas de requêtes répétées) puis **agrégats SQL** (fonction `tableau_de_bord(periode)`) au lieu de télécharger 6 tables.
-4. Chargement différé des pages (≈ 2,7 Mo → < 1 Mo à l'ouverture).
-5. Sites : remplacer `supabase-js` par un `fetch` REST léger.
-6. Nettoyage des doublons (`schema.sql`, `settings.sql`, `admin/`).
+### Priorité 1 — Stabilité ✅ réalisée (commits `e0a3999` et suivant)
+1. ✅ Error Boundary par page et par panneau (plus d'écran blanc ; fichier manquant après mise à jour → « Recharger la page »).
+2. ✅ Erreurs visibles partout : listes et fiches affichent « Impossible de charger » + **Réessayer** (fini les listes vides trompeuses et les faux « introuvable »).
+3. ✅ Délai maximal de 25 s sur toutes les requêtes ; **une seule** politique de nouvelles tentatives (aucune après délai dépassé ou erreur 4xx) — les relances internes de la librairie Supabase, qui portaient l'attente à plus de 70 s, sont désactivées.
+4. ✅ Tableau de bord / pilotage : cache partagé (React Query), rafraîchi après chaque modification. *(Les agrégats SQL viendront quand le volume le justifiera.)*
+5. ✅ Pages chargées à la demande + suppression de `@refinedev/antd` : JavaScript initial ~2,8 Mo → ~1,8 Mo (~830 → ~550 Ko compressés), graphiques chargés seulement sur les pages qui en ont.
+6. ✅ Sites : formulaires et prix via `fetch` REST (plus de librairie de 100 Ko sur 170 pages).
+7. ✅ Doublons supprimés (`admin/`, `schema.sql`, `settings.sql`), README et lanceurs à jour.
+
+Tests : 61 vues desktop/mobile, 16 parcours, 8 scénarios de panne (erreur 500, serveur muet, fiche inexistante, fichier d'application manquant, source du tableau de bord en panne) — tous OK sur Supabase simulé. **Non testé sur la vraie base** (inaccessible depuis l'environnement de développement) : à vérifier en local (envoi d'un formulaire, affichage des prix).
 
 ### Priorité 2 — UX/UI
 Nouvelle navigation (§3.6), tableau de bord en 4 blocs (Acquisition, Commercial, Clients, Finance) avec uniquement des chiffres calculables (les blocs Acquisition affichent un état vide explicatif tant que Google n'est pas connecté), bouton « Envoyer un email » préparé.
