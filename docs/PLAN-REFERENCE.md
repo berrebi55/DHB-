@@ -151,7 +151,7 @@ Ordre adapté à l'audit : la **sécurité critique** (C1, C2) et la **sauvegard
 | **2** ✅ | **Sauvegarde indépendante** : GitHub Actions nocturne (`pg_dump` chiffré, 30 jours), table `sauvegardes`, page Système → Sauvegardes, procédure de restauration testée | C3 | aucune donnée modifiée | Secret GitHub `SUPABASE_DB_URL` + clé de chiffrement |
 | **3** ✅ | **Accessibilité et cohérence UI** : couleurs de texte secondaire conformes, libellés des filtres, ordre des titres, liens soulignés | I6, I7, A4, A5 | rendu de toutes les pages (captures avant/après), axe-core | — |
 | **4** ✅ | **CRM : attribution + timeline** : colonnes d'attribution, captation sur les sites, source modifiable, vue entonnoir ; timeline client complète (journal + notes + appels) ; suppression client → archivage par défaut | I10, I5 | formulaires publics, fiches client/demande, statistiques | — |
-| **5** | **Tableau de bord commercial** : blocs Commercial, Clients, Finance (données existantes) ; bloc Acquisition = sources des demandes (lot 4), visiteurs ajoutés au lot 10 | — | pilotage, cache | — |
+| **5** ✅ | **Tableau de bord commercial** : blocs Commercial, Clients, Finance (données existantes) ; bloc Acquisition = sources des demandes (lot 4), visiteurs ajoutés au lot 10 | — | pilotage, cache | — |
 | **6** | **Documents** : `render-pdf` (devis/facture), bucket Storage privé, table `documents`, téléchargement depuis les fiches | I9 | devis, factures, envoi email | — |
 | **7** | **Paiements Stripe** : `stripe-webhook` → paiement + facture payée + abonnement démarré | I8 | paiements, factures, abonnements | Webhook + secret `whsec_…` |
 | **8** | **Communication** : `email-send` unique et journalisé, historique, modèles à variables, envoi manuel depuis client/demande/devis/facture/ticket | — | envois existants (devis, facture, relances) | Resend (domaine à vérifier ; en attendant : envoi vers sa propre adresse) |
@@ -339,6 +339,30 @@ Ordre adapté à l'audit : la **sécurité critique** (C1, C2) et la **sauvegard
 1. SQL Editor → exécuter `supabase/full-setup.sql` (ajoute les colonnes, le classement, le rattrapage et la protection des clients).
 2. Publier les 3 sites régénérés et le back-office (`npm run build`).
 3. Test : ouvrir un site avec `?utm_source=test&utm_medium=email`, envoyer une demande, vérifier « Origine du contact » dans la fiche.
+
+### Lot 5 — Tableau de bord commercial ✅ VALIDÉ (environnement de test)
+
+**Modifié**
+- Tableau de bord : la bande de 6 chiffres est remplacée par **4 blocs** d'indicateurs, chacun cliquable vers la liste filtrée ou l'analyse correspondante :
+  - **Commercial** : demandes reçues sur 30 jours (variation affichée seulement si la période précédente > 0), taux de transformation et taux d'acceptation des devis sur 90 jours, devis en attente (nombre et montant), devis à relancer, relances de prospects dues ;
+  - **Clients** : clients actifs, prospects, nouvelles fiches sur 30 jours, clients inactifs, tickets ouverts (dont urgents) ;
+  - **Finance** : facturé et encaissé du mois, à encaisser, retard de paiement, panier moyen et délai moyen de paiement (factures payées sur 12 mois), abonnements à facturer ;
+  - **Acquisition** : origine des demandes des 30 derniers jours (lot 4), nombre et part. Les visiteurs des sites viendront au lot 10 (Google Analytics) : **aucun chiffre affiché tant qu'il n'existe pas**.
+- Calculs **centralisés** dans `lib/metrics.ts` (`blocsTableau`), à partir des données déjà chargées et mises en cache (30 s, partagées avec le pilotage) : aucune requête supplémentaire. Un taux sans dénominateur affiche « — », jamais un chiffre inventé.
+- Les 4 indicateurs du haut, « À faire aujourd'hui », l'activité récente et le graphique du chiffre d'affaires sont inchangés.
+
+**Fichiers** : `admin-react/src/lib/metrics.ts` · `admin-react/src/pages/dashboard/index.tsx` · `admin-react/src/styles.css`. Aucune modification de la base.
+
+**Tests**
+- **Navigateur : 49 / 49** avec un jeu de données connu (ordinateur et mobile) : **chaque valeur affichée comparée à un calcul fait à la main** (ex. devis acceptés 1/4 = 25 %, à encaisser 300 + 420 = 720 €, délai de paiement 5 j, origines 25 % chacune), liens des lignes (Acquisition → demandes « non renseignées », Finance → factures en retard), axe-core sans défaut, 0 débordement, 0 erreur JS.
+- **Base vide : 23 / 23** : 0 partout, taux et moyennes à « — », message « Aucune demande ces 30 derniers jours ».
+- Non-régression : tests du lot 4 (40/40), audit d'accessibilité des 52 vues (inchangé), TypeScript 0 erreur, `npm run build` OK.
+
+**Résultat** : ✅ **VALIDÉ** sur l'environnement de test.
+
+**Risques** : calculs faits dans le navigateur sur 5 000 lignes maximum par table (déjà le cas, A6) : suffisant aujourd'hui, à passer en SQL au lot 15 si le volume grandit.
+
+**À faire en production** : rien de spécifique (publier le back-office).
 
 ### Problèmes connus restants
 Voir §3 : I8, I9, I11, I12, A1–A3, A6, A7 (C1, C2, I1, I2, I3, I4 traités au lot 1 ; C3 au lot 2, actif après configuration ; I6, I7, A4, A5 au lot 3 ; I5, I10 au lot 4). Points mineurs relevés au lot 3 : onglets Ant Design et colonnes « Actions » sans texte.
