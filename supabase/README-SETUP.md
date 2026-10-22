@@ -41,5 +41,7 @@ Edge Functions, secrets, planifications).
 - Modifier un prix dans Contenu → Prix & bandeau → il s'affiche sur DHB Assistance.
 
 ## 5. Sauvegardes
-Le plan gratuit de Supabase ne fournit pas de sauvegarde téléchargeable : voir
-la stratégie prévue dans [`../docs/PLAN-REFERENCE.md`](../docs/PLAN-REFERENCE.md) (problème C3, lot 2).
+Le plan gratuit de Supabase ne fournit pas de sauvegarde téléchargeable : DHB
+se sauvegarde lui-même chaque nuit, hors de Supabase (GitHub Actions, fichier
+chiffré, 30 jours). Mise en service et restauration :
+[`../docs/SAUVEGARDE.md`](../docs/SAUVEGARDE.md).

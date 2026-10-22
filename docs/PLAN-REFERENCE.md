@@ -148,7 +148,7 @@ Ordre adapté à l'audit : la **sécurité critique** (C1, C2) et la **sauvegard
 |---|---|---|---|---|
 | **0** ✅ | Stabilité du chargement | — | — | — |
 | **1** ✅ | **Sécurité des accès et des données** : rôle `en_attente` + `is_staff()` dans toutes les règles ; rattrapage sans élévation ; `invite-user` attribue le rôle ; écran « accès en attente » ; demandes publiques : colonnes imposées par un trigger + champ piège anti-robot ; factures émises non supprimables ; `notify-new-lead` : secret obligatoire | C1, C2, I1, I2, I3, I4 | connexion admin/collab, invitation, formulaires publics des 3 sites, création/suppression devis-factures-paiements, journal, statistiques | Désactiver l'inscription libre ; relancer `full-setup.sql` |
-| **2** | **Sauvegarde indépendante** : GitHub Actions nocturne (`pg_dump` chiffré, 30 jours), table `sauvegardes`, page Système → Sauvegardes, procédure de restauration testée | C3 | aucune donnée modifiée | Secret GitHub `SUPABASE_DB_URL` + clé de chiffrement |
+| **2** ✅ | **Sauvegarde indépendante** : GitHub Actions nocturne (`pg_dump` chiffré, 30 jours), table `sauvegardes`, page Système → Sauvegardes, procédure de restauration testée | C3 | aucune donnée modifiée | Secret GitHub `SUPABASE_DB_URL` + clé de chiffrement |
 | **3** | **Accessibilité et cohérence UI** : couleurs de texte secondaire conformes, libellés des filtres, ordre des titres, liens soulignés | I6, I7, A4, A5 | rendu de toutes les pages (captures avant/après), axe-core | — |
 | **4** | **CRM : attribution + timeline** : colonnes d'attribution, captation sur les sites, source modifiable, vue entonnoir ; timeline client complète (journal + notes + appels) ; suppression client → archivage par défaut | I10, I5 | formulaires publics, fiches client/demande, statistiques | — |
 | **5** | **Tableau de bord commercial** : blocs Commercial, Clients, Finance (données existantes) ; bloc Acquisition = sources des demandes (lot 4), visiteurs ajoutés au lot 10 | — | pilotage, cache | — |
@@ -216,5 +216,50 @@ Ordre adapté à l'audit : la **sécurité critique** (C1, C2) et la **sauvegard
 4. Redéployer `notify-new-lead`, `invite-user`, `send-devis`, `send-invoice`, `generate-recurring-invoices`, `send-reminders` (code partagé modifié) et définir `WEBHOOK_SECRET` + l'en-tête `x-webhook-secret` dans le webhook.
 5. Test rapide : envoyer une demande depuis un site, la voir dans Demandes.
 
+### Lot 2 — Sauvegarde indépendante ✅ VALIDÉ (base de test)
+
+**Modifié / ajouté**
+- Table `public.sauvegardes` (historique : date, type, statut, taille, empreinte SHA-256, nombre de lignes par table, lien d'exécution, erreur) : lecture équipe uniquement, **aucune écriture possible via l'API** (ni admin, ni collaborateur, ni anonyme) ; seul le script, connecté directement à PostgreSQL, y écrit.
+- `scripts/sauvegarde.sh` : export du schéma `public` (structure + données, format pg_dump « custom ») et des comptes (`auth.users`, `auth.identities`), manifeste (lignes par table), contrôle de l'archive, chiffrement **AES-256** (GnuPG, phrase ≥ 20 caractères passée hors ligne de commande), contrôle du fichier chiffré, enregistrement du résultat ; en cas d'échec, enregistrement de l'étape en cause ; aucun fichier en clair laissé sur disque.
+- `scripts/restaurer.sh` : mode `--verifier` (déchiffre et contrôle sans restaurer) ; restauration en 7 étapes dans l'ordre imposé par les dépendances ; **refus** si la base cible contient déjà des tables DHB ; contrôle final ligne par ligne contre le manifeste (arrêt en erreur au moindre écart) ; message clair si phrase incorrecte ou fichier endommagé.
+- `supabase/restauration-complements.sql` : recrée uniquement ce qui vit hors du schéma `public` (déclencheur de création de profil, publication temps réel), **sans modifier aucune donnée**.
+- `.github/workflows/sauvegarde.yml` : chaque nuit (02h17 UTC) + lancement manuel ; client PostgreSQL 17 ; fichier chiffré conservé 30 jours en artefact GitHub ; secrets absents → avertissement et aucune action (pas d'échec nocturne tant que ce n'est pas configuré).
+- Back-office : **Système → Sauvegardes** (dernière sauvegarde réussie, statut, taille, réussites sur 30 jours, historique, alertes « aucune sauvegarde », « échec », « plus de 36 h », procédure de restauration ; aucun bouton factice : les sauvegardes se lancent depuis GitHub).
+- Documentation : `docs/SAUVEGARDE.md` (mise en service, surveillance, restauration pas à pas, limites) ; renvoi dans `supabase/README-SETUP.md`.
+- Pas de fonction serveur `backup-status` (prévue au plan) : inutile, le script écrit directement en base.
+
+**Corrigé** : C3 (absence de sauvegarde) — côté code ; actif seulement après configuration des secrets.
+
+**Fichiers**
+`supabase/full-setup.sql` (section 16) · `supabase/restauration-complements.sql` (nouveau) · `supabase/tests/lot2-sauvegardes.sql` (nouveau) · `scripts/sauvegarde.sh` (nouveau) · `scripts/restaurer.sh` (nouveau) · `.github/workflows/sauvegarde.yml` (nouveau) · `admin-react/src/pages/systeme/sauvegardes.tsx` (nouveau) · `admin-react/src/App.tsx` · `admin-react/src/components/layout/nav.tsx` · `docs/SAUVEGARDE.md` (nouveau) · `supabase/README-SETUP.md`.
+
+**Tests (base PostgreSQL 16 de test)**
+- `full-setup.sql` rejoué 6 fois : 0 erreur.
+- **Sauvegarde réelle** de la base de test (données variées : accents, apostrophes, guillemets, retours à la ligne, JSON, montants) : fichier de 24 Ko, ligne `reussie` enregistrée (taille, empreinte, lignes, lien, durée 2 s) ; **aucune donnée lisible en clair** dans le fichier.
+- **Restauration complète** dans une base neuve imitant un projet Supabase (schéma `auth` vide, publication temps réel) : 17 tables identiques en nombre de lignes, puis **25 contrôles d'identité stricts** entre base d'origine et base restaurée : empreinte du **contenu** de chacune des 16 tables + comptes, 44 règles RLS, 16 tables protégées, 24 déclencheurs, 17 fonctions, 2 vues, 15 clés étrangères, rôles des profils, droits anon/authenticated, tables temps réel → **identiques**.
+  - Un premier essai a révélé un vrai défaut, corrigé : la restauration relançait `full-setup.sql`, dont les mises à jour de rattrapage modifiaient 2 tables restaurées (`leads`, `abonnements`) ; remplacé par `restauration-complements.sql`.
+- **Base restaurée fonctionnelle** : les 73 scénarios de sécurité du lot 1 rejoués sur la base restaurée → 73/73.
+- Cas d'erreur : mauvaise phrase et fichier tronqué → « Déchiffrement impossible… » ; restauration sur une base non vide → refus ; panne de `pg_dump` simulée → échec enregistré avec l'étape (« export des données métier ») et aucun fichier produit ; base injoignable → code d'erreur ; phrase trop courte → refus.
+- Droits sur `sauvegardes` : **9/9** (`supabase/tests/lot2-sauvegardes.sql`).
+- Navigateur, page Système → Sauvegardes : **10/10** (4 états × ordinateur et mobile, sans débordement ni erreur JS ; accès par le menu ; erreur de chargement → « Impossible de charger » + Réessayer).
+- Non-régression ciblée : 73/73 scénarios du lot 1 sur la base de test, 16/16 parcours du back-office ; TypeScript 0 erreur ; `npm run build` OK ; YAML du workflow valide.
+
+**Résultat** : ✅ **VALIDÉ** sur la base de test.
+
+**Risques / limites**
+- **Le workflow GitHub n'a pas encore tourné sur GitHub** (impossible avant le push ; secrets non créés) : la première exécution réelle, dont l'installation du client PostgreSQL 17 et la connexion à la vraie base par le « Session pooler », reste à confirmer à la mise en service.
+- Testé avec PostgreSQL 16 en local ; la vraie base Supabase (15 ou 17) sera sauvegardée avec le client 17 (compatible avec les versions inférieures).
+- **La phrase de chiffrement est le point unique de défaillance** : perdue = sauvegardes illisibles. À conserver hors de GitHub.
+- Fichiers Storage non couverts (il n'y en a pas aujourd'hui) : à ajouter au lot 6 « Documents ».
+- Réglages du tableau de bord Supabase (Auth, secrets des fonctions, webhooks, cron) non sauvegardés : documentés dans les README.
+- Base injoignable : l'échec n'est visible que dans GitHub (et par l'alerte « 36 h » du back-office).
+- Dépôt public : artefacts visibles par d'autres comptes GitHub (illisibles sans la phrase) ; dépôt privé recommandé.
+
+**À faire plus tard sur la vraie Supabase (mise en production)**
+1. SQL Editor → exécuter `supabase/full-setup.sql` (crée `sauvegardes`).
+2. Créer les secrets GitHub `SUPABASE_DB_URL` (« Session pooler ») et `BACKUP_PASSPHRASE` (et la conserver hors de GitHub).
+3. GitHub → Actions → « Sauvegarde de la base » → Run workflow, puis vérifier Système → Sauvegardes.
+4. Faire une restauration d'essai dans un projet Supabase neuf (`docs/SAUVEGARDE.md` §3).
+
 ### Problèmes connus restants
-Voir §3 : C3, I5–I12, A1–A7 (C1, C2, I1, I2, I3, I4 traités au lot 1).
+Voir §3 : I5–I12, A1–A7 (C1, C2, I1, I2, I3, I4 traités au lot 1 ; C3 au lot 2, actif après configuration).

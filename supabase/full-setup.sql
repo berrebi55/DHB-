@@ -886,3 +886,30 @@ end; $$;
 drop trigger if exists trg_factures_proteger on public.factures;
 create trigger trg_factures_proteger before update or delete on public.factures
   for each row execute function public.factures_proteger_emises();
+
+-- =====================================================================
+-- 16) LOT 2 — HISTORIQUE DES SAUVEGARDES (idempotent)
+-- =====================================================================
+-- Rempli uniquement par le script de sauvegarde (scripts/sauvegarde.sh, exécuté
+-- par GitHub Actions avec la connexion PostgreSQL) : aucune écriture possible
+-- depuis l'API. Consultable par l'équipe dans Système → Sauvegardes.
+create table if not exists public.sauvegardes (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now(),
+  debut timestamptz not null default now(),
+  fin timestamptz,
+  type text not null default 'quotidienne' check (type in ('quotidienne','manuelle','test')),
+  statut text not null check (statut in ('reussie','echec')),
+  taille_octets bigint,
+  fichier text,
+  empreinte_sha256 text,
+  lignes jsonb,                -- nombre de lignes par table au moment de la sauvegarde
+  run_url text,                -- lien vers l'exécution GitHub Actions
+  erreur text
+);
+create index if not exists sauvegardes_created_idx on public.sauvegardes (created_at desc);
+alter table public.sauvegardes enable row level security;
+drop policy if exists "sauvegardes read" on public.sauvegardes;
+create policy "sauvegardes read" on public.sauvegardes for select to authenticated using (public.is_staff());
+-- (aucune politique d'écriture : ni anon ni authenticated ne peuvent écrire)
+revoke insert, update, delete, truncate on public.sauvegardes from anon, authenticated;

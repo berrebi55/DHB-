@@ -1,0 +1,79 @@
+name: Sauvegarde de la base
+
+# Sauvegarde indépendante de Supabase (plan gratuit : aucune sauvegarde
+# téléchargeable côté Supabase). Chaque nuit + lancement manuel possible
+# (onglet Actions → « Sauvegarde de la base » → Run workflow).
+#
+# Le fichier produit est CHIFFRÉ (AES-256) et conservé 30 jours dans les
+# artefacts GitHub. Chaque exécution est enregistrée dans public.sauvegardes
+# (Back-office → Système → Sauvegardes).
+#
+# Secrets à créer (GitHub → Settings → Secrets and variables → Actions) :
+#   SUPABASE_DB_URL    chaîne de connexion « Session pooler » (Supabase → Connect)
+#   BACKUP_PASSPHRASE  phrase de chiffrement (20 caractères min.), à conserver
+#                      aussi HORS de GitHub : sans elle, aucune restauration.
+# Voir docs/SAUVEGARDE.md.
+
+on:
+  schedule:
+    - cron: "17 2 * * *"   # 02h17 UTC chaque nuit
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sauvegarde-base
+  cancel-in-progress: false
+
+jobs:
+  sauvegarde:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Vérifier la configuration
+        id: config
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ] || [ -z "$BACKUP_PASSPHRASE" ]; then
+            echo "::warning::Sauvegarde non configurée : secrets SUPABASE_DB_URL et BACKUP_PASSPHRASE absents (voir docs/SAUVEGARDE.md). Aucune sauvegarde effectuée."
+            echo "pret=non" >> "$GITHUB_OUTPUT"
+          else
+            echo "pret=oui" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.config.outputs.pret == 'oui'
+
+      - name: Installer le client PostgreSQL 17
+        if: steps.config.outputs.pret == 'oui'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-common gnupg
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y -qq postgresql-client-17
+          echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
+
+      - name: Sauvegarder, chiffrer et enregistrer
+        if: steps.config.outputs.pret == 'oui'
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+          SAUVEGARDE_TYPE: ${{ github.event_name == 'schedule' && 'quotidienne' || 'manuelle' }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          DOSSIER_SORTIE: sauvegardes
+        run: |
+          pg_dump --version
+          bash scripts/sauvegarde.sh
+
+      - name: Conserver le fichier chiffré (30 jours)
+        if: steps.config.outputs.pret == 'oui'
+        uses: actions/upload-artifact@v4
+        with:
+          name: dhb-sauvegarde-${{ github.run_id }}
+          path: sauvegardes/*.tar.gpg
+          retention-days: 30
+          if-no-files-found: error
+          compression-level: 0

@@ -45,11 +45,12 @@ const PrixPage = lazy(() => import("./pages/contenu/prix").then((m) => ({ defaul
 const UtilisateursPage = lazy(() => import("./pages/systeme/utilisateurs").then((m) => ({ default: m.UtilisateursPage })));
 const ParametresPage = lazy(() => import("./pages/systeme/parametres").then((m) => ({ default: m.ParametresPage })));
 const SecuritePage = lazy(() => import("./pages/systeme/securite").then((m) => ({ default: m.SecuritePage })));
+const SauvegardesPage = lazy(() => import("./pages/systeme/sauvegardes").then((m) => ({ default: m.SauvegardesPage })));
 const JournalPage = lazy(() => import("./pages/systeme/journal").then((m) => ({ default: m.JournalPage })));
 
 const RESOURCES = [
   "dashboard", "leads", "clients", "clients_vue", "devis", "prestations", "factures", "factures_vue",
-  "paiements", "abonnements", "tickets", "notes", "activites", "profiles", "settings", "entreprise",
+  "paiements", "abonnements", "tickets", "notes", "activites", "profiles", "settings", "entreprise", "sauvegardes",
 ].map((name) => ({ name, list: name === "dashboard" ? "/" : undefined }));
 
 export default function App() {
@@ -103,6 +104,7 @@ export default function App() {
               <Route path="/systeme/utilisateurs" element={<UtilisateursPage />} />
               <Route path="/systeme/parametres" element={<ParametresPage />} />
               <Route path="/systeme/securite" element={<SecuritePage />} />
+              <Route path="/systeme/sauvegardes" element={<SauvegardesPage />} />
               <Route path="/systeme/journal" element={<JournalPage />} />
               <Route path="*" element={<NotFound />} />
             </Route>
