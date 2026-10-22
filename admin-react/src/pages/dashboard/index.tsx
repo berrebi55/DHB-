@@ -14,8 +14,9 @@ import dayjs from "dayjs";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { EmptyState, Kpi, PageHeader, Panel } from "../../components/ui";
 import { ActivityFeed } from "../../components/activity/ActivityFeed";
-import { eur, eur0, num, variation } from "../../lib/format";
-import { kpis, serieMensuelle, taches, useDonnees } from "../../lib/metrics";
+import { eur, eur0, num, pct, variation } from "../../lib/format";
+import { blocsTableau, kpis, serieMensuelle, taches, useDonnees, valeurTaux, type Taux } from "../../lib/metrics";
+import { label } from "../../lib/statuts";
 import { useIdentite } from "../../lib/hooks";
 import { appelerFonction } from "../../lib/functions";
 import { COULEURS } from "../../theme";
@@ -43,6 +44,38 @@ export function TooltipEur({ active, payload, label }: any) {
   );
 }
 
+const tauxTxt = (t: Taux) => { const v = valeurTaux(t); return v == null ? "—" : `${Math.round(v)} %`; };
+
+interface LigneBloc { l: string; v: string; sous?: string; delta?: number | null; to: string }
+
+/** Bloc d'indicateurs : chaque ligne ouvre la liste ou l'analyse correspondante. */
+function Bloc(props: { titre: string; hint?: string; lignes: LigneBloc[]; loading?: boolean; vide?: string }) {
+  const navigate = useNavigate();
+  return (
+    <Panel title={props.titre} hint={props.hint} flush>
+      {props.loading ? (
+        <div style={{ padding: 18 }}><div className="skel" style={{ height: 120 }} /></div>
+      ) : props.vide ? (
+        <p className="faint" style={{ padding: "16px 18px", margin: 0 }}>{props.vide}</p>
+      ) : (
+        <ul className="bloc-lignes">
+          {props.lignes.map((x) => (
+            <li key={x.l}>
+              <button type="button" className="bloc-ligne" onClick={() => navigate(x.to)}>
+                <span className="l">{x.l}{x.sous && <span className="s">{x.sous}</span>}</span>
+                <span className="v tabular">
+                  {x.v}
+                  {x.delta != null && <span className={`delta ${x.delta > 0 ? "up" : x.delta < 0 ? "down" : "flat"}`} title="vs 30 jours précédents">{pct(x.delta, 0)}</span>}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Panel>
+  );
+}
+
 export function DashboardPage() {
   const navigate = useNavigate();
   const { message } = App.useApp();
@@ -52,6 +85,7 @@ export function DashboardPage() {
 
   const k = useMemo(() => (data ? kpis(data) : null), [data]);
   const todo = useMemo(() => (data ? taches(data) : []), [data]);
+  const b = useMemo(() => (data ? blocsTableau(data) : null), [data]);
   const serie = useMemo(() => (data ? serieMensuelle(data.factures) : []), [data]);
   const aDuCA = serie.some((s) => s.encaisse > 0);
 
@@ -142,22 +176,38 @@ export function DashboardPage() {
         </Panel>
       </div>
 
-      <div className="panel" style={{ marginBottom: 20 }}>
-        <div className="mini-stats">
-          {[
-            { v: k ? num(k.clientsActifs) : "—", l: "Clients actifs", to: "/clients?statut=client" },
-            { v: k ? num(k.prospects30) : "—", l: "Prospects sur 30 jours", to: "/leads?statut=toutes" },
-            { v: k ? eur0(k.devisAttenteMontant) : "—", l: k ? `${k.devisAttenteNb} devis en attente` : "Devis en attente", to: "/devis?statut=envoye" },
-            { v: k ? num(k.abosActifs) : "—", l: "Abonnements actifs", to: "/abonnements" },
-            { v: k ? num(k.ticketsOuverts) : "—", l: k?.ticketsUrgents ? `Tickets ouverts, dont ${k.ticketsUrgents} urgent${k.ticketsUrgents > 1 ? "s" : ""}` : "Tickets ouverts", to: "/tickets" },
-            { v: k ? eur0(k.enRetardMontant) : "—", l: "En retard de paiement", to: "/factures?etat=en_retard" },
-          ].map((s) => (
-            <button type="button" key={s.to} className="mini-stat" onClick={() => navigate(s.to)}>
-              <div className="v tabular">{s.v}</div>
-              <div className="l">{s.l}</div>
-            </button>
-          ))}
-        </div>
+      <div className="blocs-tableau" style={{ marginBottom: 20 }}>
+        <Bloc titre="Commercial" hint="30 derniers jours (taux : 90 jours)" loading={loading} lignes={b ? [
+          { l: "Demandes reçues", v: num(b.commercial.demandes30), delta: variation(b.commercial.demandes30, b.commercial.demandes30Prec), to: "/leads?statut=toutes" },
+          { l: "Taux de transformation", v: tauxTxt(b.commercial.transformation90), sous: `${b.commercial.transformation90.n} gagnée(s) / ${b.commercial.transformation90.d}`, to: "/pilotage/commercial" },
+          { l: "Devis acceptés", v: tauxTxt(b.commercial.acceptation90), sous: `${b.commercial.acceptation90.n} / ${b.commercial.acceptation90.d} envoyé(s)`, to: "/devis?statut=accepte" },
+          { l: "Devis en attente", v: eur0(b.commercial.devisAttenteMontant), sous: `${b.commercial.devisAttenteNb} devis`, to: "/devis?statut=envoye" },
+          { l: "Devis à relancer", v: num(b.commercial.devisARelancer), to: "/devis?statut=envoye&relance=due" },
+          { l: "Relances de prospects dues", v: num(b.commercial.relancesDues), to: "/leads?relance=due" },
+        ] : []} />
+        <Bloc titre="Clients" loading={loading} lignes={b ? [
+          { l: "Clients actifs", v: num(b.clients.actifs), to: "/clients?statut=client" },
+          { l: "Prospects", v: num(b.clients.prospects), to: "/clients?statut=prospect" },
+          { l: "Nouvelles fiches (30 j)", v: num(b.clients.nouveaux30), to: "/clients" },
+          { l: "Clients inactifs", v: num(b.clients.inactifs), to: "/clients?statut=inactif" },
+          { l: "Tickets ouverts", v: num(b.clients.ticketsOuverts), sous: b.clients.ticketsUrgents ? `dont ${b.clients.ticketsUrgents} urgent(s)` : undefined, to: "/tickets" },
+        ] : []} />
+        <Bloc titre="Finance" hint="Panier et délai : 12 derniers mois" loading={loading} lignes={b ? [
+          { l: `Facturé en ${moisNom}`, v: eur0(b.finance.factureMois), sous: `encaissé : ${eur0(b.finance.encaisseMois)}`, to: "/pilotage/chiffre-affaires" },
+          { l: "À encaisser", v: eur0(b.finance.aEncaisser), to: "/factures?statut=envoyee" },
+          { l: "En retard de paiement", v: eur0(b.finance.retardMontant), sous: `${b.finance.retardNb} facture(s)`, to: "/factures?etat=en_retard" },
+          { l: "Panier moyen", v: b.finance.panierMoyen == null ? "—" : eur0(b.finance.panierMoyen), sous: b.finance.panierMoyen == null ? "aucune facture payée" : "par facture payée", to: "/factures?statut=payee" },
+          { l: "Délai moyen de paiement", v: b.finance.delaiPaiementMoyen == null ? "—" : `${Math.round(b.finance.delaiPaiementMoyen)} j`, to: "/factures?statut=payee" },
+          { l: "Abonnements à facturer", v: num(b.finance.aboAFacturer), to: "/abonnements?alerte=facture" },
+        ] : []} />
+        <Bloc titre="Acquisition" hint="Origine des demandes, 30 derniers jours" loading={loading}
+          vide={b && b.acquisition.total30 === 0 ? "Aucune demande ces 30 derniers jours." : undefined}
+          lignes={b ? b.acquisition.origines.map((o) => ({
+            l: o.source ? label("source", o.source) : "Non renseignée",
+            v: num(o.nombre),
+            sous: `${Math.round((o.nombre / Math.max(b.acquisition.total30, 1)) * 100)} %`,
+            to: `/leads?statut=toutes&source=${o.source ?? "inconnue"}`,
+          })) : []} />
       </div>
 
       <Panel title="Chiffre d'affaires — 12 derniers mois" hint="Encaissé (factures payées) et facturé (envoyées ou payées), en euros."

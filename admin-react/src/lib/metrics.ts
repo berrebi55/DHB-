@@ -168,3 +168,79 @@ export function taches(d: Donnees): Tache[] {
   if (questions.length) list.push({ cle: "questions", nombre: questions.length, titre: `${plur(questions.length, "question")} reçue${questions.length > 1 ? "s" : ""} sans réponse`, detail: "Depuis les sites", to: "/support/questions?statut=nouveau", ton: "primary" });
   return list;
 }
+
+// ---------------------------------------------------------------------------
+// Blocs du tableau de bord (Commercial, Clients, Finance, Acquisition).
+// Uniquement des données enregistrées ; un taux sans dénominateur reste null (« — »).
+// ---------------------------------------------------------------------------
+export interface Taux { n: number; d: number }
+export const valeurTaux = (t: Taux) => (t.d > 0 ? (t.n / t.d) * 100 : null);
+
+export function blocsTableau(d: Donnees) {
+  const now = dayjs();
+  const fin = now.add(1, "day");
+  const j30 = now.subtract(30, "day");
+  const j60 = now.subtract(60, "day");
+  const j90 = now.subtract(90, "day");
+  const mois = now.startOf("month");
+  const an = now.subtract(12, "month");
+
+  // Commercial
+  const leadsCom = d.leads.filter((l) => l.type !== "question");
+  const recus = (from: Dayjs, to: Dayjs) => leadsCom.filter((l) => dans(dayjs(l.created_at), from, to));
+  const leads90 = recus(j90, fin);
+  const devis90 = d.devis.filter((x) => dans(dayjs(x.date_devis), j90, fin));
+  const devisAttente = d.devis.filter((x) => x.statut === "envoye" && !x.signed_at);
+  const commercial = {
+    demandes30: recus(j30, fin).length,
+    demandes30Prec: recus(j60, j30).length,
+    transformation90: { n: leads90.filter((l) => l.status === "gagne").length, d: leads90.length } as Taux,
+    acceptation90: {
+      n: devis90.filter((x) => x.statut === "accepte").length,
+      d: devis90.filter((x) => ["envoye", "accepte", "refuse", "expire"].includes(x.statut)).length,
+    } as Taux,
+    devisAttenteNb: devisAttente.length,
+    devisAttenteMontant: devisAttente.reduce((s, x) => s + x.total_ttc, 0),
+    devisARelancer: d.devis.filter(devisARelancer).length,
+    relancesDues: d.leads.filter(leadRelanceDue).length,
+  };
+
+  // Clients
+  const vivants = d.clients.filter((c) => !c.archived_at);
+  const ouverts = d.tickets.filter((t) => ["ouvert", "en_cours"].includes(t.status));
+  const clients = {
+    actifs: vivants.filter((c) => c.statut === "client").length,
+    prospects: vivants.filter((c) => c.statut === "prospect").length,
+    inactifs: vivants.filter((c) => c.statut === "inactif").length,
+    nouveaux30: vivants.filter((c) => dans(dayjs(c.created_at), j30, fin)).length,
+    ticketsOuverts: ouverts.length,
+    ticketsUrgents: ouverts.filter((t) => t.priorite === "urgente").length,
+  };
+
+  // Finance (12 derniers mois pour le panier et le délai de paiement)
+  const payees12 = d.factures.filter((f) => f.status === "payee" && dans(dateEncaissement(f), an, fin));
+  const delais = payees12.filter((f) => f.paid_at).map((f) => Math.max(0, dayjs(f.paid_at!).diff(dayjs(f.date_facture), "day")));
+  const impayees = d.factures.filter((f) => f.status === "envoyee");
+  const retard = impayees.filter((f) => f.en_retard);
+  const finance = {
+    factureMois: caFacture(d.factures, mois, fin),
+    encaisseMois: caEncaisse(d.factures, mois, fin),
+    aEncaisser: impayees.reduce((s, f) => s + f.reste_a_payer, 0),
+    retardNb: retard.length,
+    retardMontant: retard.reduce((s, f) => s + f.reste_a_payer, 0),
+    panierMoyen: payees12.length ? payees12.reduce((s, f) => s + f.total_ttc, 0) / payees12.length : null,
+    delaiPaiementMoyen: delais.length ? delais.reduce((s, x) => s + x, 0) / delais.length : null,
+    aboAFacturer: d.abonnements.filter(aboFactureADue).length,
+  };
+
+  // Acquisition : origine des demandes des 30 derniers jours (lot 4).
+  const parOrigine = new Map<string | null, number>();
+  recus(j30, fin).forEach((l) => parOrigine.set(l.source ?? null, (parOrigine.get(l.source ?? null) ?? 0) + 1));
+  const acquisition = {
+    total30: commercial.demandes30,
+    origines: [...parOrigine.entries()].map(([source, nombre]) => ({ source, nombre })).sort((a, b) => b.nombre - a.nombre),
+  };
+
+  return { commercial, clients, finance, acquisition };
+}
+export type BlocsTableau = ReturnType<typeof blocsTableau>;
