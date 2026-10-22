@@ -51,7 +51,8 @@ PDF générés côté serveur, stockage de documents, webhook Stripe (paiements 
 ### 2.4 Dupliqué / inutile
 
 - ✅ supprimé au lot 0 : ancienne admin `admin/`, `schema.sql`, `settings.sql`.
-- Restant : code d'envoi d'email réparti dans 4 fonctions (à centraliser au lot Communication) ; règles de relance codées en dur dans `send-reminders` (à migrer au lot Automatisations) ; UTM concaténés dans `source_url` (lot CRM).
+- ✅ centralisé au lot 8 : code d'envoi d'email (un seul module `_shared/email.ts`).
+- Restant : règles de relance codées en dur dans `send-reminders` (à migrer au lot Automatisations) ; UTM concaténés dans `source_url` (lot CRM).
 
 ---
 
@@ -154,7 +155,7 @@ Ordre adapté à l'audit : la **sécurité critique** (C1, C2) et la **sauvegard
 | **5** ✅ | **Tableau de bord commercial** : blocs Commercial, Clients, Finance (données existantes) ; bloc Acquisition = sources des demandes (lot 4), visiteurs ajoutés au lot 10 | — | pilotage, cache | — |
 | **6** ✅ | **Documents** : `render-pdf` (devis/facture), bucket Storage privé, table `documents`, téléchargement depuis les fiches | I9 | devis, factures, envoi email | — |
 | **7** ✅ | **Paiements Stripe** : `stripe-webhook` → paiement + facture payée + abonnement démarré | I8 | paiements, factures, abonnements | Webhook + secret `whsec_…` |
-| **8** | **Communication** : `email-send` unique et journalisé, historique, modèles à variables, envoi manuel depuis client/demande/devis/facture/ticket | — | envois existants (devis, facture, relances) | Resend (domaine à vérifier ; en attendant : envoi vers sa propre adresse) |
+| **8** ✅ | **Communication** : `email-send` unique et journalisé, historique, modèles à variables, envoi manuel depuis client/demande/devis/facture/ticket | — | envois existants (devis, facture, relances) | Resend (domaine à vérifier ; en attendant : envoi vers sa propre adresse) |
 | **9** | **Automatisations** : `evenements` + `worker`, règles SI → ALORS (bienvenue, relance devis J+5, rappel facture J+7, ticket résolu), migration de `send-reminders` | — | lots 6 à 8 | Planification (cron) |
 | **10** | **Intégrations + Google Analytics** : page Système → Intégrations, connexion Google OAuth, dictionnaire d'événements, conversions serveur, copie quotidienne des chiffres, Pilotage → Acquisition | — | consentement, formulaires, sites | Projet Google Cloud, GA4, secret Measurement Protocol |
 | **11** | **Google Drive** : dossier client + 8 sous-dossiers, copie des PDF, statut et reprise | — | clients, documents | même connexion Google |
@@ -436,6 +437,42 @@ Ordre adapté à l'audit : la **sécurité critique** (C1, C2) et la **sauvegard
 2. `supabase functions deploy stripe-webhook --no-verify-jwt` et `supabase functions deploy generate-recurring-invoices --no-verify-jwt`.
 3. Stripe → Webhooks → endpoint + 5 événements (`supabase/STRIPE-SETUP.md` §5) ; secret `STRIPE_WEBHOOK_SECRET`.
 4. Test en **mode test Stripe** (carte 4242…) : une intervention puis un abonnement ; vérifier Factures, Paiements, Abonnements ; puis « Resend » d'un événement dans Stripe → aucun doublon.
+
+### Lot 8 — Communication ✅ VALIDÉ (environnement de test)
+
+**Modifié**
+- **Un seul module d'envoi** (`supabase/functions/_shared/email.ts`) pour **toutes** les fonctions : envoi Resend, pièce jointe, **historique** de chaque envoi (réussi ou non) dans la table `emails`. L'ancien envoi dispersé (`envoyerEmail` dans `securite.ts`, utilisé par 4 fonctions) est supprimé : `send-devis`, `send-invoice`, `send-reminders`, `notify-new-lead` passent toutes par le module (code dupliqué du §2.4 résolu).
+- **Mode test sans domaine vérifié** : secret `EMAIL_REDIRECTION` = votre adresse → tous les emails y partent avec « [TEST → destinataire prévu] » dans le sujet ; l'historique garde les deux adresses ; l'aperçu le signale.
+- **Email depuis les fiches** (nouvelle Edge Function `email-send`) : client, demande, devis, facture, ticket. Le destinataire est **toujours l'email enregistré sur la fiche** (jamais choisi par l'utilisateur) ; texte échappé ; aperçu avant envoi ; PDF joint pour un devis ou une facture émise (archivé à cette occasion, règles du lot 6).
+- **Modèles à variables** (table `email_modeles`, modifiables par un administrateur) : `{{contact_nom}}`, `{{client_nom}}`, `{{societe}}`, `{{signature}}`, `{{date_du_jour}}`, `{{devis_…}}`, `{{facture_…}}`, `{{ticket_sujet}}`, remplies **uniquement** avec les données enregistrées ; une variable inconnue ou **vide** bloque l'envoi et le back-office dit laquelle compléter. 5 modèles de départ neutres (message libre, suite à une demande, relance de devis, rappel de facture, ticket résolu), sans information inventée.
+- **PDF joint automatiquement** : `send-devis` joint le PDF du devis ; `send-invoice` joint le PDF de la facture et, pour un brouillon envoyé, **archive exactement le PDF envoyé** (complète le risque noté au lot 6) ; un renvoi joint le PDF archivé.
+- **Back-office** : « Écrire un email » sur les 5 types de fiche (modèle proposé selon le contexte : relance de devis, rappel de facture en retard, ticket résolu) ; menu **Communication → Emails envoyés** (filtres, détail, erreur expliquée, lien vers la fiche) et **Modèles d'emails** ; fil chronologique du client enrichi des emails (envoyés / non partis).
+- Base : un client à qui un email a été envoyé n'est plus supprimable (historique, lot 4).
+
+**Fichiers**
+`supabase/full-setup.sql` (section 20, protection client) · `supabase/tests/lot8-communication.sql` (nouveau) · `supabase/functions/_shared/email.ts`, `modeles.ts`, `documents.ts` (nouveaux) · `_shared/securite.ts` · `email-send/index.ts` (nouveau) · `render-pdf`, `send-devis`, `send-invoice`, `send-reminders`, `notify-new-lead` · `admin-react/README.md` · `admin-react/src/components/communication/EmailDrawer.tsx` (nouveau) · `src/pages/communication/index.tsx` (nouveau) · `src/components/activity/ClientTimeline.tsx` · `src/components/layout/nav.tsx` · `src/App.tsx` · `src/lib/functions.ts` · fiches client, demande, devis, facture, ticket.
+
+**Tests**
+- `full-setup.sql` rejoué 4 fois : 0 erreur.
+- **SQL `lot8-communication.sql` : 15 / 15** — historique lisible par l'équipe seulement, **non modifiable / non effaçable / non falsifiable** depuis l'API (même admin), écrit par le serveur, origine contrôlée ; modèles lus par l'équipe, modifiés par l'admin seul, clé contrôlée ; client avec email → suppression refusée.
+- **Fonctions exécutées avec Deno (faux Supabase + faux Resend) : 30 / 30** — `email-send` : 401 / 403 / 400 / 422 (fiche sans email), **adresse fournie par l'appelant ignorée**, aperçu (variables remplies, rien envoyé), **variables inconnues ou vides → 422 avec la liste**, texte échappé (`<script>`), historique complet (origine, modèle, auteur, fiche, identifiant Resend), PDF joint et archivé, brouillon refusé, ticket sans email → email du client, **Resend en panne → 502 et échec historisé**, **redirection de test**, sans clé → 503 ; `send-invoice` : PDF joint, facture envoyée, **archive = PDF envoyé** (sans bandeau brouillon), renvoi = même PDF ; `send-devis` : PDF + lien de signature ; `send-reminders` (planification) : relance + rappel historisés ; `notify-new-lead` : alerte historisée, mauvais secret refusé. `render-pdf` après refactoring : 23 / 23. `deno check` des 12 fonctions : OK.
+- **Navigateur : 59 / 59** (ordinateur et mobile) — tiroir (destinataire non modifiable, modèle, **modèles d'autres fiches non proposés**, insertion de variable, aperçu avec avertissement mode test, envoi), facture (PDF, variables manquantes, envoi non configuré), devis / demande / ticket, Emails envoyés (liste, détail d'un échec), Modèles (édition), fil client, menu ; axe-core sans défaut, 0 débordement, 0 erreur JS.
+- Non-régression : SQL lots 1 / 2 / 4 / 6 / 7 (73 / 9 / 30 / 16 / 33), navigateur lots 4 / 5 / 6 / 7 (40 / 49 / 31 / 10), audit d'accessibilité des 52 vues (inchangé), TypeScript 0 erreur, `npm run build` OK.
+
+**Résultat** : ✅ **VALIDÉ** sur l'environnement de test.
+
+**Risques / points à surveiller**
+- **Resend jamais appelé pour de vrai** (faux service de test) : premier envoi réel à vérifier, d'abord en mode test (`EMAIL_REDIRECTION`).
+- Tant que le domaine n'est pas vérifié chez Resend, **aucun email ne peut partir vers un client** : garder `EMAIL_REDIRECTION` jusque-là.
+- Les relances automatiques gardent leurs textes actuels ; elles deviendront configurables au lot 9 (Automatisations).
+- L'historique conserve le contenu des emails : à prendre en compte dans la durée de conservation RGPD (à fixer par le propriétaire).
+
+**À faire plus tard (mise en production)**
+1. SQL Editor → exécuter `supabase/full-setup.sql`.
+2. Déployer `email-send` et redéployer `render-pdf`, `send-devis`, `send-invoice`, `send-reminders`, `notify-new-lead` (module d'envoi commun modifié).
+3. Secrets : `RESEND_API_KEY`, `NOTIFY_FROM`, et **`EMAIL_REDIRECTION` = votre adresse** tant que le domaine n'est pas vérifié.
+4. Test : Écrire un email depuis une fiche client (aperçu puis envoi) → reçu sur votre adresse avec « [TEST → …] » ; vérifier Communication → Emails envoyés.
+5. Domaine vérifié chez Resend : mettre `NOTIFY_FROM` sur ce domaine et **supprimer** `EMAIL_REDIRECTION`.
 
 ### Problèmes connus restants
 Voir §3 : I11, I12, A1–A3, A6, A7 (C1, C2, I1, I2, I3, I4 traités au lot 1 ; C3 au lot 2, actif après configuration ; I6, I7, A4, A5 au lot 3 ; I5, I10 au lot 4 ; I9 au lot 6 ; I8 au lot 7). Points mineurs relevés au lot 3 : onglets Ant Design et colonnes « Actions » sans texte.

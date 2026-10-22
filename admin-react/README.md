@@ -56,7 +56,7 @@ l'utilisateur connecté ou le secret de cron, d'où `--no-verify-jwt` :
 
 ```bash
 for f in get-devis-public sign-devis send-devis send-invoice invite-user \
-         generate-recurring-invoices send-reminders notify-new-lead create-checkout          render-pdf stripe-webhook; do
+         generate-recurring-invoices send-reminders notify-new-lead create-checkout          render-pdf stripe-webhook email-send; do
   supabase functions deploy $f --no-verify-jwt
 done
 ```
@@ -73,7 +73,8 @@ mettre dans le code ou dans `.env` du front.**
 | `CRON_SECRET` | mot de passe des appels planifiés (en-tête `x-cron-secret`) |
 | `SIGN_BASE` | URL de la page publique de signature (`…/devis.html`) |
 | `ADMIN_URL` | URL du back-office (liens dans les emails) |
-| `RESEND_API_KEY`, `NOTIFY_FROM`, `NOTIFY_TO` | envoi des emails (sans clé : simulation) |
+| `RESEND_API_KEY`, `NOTIFY_FROM`, `NOTIFY_TO` | envoi des emails (sans clé : aucun email ne part, l'échec est noté dans Communication → Emails envoyés) |
+| `EMAIL_REDIRECTION` | **mode test** : tant que le domaine n'est pas vérifié chez Resend, mettez ici **votre** adresse : tous les emails y partent, avec « [TEST → destinataire prévu] » dans le sujet. À supprimer une fois le domaine vérifié. |
 | `WEBHOOK_SECRET` | **obligatoire** pour `notify-new-lead` (sans lui, la fonction refuse tout appel) |
 | `STRIPE_*`, `SITE_URL` | paiement en ligne du site Assistance |
 | `STRIPE_WEBHOOK_SECRET` | secret `whsec_…` du webhook Stripe : enregistre les paiements dans DHB (voir `supabase/STRIPE-SETUP.md` §5) |
