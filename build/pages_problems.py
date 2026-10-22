@@ -2,6 +2,7 @@
 import json
 import problems_data as pd
 import blog_data
+import marque
 from base import (page, breadcrumb, breadcrumb_jsonld, cta_band, contact_form,
                   lead_magnet, faq_jsonld, IC, DOMAIN, SERVICES, PHONE_DISPLAY, PHONE_LINK, root)
 
@@ -109,8 +110,8 @@ def build():
 {filter_js}
 """
     title = "Pannes informatiques fréquentes : causes et solutions | DHB"
-    desc = ("Base de pannes informatiques fréquentes en entreprise : ordinateur lent, écran bleu, plus d'internet, "
-            "imprimante hors ligne, messagerie en panne… Causes, vérifications et solutions. DHB, IdF & à distance.")
+    desc = ("Pannes informatiques fréquentes en entreprise : ordinateur lent, écran bleu, plus d'internet, "
+            "imprimante hors ligne… Causes, vérifications et solutions.")
     out["pannes-frequentes/index.html"] = page(1, "pannes-frequentes/", title, desc, body, extra_head=extra_css)
 
     # ---------- PAGES par problème ----------
@@ -134,7 +135,7 @@ def build():
             art_block = f'<li><a href="{r}blog/{a["slug"]}/">{a["title"]}</a></li>'
 
         # autres pannes de la même catégorie
-        others = [x for x in pd.by_category()[p["cat"]] if x["slug"] != p["slug"]][:4]
+        others, meme_cat = marque.fiches_liees(pd.by_category()[p["cat"]], pd.P, p)
         others_html = "".join(
             f'<a href="{r}pannes-frequentes/{o["slug"]}/">{o["q"]}</a>' for o in others
         )
@@ -181,7 +182,7 @@ def build():
 </div></section>
 
 <section class="section section--gris"><div class="wrap">
-  <h2 class="center" style="margin-bottom:30px">Autres {word} de la catégorie « {cat_label} »</h2>
+  <h2 class="center" style="margin-bottom:30px">{f"Autres {word} de la catégorie « {cat_label} »" if meme_cat else "À voir aussi"}</h2>
   <div class="related">{others_html}</div>
 </div></section>
 
@@ -202,10 +203,12 @@ def build():
 """
         if is_dec:
             title = f"{p['q']} | DHB"
-            desc = p["sym"][:158]
+            desc = p["sym"]
         else:
             title = f"{p['q']} — causes et solutions | DHB"
-            desc = (p["sym"][:150] + " Causes, vérifications et solutions. Dépannage DHB sur site en IdF et à distance.")
+            # Symptôme entier (jamais coupé au milieu d'un mot), complété si la place le permet.
+            desc = next((d for d in (p["sym"] + " Causes, vérifications et solutions. Dépannage DHB sur site en IdF et à distance.",
+                                     p["sym"] + " Causes, vérifications et solutions.") if len(d) <= 160), p["sym"])
         out[f"pannes-frequentes/{p['slug']}/index.html"] = page(depth, f"pannes-frequentes/{p['slug']}/", title, desc, body)
 
     return out

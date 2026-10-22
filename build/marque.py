@@ -140,7 +140,8 @@ def balises_partage(site, domaine, titre, description, canonical, og_type="websi
     Page non indexable (404, retour de paiement) : noindex et pas de canonical.
     L'image og.png est produite par build/og/generer_og.mjs (mêmes accroches)."""
     import html as _h
-    t, d = titre_seo(titre), description_seo(description)
+    from titres_courts import TITRES_COURTS  # titres courts proposés au propriétaire (lot 14)
+    t, d = TITRES_COURTS.get(canonical) or titre_seo(titre), description_seo(description)
     e = lambda s: _h.escape(s, quote=True).replace("&#x27;", "'")
     lignes = [f"<title>{e(t)}</title>", f'<meta name="description" content="{e(d)}">']
     if indexable:
@@ -166,6 +167,24 @@ def balises_partage(site, domaine, titre, description, canonical, og_type="websi
         '<meta name="twitter:card" content="summary_large_image">',
     ]
     return "\n".join(lignes)
+
+
+def voisins(liste, element, n=4):
+    """Les n éléments qui suivent `element` dans `liste`, en boucle : chaque fiche
+    d'une catégorie reçoit ainsi des liens de ses voisines (et pas seulement les
+    premières de la liste)."""
+    i = liste.index(element)
+    return [liste[(i + k) % len(liste)] for k in range(1, min(n, len(liste) - 1) + 1)]
+
+
+def fiches_liees(categorie, toutes, element, n=4):
+    """Fiches à proposer en bas de page : les voisines de la même catégorie,
+    complétées si besoin par les voisines toutes catégories confondues.
+    Renvoie (fiches, toutes_de_la_meme_categorie)."""
+    liees = voisins(categorie, element, n)
+    if len(liees) < n:
+        liees += [x for x in voisins(toutes, element, len(toutes)) if x not in liees][:n - len(liees)]
+    return liees, all(x in categorie for x in liees)
 
 
 def fil_ariane(domaine, depth, etapes, page_courante=None):

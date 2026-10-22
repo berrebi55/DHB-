@@ -57,7 +57,7 @@ SERVICE_CONTENT = {
         "h1": "Supervision & monitoring : vos équipements surveillés en continu",
         "lead": "Et si on détectait les pannes avant qu'elles ne vous bloquent ? Notre supervision veille sur vos équipements 24h/24 et déclenche une action dès qu'un signal faible apparaît.",
         "title": "Supervision informatique entreprise — monitoring 24/7 du parc | DHB",
-        "desc": "Service de supervision et monitoring informatique : surveillance 24/7 de vos postes, serveurs et sauvegardes pour détecter les pannes avant qu'elles ne vous bloquent.",
+        "desc": "Supervision et monitoring informatique : surveillance 24/7 de vos postes, serveurs et sauvegardes pour détecter les pannes avant qu'elles ne vous bloquent.",
         "probleme": "La plupart des pannes ne sont pas soudaines : un disque qui se remplit, une sauvegarde qui échoue, une température qui monte, un antivirus qui se désactive… autant de signaux qui passent inaperçus jusqu'à la panne. Sans surveillance, vous ne découvrez le problème que lorsqu'il vous a déjà bloqué.",
         "inclus": [
             "Surveillance continue de vos postes et serveurs (24/7)",

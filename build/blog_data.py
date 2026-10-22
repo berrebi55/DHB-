@@ -31,7 +31,7 @@ ARTICLES = [
         "theme": "A",
         "title": "Mon ordinateur professionnel est très lent : 7 causes et comment y remédier",
         "excerpt": "Un PC de bureau qui rame fait perdre des heures chaque semaine. Voici les 7 causes les plus fréquentes et ce que vous pouvez vérifier vous-même.",
-        "desc": "Ordinateur de bureau trop lent ? Découvrez les 7 causes les plus fréquentes d'un PC professionnel qui rame et les solutions concrètes pour le rendre à nouveau rapide.",
+        "desc": "Ordinateur de bureau trop lent ? Les 7 causes les plus fréquentes d'un PC professionnel qui rame et les solutions concrètes pour le rendre à nouveau rapide.",
         "service": "depannage-assistance-informatique",
         "related": ["plus-dacces-internet-bureau-que-verifier", "ecran-bleu-pc-qui-plante-que-faire", "combien-temps-perd-pme-problemes-informatiques"],
         "body": _p(
@@ -221,7 +221,7 @@ ARTICLES = [
         "theme": "B",
         "title": "J'ai supprimé un fichier important : est-il récupérable ?",
         "excerpt": "Un dossier effacé par erreur, une corbeille vidée trop vite : dans bien des cas, tout n'est pas perdu. Mais chaque minute compte.",
-        "desc": "Fichier important supprimé par erreur ? Découvrez dans quels cas il est récupérable, les gestes qui sauvent et les erreurs qui rendent la récupération impossible.",
+        "desc": "Fichier important supprimé par erreur ? Dans quels cas il est récupérable, les gestes qui sauvent et les erreurs qui rendent la récupération impossible.",
         "service": "sauvegarde-restauration",
         "related": ["comment-sauvegarder-donnees-entreprise", "sauvegarde-locale-externe-cloud-choisir-pme", "ecran-bleu-pc-qui-plante-que-faire"],
         "body": _p(
@@ -588,7 +588,7 @@ ARTICLES = [
         "theme": "E",
         "title": "Infogérance : c'est quoi, concrètement, et pour quelles entreprises ?",
         "excerpt": "Le mot « infogérance » impressionne, mais le concept est simple : confier la gestion de son informatique à un spécialiste. Explications sans jargon.",
-        "desc": "Infogérance : définition claire et sans jargon. Ce que fait concrètement un prestataire d'infogérance, pour quelles entreprises, et ce que ça change au quotidien.",
+        "desc": "Infogérance : définition claire et sans jargon. Ce que fait un prestataire d'infogérance, pour quelles entreprises, et ce que ça change au quotidien.",
         "service": "infogerance-globale",
         "related": ["informaticien-interne-ou-prestataire-externe", "comment-choisir-prestataire-informatique-checklist", "combien-temps-perd-pme-problemes-informatiques"],
         "body": _p(

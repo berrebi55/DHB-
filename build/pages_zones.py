@@ -238,6 +238,16 @@ def build():
         "DHB intervient sur site partout en Île-de-France (Paris, 92, 93, 94, 78, 95) et assure le support informatique à distance dans toute la France.",
         body)
 
+    def autres_zones(slug, v, r):
+        """Liens vers les autres villes : d'abord le même département, puis les autres (ordre de la liste)."""
+        villes = [(s_, VILLE_CONTENT[s_]) for s_, _ in VILLES if s_ != slug and not VILLE_CONTENT[s_].get("distance")]
+        villes.sort(key=lambda x: x[1]["dep"] != v["dep"])
+        num = lambda dep: dep[dep.rfind("("):] if "(" in dep else ""   # « Seine-Saint-Denis (93) » → « (93) »
+        liens = [f'<a href="{r}zones/{s_}/">{w["ville"]} {num(w["dep"])}</a>' for s_, w in villes[:6]]
+        if not v.get("distance"):
+            liens.append(f'<a href="{r}zones/support-informatique-a-distance-france/">Support à distance (toute la France)</a>')
+        return "".join(liens)
+
     # Pages ville
     for slug, name in VILLES:
         v = VILLE_CONTENT[slug]
@@ -287,6 +297,11 @@ def build():
 </div></section>
 
 {faq_block(faq, "Questions fréquentes — " + (v['ville'] if not distance else 'support à distance'))}
+
+<section class="section section--tight"><div class="wrap">
+  <h2 class="center" style="margin-bottom:24px">Autres zones d'intervention</h2>
+  <div class="related">{autres_zones(slug, v, r)}</div>
+</div></section>
 
 {cta_band(depth, title=("Besoin d'aide informatique à " + v['ville'] + " ?") if not distance else "Besoin d'un support informatique à distance ?")}
 

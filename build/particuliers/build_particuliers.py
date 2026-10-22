@@ -367,7 +367,7 @@ def aide_page(a):
     label = ad.CATEGORIES[a["cat"]]
     causes = "".join(f"<li>{c}</li>" for c in a["causes"])
     checks = "".join(f"<li>{c}</li>" for c in a["check"])
-    others = [x for x in cats[a["cat"]] if x["slug"] != a["slug"]][:4]
+    others, meme_cat = marque.fiches_liees(cats[a["cat"]], ad.A, a)
     others_html = "".join(f'<a href="{r}aide/{o["slug"]}/">{o["q"]}</a>' for o in others)
     faq = {"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{
         "@type": "Question", "name": a["q"], "acceptedAnswer": {"@type": "Answer",
@@ -391,7 +391,7 @@ def aide_page(a):
   </div>
 </div></section>
 <section class="section section--tint"><div class="wrap">
-  <h2 class="center" style="margin-bottom:30px">Autres aides « {label} »</h2>
+  <h2 class="center" style="margin-bottom:30px">{f"Autres aides « {label} »" if meme_cat else "Autres aides"}</h2>
   <div class="related">{others_html}</div>
 </div></section>
 <section class="section"><div class="wrap"><div class="grid grid-2" style="align-items:center;gap:48px">
