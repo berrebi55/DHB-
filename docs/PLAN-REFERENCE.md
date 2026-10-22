@@ -158,7 +158,7 @@ Ordre adapté à l'audit : la **sécurité critique** (C1, C2) et la **sauvegard
 | **7** ✅ | **Paiements Stripe** : `stripe-webhook` → paiement + facture payée + abonnement démarré | I8 | paiements, factures, abonnements | Webhook + secret `whsec_…` |
 | **8** ✅ | **Communication** : `email-send` unique et journalisé, historique, modèles à variables, envoi manuel depuis client/demande/devis/facture/ticket | — | envois existants (devis, facture, relances) | Resend (domaine à vérifier ; en attendant : envoi vers sa propre adresse) |
 | **9** ✅ | **Automatisations** : `evenements` + `worker`, règles SI → ALORS (bienvenue, relance devis J+5, rappel facture J+7, ticket résolu), migration de `send-reminders` | — | lots 6 à 8 | Planification (cron) |
-| **10** | **Intégrations + Google Analytics** : page Système → Intégrations, connexion Google OAuth, dictionnaire d'événements, conversions serveur, copie quotidienne des chiffres, Pilotage → Acquisition | — | consentement, formulaires, sites | Projet Google Cloud, GA4, secret Measurement Protocol |
+| **10** ✅ | **Intégrations + Google Analytics** : page Système → Intégrations, connexion Google OAuth, dictionnaire d'événements, conversions serveur, copie quotidienne des chiffres, Pilotage → Acquisition | — | consentement, formulaires, sites | Projet Google Cloud, GA4, secret Measurement Protocol |
 | **11** | **Google Drive** : dossier client + 8 sous-dossiers, copie des PDF, statut et reprise | — | clients, documents | même connexion Google |
 | **12** | **Search Console** : synchronisation, Pilotage → SEO | — | — | domaines achetés + propriétés vérifiées |
 | **13** | **SEO technique** : titres/descriptions, `og:image`, 404, fils d'Ariane, `noindex` paiement, polices auto-hébergées | I11, I12, A7 | 170 pages, sitemap, liens, GA | — |
@@ -513,6 +513,39 @@ Ordre adapté à l'audit : la **sécurité critique** (C1, C2) et la **sauvegard
 2. Déployer `worker` et redéployer `send-reminders`.
 3. Planifier le robot toutes les 15 min (`admin-react/README.md`, « dhb-robot ») ; l'ancienne planification `dhb-relances` peut être supprimée.
 4. Système → Automatisations : relire les modèles « Bienvenue » et « Ticket résolu », puis activer ces règles si souhaité.
+
+### Lot 10 — Intégrations et Google Analytics ✅ VALIDÉ (environnement de test)
+
+**Modifié**
+- **Base** : `integrations` (état de chaque intégration ; statut, compte, dernière synchro et erreur **écrits par le serveur seul**, réglages non secrets — propriété et identifiant de mesure GA4, contrôlés — par l'administrateur ; aucun secret accepté dans les réglages) ; `integration_credentials` (jeton Google, **illisible depuis l'API**, même pour un administrateur) ; `integration_logs` (journal) ; `analytics_quotidien` (copie des chiffres GA4, lecture seule) ; événement `lead_gagne` ajouté à la file du lot 9.
+- **Connexion Google** (`google-oauth`) : lancée par un administrateur ; retour de Google vérifié par un **état signé** (10 min, administrateur toujours valide) ; accès durable exigé ; autorisations GA4 (lecture), Search Console (lecture), Drive (fichiers créés par DHB) ; déconnexion avec révocation chez Google ; chaque cas d'échec expliqué.
+- **Copie quotidienne GA4** (`google-sync`, planifiable) : sessions, utilisateurs, événements clés par jour et par canal sur 30 jours, sans doublon ; accès expiré ou propriété inaccessible → erreur lisible, chiffres déjà copiés conservés.
+- **Conversion côté serveur** : une demande passée à « Gagné » envoie `close_convert_lead` à GA4 (Measurement Protocol) par le robot, **seulement** si le visiteur avait accepté la mesure d'audience ; réessayée en cas de panne ; jamais de double comptage de `generate_lead`.
+- **`integration-test`** : indique quels secrets sont définis (**jamais leur valeur**) et teste l'accès Google.
+- **Back-office** : **Système → Intégrations** (Google, GA4, emails et mode test, Stripe, planification, sauvegardes, journal) ; **Pilotage → Acquisition** (sessions, visiteurs, demandes, demandes pour 100 sessions, sessions par jour, canaux, origines) ; bloc *Acquisition* du tableau de bord enrichi des visites. Sans GA4 : explication et lien, **aucun chiffre inventé**.
+- **Documentation** : `docs/GOOGLE.md` (projet Google Cloud, application OAuth **en production** pour éviter l'expiration à 7 jours, GA4, planification, **dictionnaire des événements** des sites et du serveur, dépannage).
+
+**Fichiers**
+`supabase/full-setup.sql` (section 22 + événement `lead_gagne`) · `supabase/tests/lot10-integrations.sql` (nouveau) · `supabase/functions/_shared/google.ts` (nouveau) · `_shared/automatisations.ts` · `google-oauth`, `google-sync`, `integration-test` (nouvelles) · `admin-react/src/pages/systeme/integrations.tsx` (nouveau) · `src/pages/pilotage/acquisition.tsx` (nouveau) · `src/pages/dashboard/index.tsx` · `src/components/layout/nav.tsx` · `src/App.tsx` · `src/styles.css` · `admin-react/README.md` · `docs/GOOGLE.md` (nouveau).
+
+**Tests**
+- `full-setup.sql` rejoué 4 fois : 0 erreur.
+- **SQL `lot10-integrations.sql` : 20 / 20** (rejouable) — jeton Google illisible et non modifiable par l'admin et l'anonyme, lisible par le serveur ; état visible de l'équipe seule ; réglages : collaborateur sans effet, admin OK, propriété / identifiant de mesure mal formés et **secret glissé dans les réglages refusés**, statut / compte / erreur **non falsifiables** par l'admin ; journal et chiffres non modifiables ; événements `lead_cree` puis `lead_gagne` (rien pour une simple lecture).
+- **Bout en bout** (vraie base + PostgREST + fonctions exécutées par Deno + faux Google reproduisant les réponses documentées) : **26 / 26** — démarrer (401 / 403 collaborateur / adresse Google complète avec accès durable et autorisations) ; retour avec état **falsifié, expiré, ou signé pour un collaborateur** → refusé ; annulation ; accès non durable ; **jeton non enregistrable → erreur signalée, pas « connecté »** (défaut trouvé et corrigé pendant le lot) ; connexion réussie (jeton côté serveur, compte, statut) ; état des secrets **sans valeur** ; test d'accès ; copie : propriété manquante, 3 lignes, 2ᵉ copie sans doublon, propriété refusée (erreur claire, chiffres conservés) ; conversion envoyée (bon identifiant, bon client, `lead_source`), pas d'envoi sans consentement, GA4 injoignable → réessai ; accès retiré → « reconnectez » ; déconnexion (révocation, jeton supprimé).
+- Robot et emails rejoués : 20 / 20 et 30 / 30. `deno check` des 16 fonctions : OK.
+- **Navigateur : 37 / 37** (ordinateur et mobile) — cartes et états, secrets sans valeur, copie désactivée sans Google, réglages GA4 (refus d'un identifiant invalide avant envoi, enregistrement), redirection vers Google, retours « connecté » / erreur expliquée, copie, test, déconnexion avec confirmation, Acquisition avec et sans données (100 sessions, 90 visiteurs, 4,0 %), tableau de bord avec et sans visites, collaborateur en lecture ; axe-core sans défaut, 0 débordement, 0 erreur JS.
+- Non-régression : SQL lots 1 / 2 / 4 / 6 / 7 / 8 / 9, navigateur lots 4 à 9, audit d'accessibilité des 52 vues (inchangé), TypeScript 0 erreur, `npm run build` OK. (Un test du lot 5 dépendait de l'heure d'exécution du jeu de données de test, pas du code : corrigé dans le jeu de test.)
+
+**Résultat** : ✅ **VALIDÉ** sur l'environnement de test.
+
+**Risques / points à surveiller**
+- **Aucun appel réel à Google** : Google a été simulé d'après sa documentation ; la première connexion, la première copie et la première conversion sont à vérifier à la mise en service.
+- Application Google à **publier « en production »** : sinon l'accès expire après 7 jours (DHB le signale).
+- Le jeton Google est dans la base (illisible depuis l'API) et donc **dans la sauvegarde chiffrée** : la phrase de chiffrement protège aussi cet accès.
+- Les chiffres GA4 ne couvrent que les visiteurs ayant accepté les cookies (signalé à l'écran).
+- L'identifiant de mesure doit aussi être saisi dans `suivi.js` (sites) : deux endroits à garder identiques.
+
+**À faire plus tard (mise en production)** : suivre `docs/GOOGLE.md` (projet Google Cloud, secrets, déploiement de `google-oauth`, `google-sync`, `integration-test`, `worker` ; connexion ; identifiants GA4 ; `GA_API_SECRET` ; planification `dhb-google` ; événements clés dans GA4) et exécuter `supabase/full-setup.sql`.
 
 ### Problèmes connus restants
 Voir §3 : I11, I12, A1–A3, A6, A7 (C1, C2, I1, I2, I3, I4 traités au lot 1 ; C3 au lot 2, actif après configuration ; I6, I7, A4, A5 au lot 3 ; I5, I10 au lot 4 ; I9 au lot 6 ; I8 au lot 7). Points mineurs relevés au lot 3 : onglets Ant Design et colonnes « Actions » sans texte.
