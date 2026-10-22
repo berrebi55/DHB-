@@ -119,7 +119,7 @@ export function AbonnementsList() {
           )}
           columns={[
             { title: "Client", dataIndex: "client_nom", render: (v: string, r: Abonnement) => <div><div className="cell-main">{r.client_id ? <a onClick={(e) => { e.stopPropagation(); navigate(`/clients/${r.client_id}`); }}>{v}</a> : v}</div><div className="cell-sub">{label("entite", r.entity)}</div></div> },
-            { title: "Formule", dataIndex: "libelle" },
+            { title: "Formule", dataIndex: "libelle", render: (v: string, r: Abonnement) => <>{v}{r.stripe_subscription_id && <div className="cell-sub" title="Prélevé automatiquement par Stripe : une facture payée est créée à chaque paiement reçu.">Paiement en ligne (Stripe)</div>}</> },
             { title: "Mensuel", dataIndex: "montant_mensuel", align: "right" as const, render: (v: number) => <b className="tabular">{eur(v)}</b> },
             { title: "Début", dataIndex: "date_debut", render: (v: string) => dateFR(v) },
             { title: "Renouvellement", dataIndex: "date_renouvellement", render: (v: string | null) => v ? <span style={{ color: dayjs(v).isBefore(dayjs()) ? "var(--danger)" : undefined }}>{dateFR(v)}</span> : <span className="faint">—</span> },
@@ -134,7 +134,7 @@ export function AbonnementsList() {
           ]}
           mobileRender={(r) => (
             <><div className="m-row"><span className="m-title">{r.client_nom}</span><b className="tabular">{eur(r.montant_mensuel)}/mois</b></div>
-              <div className="m-sub">{r.libelle}</div>
+              <div className="m-sub">{r.libelle}{r.stripe_subscription_id ? " · Stripe" : ""}</div>
               <Space size={4} wrap>{alertes(r).map((a) => <Pill key={a.cle} tone={a.ton} dot>{a.txt}</Pill>)}</Space></>
           )}
         />

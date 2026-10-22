@@ -56,7 +56,7 @@ l'utilisateur connecté ou le secret de cron, d'où `--no-verify-jwt` :
 
 ```bash
 for f in get-devis-public sign-devis send-devis send-invoice invite-user \
-         generate-recurring-invoices send-reminders notify-new-lead create-checkout          render-pdf; do
+         generate-recurring-invoices send-reminders notify-new-lead create-checkout          render-pdf stripe-webhook; do
   supabase functions deploy $f --no-verify-jwt
 done
 ```
@@ -76,6 +76,7 @@ mettre dans le code ou dans `.env` du front.**
 | `RESEND_API_KEY`, `NOTIFY_FROM`, `NOTIFY_TO` | envoi des emails (sans clé : simulation) |
 | `WEBHOOK_SECRET` | **obligatoire** pour `notify-new-lead` (sans lui, la fonction refuse tout appel) |
 | `STRIPE_*`, `SITE_URL` | paiement en ligne du site Assistance |
+| `STRIPE_WEBHOOK_SECRET` | secret `whsec_…` du webhook Stripe : enregistre les paiements dans DHB (voir `supabase/STRIPE-SETUP.md` §5) |
 
 Les fonctions **refusent** désormais les appels anonymes (sauf la page publique
 de devis, protégée par son jeton). Envoi de devis/factures : boutons sur les

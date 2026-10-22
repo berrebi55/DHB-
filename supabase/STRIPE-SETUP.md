@@ -34,11 +34,36 @@ Régénérez si besoin et republiez.
 - Carte de test Stripe : `4242 4242 4242 4242`, date future, CVC au hasard.
 - Après paiement → redirection vers `/paiement-reussi/` ; annulation → `/paiement-annule/`.
 
-## 5. (Recommandé) Suivi des abonnements
-Pour enregistrer l'état des paiements/abonnements et gérer les renouvellements,
-ajoutez un **webhook Stripe** vers une fonction `stripe-webhook` (à créer sur le
-même modèle) qui écrit dans une table `abonnements`. À faire lors de la mise en
-production.
+## 5. Enregistrer automatiquement les paiements dans DHB (webhook)
+Sans cette étape, Stripe encaisse mais **rien n'apparaît dans le back-office**.
+Avec elle, chaque paiement crée (ou retrouve, par son email) la fiche client,
+une **facture numérotée déjà payée** et le **paiement « Stripe »** ; un
+abonnement est créé, renouvelé chaque mois (nouvelle facture payée) et passe
+« suspendu » / « résilié » selon Stripe. Un même paiement n'est jamais
+enregistré deux fois.
+
+1. Mettre à jour la base : SQL Editor → exécuter `supabase/full-setup.sql`.
+2. Déployer la fonction :
+   ```bash
+   supabase functions deploy stripe-webhook --no-verify-jwt
+   ```
+3. Stripe → **Developers → Webhooks → Add endpoint** :
+   - URL : `https://<votre-projet>.supabase.co/functions/v1/stripe-webhook`
+   - événements : `checkout.session.completed`,
+     `checkout.session.async_payment_succeeded`, `invoice.paid`,
+     `customer.subscription.updated`, `customer.subscription.deleted`.
+4. Copier le **Signing secret** (`whsec_…`) affiché par Stripe, puis Supabase →
+   Edge Functions → Secrets : `STRIPE_WEBHOOK_SECRET = whsec_…`
+   (`STRIPE_SECRET_KEY`, déjà défini à l'étape 2, permet en plus de reprendre le
+   libellé exact du produit sur la facture).
+5. Tester avec une carte de test : la facture payée apparaît dans Factures,
+   le paiement dans Paiements, l'abonnement dans Abonnements (mention
+   « Paiement en ligne (Stripe) »). En cas de souci : Stripe → Webhooks →
+   l'endpoint → onglet des événements (réponse de DHB, renvoi possible).
+
+> Les abonnements payés par Stripe ne sont **jamais** facturés une seconde fois
+> par la génération mensuelle de DHB : c'est Stripe qui prélève, DHB crée la
+> facture à chaque paiement reçu.
 
 > ⚠️ Les pages de retour `/paiement-reussi/` et `/paiement-annule/` existent déjà
 > sur le site Particuliers. En production, `SITE_URL` doit pointer vers le vrai domaine.

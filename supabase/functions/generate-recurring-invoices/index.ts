@@ -39,6 +39,8 @@ Deno.serve(async (req) => {
     const crees: string[] = [];
     const ignores: { id: string; raison: string }[] = [];
     for (const a of abos ?? []) {
+      // Abonnement payé en ligne : Stripe prélève et la facture est créée à chaque paiement reçu (stripe-webhook).
+      if (a.stripe_subscription_id) { ignores.push({ id: a.id, raison: "preleve_par_stripe" }); continue; }
       const dejaCeMois = a.derniere_facture_le && String(a.derniere_facture_le).slice(0, 7) >= ym;
       if (dejaCeMois) { ignores.push({ id: a.id, raison: "deja_facture_ce_mois" }); continue; }
       // Le bouton « Générer maintenant » d'un abonnement précis ignore le jour de facturation.

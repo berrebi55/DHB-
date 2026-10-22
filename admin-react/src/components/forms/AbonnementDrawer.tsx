@@ -21,6 +21,7 @@ export interface Abonnement {
   derniere_facture_le: string | null;
   statut: string;
   notes: string | null;
+  stripe_subscription_id?: string | null;
 }
 
 const d = (v?: string | null) => (v ? dayjs(v) : null);

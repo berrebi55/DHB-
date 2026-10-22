@@ -13,7 +13,7 @@ import { messageErreurBase } from "./functions";
 export interface F { id: string; numero: string | null; status: string; total_ht: number; total_ttc: number; date_facture: string; date_echeance: string | null; paid_at: string | null; client_id: string | null; client_nom: string | null; entity: string; en_retard: boolean; reste_a_payer: number; abonnement_id: string | null; devis_id: string | null; created_at: string }
 export interface D { id: string; numero: string | null; statut: string; total_ht: number; total_ttc: number; date_devis: string; created_at: string; envoye_at: string | null; signed_at: string | null; client_id: string | null; client_nom: string | null; lead_id: string | null; derniere_relance_le: string | null; entity: string }
 export interface L { id: string; nom: string | null; entreprise: string | null; status: string; type: string; created_at: string; relance_at: string | null; priorite: string; client_id: string | null; entity: string; type_client: string | null; source?: string | null }
-export interface A { id: string; client_nom: string | null; client_id: string | null; libelle: string | null; montant_mensuel: number; statut: string; date_debut: string; date_renouvellement: string | null; derniere_facture_le: string | null; jour_facturation: number | null; entity: string }
+export interface A { id: string; client_nom: string | null; client_id: string | null; libelle: string | null; montant_mensuel: number; statut: string; date_debut: string; date_renouvellement: string | null; derniere_facture_le: string | null; jour_facturation: number | null; entity: string; stripe_subscription_id?: string | null }
 export interface T { id: string; sujet: string; status: string; priorite: string; created_at: string; client_nom: string | null }
 export interface C { id: string; type: string; statut: string; archived_at: string | null; created_at: string; entity: string }
 
@@ -22,20 +22,24 @@ export interface Donnees { factures: F[]; devis: D[]; leads: L[]; abonnements: A
 const MAX = 5000;
 const COLONNES_LEADS = "id, nom, entreprise, status, type, created_at, relance_at, priorite, client_id, entity, type_client";
 
-// L'origine (« source ») n'existe qu'après la mise à jour de la base du lot 4 :
-// si la colonne manque encore, on charge les demandes sans elle.
-async function chargerLeads() {
-  const r = await supabaseClient.from("leads").select(`${COLONNES_LEADS}, source`).limit(MAX);
-  if (r.error && /source/.test(r.error.message ?? "")) return supabaseClient.from("leads").select(COLONNES_LEADS).limit(MAX);
+const COLONNES_ABOS = "id, client_nom, client_id, libelle, montant_mensuel, statut, date_debut, date_renouvellement, derniere_facture_le, jour_facturation, entity";
+
+// Colonnes ajoutées par les lots 4 (« source ») et 7 (« stripe_subscription_id ») :
+// si la base n'est pas encore à jour, on charge les données sans elles.
+type Reponse = { data: unknown[] | null; error: { message: string } | null };
+async function chargerAvecRepli(table: string, colonnes: string, ajout: string): Promise<Reponse> {
+  const r: Reponse = await supabaseClient.from(table).select(`${colonnes}, ${ajout}`).limit(MAX);
+  if (r.error && new RegExp(ajout).test(r.error.message ?? "")) return await supabaseClient.from(table).select(colonnes).limit(MAX);
   return r;
 }
+const chargerLeads = () => chargerAvecRepli("leads", COLONNES_LEADS, "source");
 
 async function chargerDonnees(): Promise<Donnees> {
   const [f, d, l, a, t, c] = await Promise.all([
     supabaseClient.from("factures_vue").select("id, numero, status, total_ht, total_ttc, date_facture, date_echeance, paid_at, client_id, client_nom, entity, en_retard, reste_a_payer, abonnement_id, devis_id, created_at").limit(MAX),
     supabaseClient.from("devis").select("id, numero, statut, total_ht, total_ttc, date_devis, created_at, envoye_at, signed_at, client_id, client_nom, lead_id, derniere_relance_le, entity").limit(MAX),
     chargerLeads(),
-    supabaseClient.from("abonnements").select("id, client_nom, client_id, libelle, montant_mensuel, statut, date_debut, date_renouvellement, derniere_facture_le, jour_facturation, entity").limit(MAX),
+    chargerAvecRepli("abonnements", COLONNES_ABOS, "stripe_subscription_id"),
     supabaseClient.from("tickets").select("id, sujet, status, priorite, created_at, client_nom").limit(MAX),
     supabaseClient.from("clients").select("id, type, statut, archived_at, created_at, entity").limit(MAX),
   ]);
@@ -133,7 +137,8 @@ export const devisARelancer = (x: D) => {
   return x.statut === "envoye" && !x.signed_at && envoi.isBefore(dayjs().subtract(7, "day")) && (!relance || relance.isBefore(dayjs().subtract(7, "day")));
 };
 export const aboFactureADue = (a: A) => {
-  if (a.statut !== "actif") return false;
+  // Prélevé par Stripe : la facture est créée automatiquement à chaque paiement reçu.
+  if (a.statut !== "actif" || a.stripe_subscription_id) return false;
   const deja = a.derniere_facture_le && a.derniere_facture_le.slice(0, 7) >= dayjs().format("YYYY-MM");
   return !deja && dayjs().date() >= (a.jour_facturation ?? 1);
 };
