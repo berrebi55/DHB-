@@ -4,6 +4,10 @@
 > fois, le 22/10/2026), la **cartographie des problèmes**, l'**architecture cible**, le
 > **plan par lots** et le **journal d'avancement**. Il remplace `PLAN-PLATEFORME.md`.
 >
+> **Méthodologie permanente (depuis le 23/10/2026) : `docs/METHODOLOGIE.md`** — elle prime.
+> Pour chaque lot : comprendre → rechercher une solution existante → concevoir → valider
+> (si important) → développer → tester → documenter ici → commit → push → **arrêt**.
+>
 > Méthode : AUDIT INITIAL → PLAN → UN LOT À LA FOIS (tests ciblés, rapport) → AUDIT FINAL.
 > Aucun nouvel audit global avant la fin : chaque lot n'analyse que ses fichiers et
 > dépendances directes, puis met à jour la section 6 de ce document.

@@ -244,6 +244,12 @@ Tous les `[À COMPLÉTER PAR LE PROPRIÉTAIRE]` / `[EXEMPLE]` : téléphone, ema
 
 ## 13. MÉTHODE DE TRAVAIL ATTENDUE
 
+> **Depuis le 23/10/2026, la méthodologie permanente est `docs/METHODOLOGIE.md`** (chercher
+> une solution existante avant de développer, build vs buy, source de vérité, rapport avant
+> développement, amélioration continue, limites de l'autonomie, sécurité défensive sur la base
+> de test, anti-duplication, méthode en 10 étapes avec **arrêt après chaque lot**). Elle prime
+> sur les points ci-dessous en cas de différence.
+
 - Branche de travail : `claude/dhb-website-design-ju4n5r` (seule branche du dépôt, pas de PR). Commits clairs ; ne jamais mettre d'identifiant de modèle dans les commits.
 - Après chaque modification : build (`npm run build`, `python3 build/build_all.py`), contrôle des liens, test navigateur (desktop **et** mobile), test SQL si la base change, vérification des permissions.
 - Toute nouvelle fonctionnalité doit : respecter les règles du §2, réutiliser le design system (§4.2, §6.2) et le référentiel de statuts, rester **additive** pour la base (jamais de suppression destructrice), et être documentée dans `docs/REFONTE.md` / README.
