@@ -168,7 +168,7 @@ export function LeadsList({ mode }: { mode: "devis" | "question" }) {
               title: "Contact", dataIndex: "nom", sorter: true,
               render: (_: unknown, r: Lead) => (
                 <div style={{ minWidth: 180 }}>
-                  <div className="cell-main" style={{ fontWeight: r.is_read ? 550 : 700 }}>{r.nom || r.email || "—"}{!r.is_read && <span className="st tone-primary nodot" style={{ marginLeft: 8, height: 18 }}>Non lue</span>}</div>
+                  <div className="cell-main" style={{ fontWeight: r.is_read ? 550 : 700 }}>{r.nom || r.email || "—"}{!r.is_read && <span className="st tone-primary nodot" style={{ marginLeft: 8, height: 18 }}>Non lue</span>}{r.type === "guide" && <span className="st tone-purple nodot" style={{ marginLeft: 8, height: 18 }}>Guide téléchargé</span>}</div>
                   <div className="cell-sub">{[r.entreprise, r.email].filter(Boolean).join(" · ")}</div>
                 </div>
               ),

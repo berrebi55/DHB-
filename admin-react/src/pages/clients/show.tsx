@@ -29,7 +29,7 @@ import { ClientDrawer, adresseComplete } from "../../components/forms/ClientDraw
 import { TicketDrawer } from "../../components/forms/TicketDrawer";
 import { AbonnementDrawer } from "../../components/forms/AbonnementDrawer";
 import { dateFR, eur, eur0, fromNow, initiales } from "../../lib/format";
-import { label } from "../../lib/statuts";
+import { label, natureLead } from "../../lib/statuts";
 import { useRole, useUrlState } from "../../lib/hooks";
 import { messageErreurBase, estIntrouvable } from "../../lib/functions";
 import type { ClientVue } from "./list";
@@ -181,7 +181,7 @@ export function ClientShow() {
                       vide={<EmptyState compact icon={<FileTextOutlined />} title="Aucun devis" description="Préparez une proposition pour ce client." />} />
                   </Panel>
                   <Panel title="Demandes" flush>
-                    <MiniListe rows={(leads.data?.data ?? []) as any[]} loading={leads.isLoading} to={(r) => `/leads/${r.id}`} titre={(r) => r.type === "question" ? "Question" : "Demande de devis"} statut={(r) => <StatusTag kind="lead" value={r.status} />}
+                    <MiniListe rows={(leads.data?.data ?? []) as any[]} loading={leads.isLoading} to={(r) => `/leads/${r.id}`} titre={(r) => natureLead(r.type)} statut={(r) => <StatusTag kind="lead" value={r.status} />}
                       sous={(r) => `${dateFR(r.created_at)} · ${(r.message ?? "").slice(0, 80)}`}
                       vide={<EmptyState compact icon={<InboxOutlined />} title="Aucune demande liée" description="Les demandes converties en client apparaissent ici." />} />
                   </Panel>

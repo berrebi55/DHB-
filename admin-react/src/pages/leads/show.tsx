@@ -22,7 +22,7 @@ import { ActivityFeed } from "../../components/activity/ActivityFeed";
 import { LeadDrawer, type Lead } from "../../components/forms/LeadDrawer";
 import { ClientDrawer, type Client } from "../../components/forms/ClientDrawer";
 import { dateFR, dateTimeFR, eur } from "../../lib/format";
-import { PRIORITES, SOURCES_LEAD, label, options } from "../../lib/statuts";
+import { PRIORITES, SOURCES_LEAD, label, options, natureLead } from "../../lib/statuts";
 import { useRole } from "../../lib/hooks";
 import { messageErreurBase, estIntrouvable } from "../../lib/functions";
 
@@ -113,7 +113,7 @@ export function LeadShow() {
       <PageHeader
         title={lead.nom || lead.email || "Demande"}
         subtitle={<Space size={8} wrap><StatusTag kind="lead" value={lead.status} /><StatusTag kind="priorite" value={lead.priorite} />
-          <span className="faint">{isQ ? "Question" : "Demande de devis"} reçue le {dateTimeFR(lead.created_at)}</span></Space>}
+          <span className="faint">{natureLead(lead.type)} — reçue le {dateTimeFR(lead.created_at)}</span></Space>}
         crumbs={[{ label: isQ ? "Questions reçues" : "Demandes", to: listeTo }, { label: lead.nom || "Demande" }]}
         back={listeTo}
         actions={

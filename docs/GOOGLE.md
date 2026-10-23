@@ -126,6 +126,8 @@ impressions, comme dans Search Console).
 | **`generate_lead`** | **demande envoyée** (conversion) | `type`, `service`, `page` |
 | `faq_ouverte` | question de FAQ dépliée | `question` |
 | `scroll_profondeur` | 25, 50, 75, 90 % de la page | `pourcentage`, `page` |
+| `telechargement_guide` | guide PDF demandé avec un email (lot 16) — **pas** une conversion `generate_lead` | `page` |
+| `outil_termine` | outil interactif terminé (lot 16) : auto-diagnostic sécurité (Pro), « Arnaque ou pas ? » (Assistance) | `outil` : diagnostic_securite, arnaque_ou_pas ; `score` ; `page` (jamais les réponses) |
 
 Tous portent aussi `site` (groupe, pro, assistance). Aucune donnée personnelle
 (nom, email, téléphone, message) n'est envoyée à Google.

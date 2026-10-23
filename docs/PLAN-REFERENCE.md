@@ -164,7 +164,7 @@ Ordre adapté à l'audit : la **sécurité critique** (C1, C2) et la **sauvegard
 | **13** ✅ | **SEO technique** : titres/descriptions, `og:image`, 404, fils d'Ariane, `noindex` paiement, polices auto-hébergées | I11, I12, A7 | 170 pages, sitemap, liens, GA | — |
 | **14** ✅ | **SEO local + contenu** : pages utiles et distinctes (intention, mot-clé, FAQ, maillage) | — | sitemap, maillage | validation du contenu par le propriétaire |
 | **15** ✅ | **Performance + dépendances** : mesure, Vite à jour, ESLint, agrégats SQL si nécessaire | A1, A2, A6 | build, tous les écrans | — |
-| **16** | **Conversion** : lead magnets, outils interactifs | — | formulaires, GA | — |
+| **16** ✅ | **Conversion** : lead magnets, outils interactifs | — | formulaires, GA | — |
 | **17** | **Audit global final** | — | tout | — |
 
 ---
@@ -694,6 +694,34 @@ Ordre adapté à l'audit : la **sécurité critique** (C1, C2) et la **sauvegard
 - 29 `any` à typer progressivement (avertissements ESLint).
 
 **À faire plus tard (mise en production)** : poste de développement et hébergeur du back-office en **Node.js 20.19+** ; rien côté Supabase.
+
+### Lot 16 — Conversion : guides et outils interactifs ✅ VALIDÉ (environnement de test)
+
+**Modifié** (rien d'inventé : textes repris des deux guides PDF existants)
+- **Guides** (Pro : checklist sécurité ; Assistance : anti-arnaques) : le formulaire promettait « laissez votre email pour **le recevoir** » alors qu'**aucun email n'était envoyé** → « pour le **télécharger** », bouton « Télécharger le guide » ; **mention RGPD** + lien vers la politique de confidentialité. La demande est enregistrée avec un nouveau type **« guide »** : elle n'encombre plus « Questions reçues », apparaît dans « Demandes » avec l'étiquette **« Guide téléchargé »**, et n'est **plus comptée comme une demande de contact** dans GA4 (`telechargement_guide` au lieu de `generate_lead`).
+- **Auto-diagnostic sécurité** (Pro, `/outils/auto-diagnostic-securite/`) : les 7 points de la checklist en 7 questions (Oui / Non / Je ne sais pas) ; résultat « x points sur 7 », points à renforcer avec le « À faire » de la checklist et un lien vers la page du site correspondante ; réponses **jamais envoyées** ; lié depuis la page Cybersécurité et le pied de page.
+- **« Arnaque ou pas ? »** (Assistance, `/outils/arnaque-ou-pas/`) : 4 situations du guide ; chaque choix affiche aussitôt le bon réflexe et le signal d'alerte du guide ; bilan « x bons réflexes sur 4 » + les 4 réflexes du guide + liens vers le centre d'aide ; lié depuis le pied de page.
+- Mesure d'audience (après consentement seulement) : `outil_termine` (outil + score, jamais les réponses).
+- Tableau de bord : taux de conversion calculés sur les **seules demandes de devis** (les guides n'y entrent pas). Notification email au propriétaire : « Guide téléchargé — site ».
+- `docs/CONTENU-A-VALIDER.md` §5 : le guide d'Assistance porte encore l'ancien nom « DHB Particuliers » et les deux PDF les coordonnées d'exemple ; formulations des outils à relire.
+
+**Fichiers**
+`supabase/full-setup.sql` (type « guide » : contrainte, filtre des formulaires publics, journal ; section 25) · `supabase/tests/lot16-guides.sql` (nouveau) · `supabase/functions/notify-new-lead/index.ts` · `build/pages_outils.py` (nouveau) · `build/build.py` · `build/base.py` · `build/pages_services.py` · `build/particuliers/build_particuliers.py` · `sites/infogerance/assets/js/suivi.js` · `sites/infogerance/assets/css/style.css` · `sites/**` (régénérés) · `admin-react/src/lib/{statuts,metrics}.ts` · `src/pages/leads/{list,show}.tsx` · `src/pages/clients/show.tsx` · `src/components/layout/GlobalSearch.tsx` · `src/components/forms/LeadDrawer.tsx` · `docs/GOOGLE.md` · `docs/CONTENU-A-VALIDER.md`.
+
+**Tests**
+- `full-setup.sql` rejoué 2 fois : 0 erreur. **SQL `lot16-guides.sql` : 7 / 7** — formulaire public : guide enregistré « guide », question inchangée, type inconnu ramené à « devis », champs internes imposés ; journal « Guide téléchargé par … » ; événement `lead_cree` ; modification vers un type hors liste refusée. Non-régression SQL : lots 1 (73), 4 (30), 9 (23).
+- **Navigateur, sites : 54 / 54** — auto-diagnostic (7 × 3 réponses, « 5 points sur 7 », « à vérifier », textes de la checklist, focus sur le résultat, liens valides, 7 / 7 sans liste) et « Arnaque ou pas ? » (piège / bon réflexe avec les textes du guide, réponses verrouillées, bilan « 3 sur 4 », liens valides), bureau et mobile, axe-core sans défaut, sans débordement ; guides sur 3 pages : formulation, mention RGPD, demande envoyée en type « guide », PDF servi, `telechargement_guide` sans `generate_lead` ; formulaire de contact : toujours `generate_lead` ; consentement refusé : aucun événement, rien vers Google.
+- **Back-office : 7 / 7** — étiquette « Guide téléchargé » dans Demandes, absent des Questions, fiche, nature conservée à la modification ; axe-core sans défaut.
+- Emails de bout en bout **30 / 30** ; `deno check` / `deno lint` OK.
+- Non-régression : navigateur sites lots 13 (54) et 14 (37), back-office lots 4 à 12 et 15 (40, 49, 31, 10, 59, 18, 37, 26, 21, 50), polices 3 / 3, contrôles SEO 16 / 16, contenu 12 / 12, liens internes 15 072 (0 cassé), **audit d'accessibilité : 0 défaut**, TypeScript 0 erreur, ESLint 0 erreur.
+
+**Résultat** : ✅ **VALIDÉ** sur l'environnement de test. Formulations des outils et guides PDF : à valider par le propriétaire.
+
+**Risques / points à surveiller**
+- Les guides PDF eux-mêmes restent à mettre à jour (nom « DHB Particuliers », coordonnées d'exemple).
+- Les anciennes demandes de guide (avant ce lot) restent des « questions ».
+
+**À faire plus tard (mise en production)** : `supabase/full-setup.sql` ; redéployer `notify-new-lead` ; publier les sites régénérés ; dans GA4, ne **pas** marquer `telechargement_guide` / `outil_termine` comme événements clés (ou les marquer à part).
 
 ### Problèmes connus restants
 Voir §3 : aucun point ouvert de la cartographie (C1, C2, I1, I2, I3, I4 traités au lot 1 ; C3 au lot 2, actif après configuration ; I6, I7, A4, A5 au lot 3 ; I5, I10 au lot 4 ; I9 au lot 6 ; I8 au lot 7 ; I11, I12, A7 au lot 13 ; A1, A2, A3, A6 au lot 15). Points mineurs du lot 3 (onglets, colonnes « Actions ») corrigés au lot 15. Restent : 3 avis « moderate » de react-router v6 (cas exploitable neutralisé), 29 « any » à typer.

@@ -10,7 +10,7 @@ export interface Lead {
   created_at: string;
   updated_at?: string;
   entity: string;
-  type: "devis" | "question";
+  type: "devis" | "question" | "guide";
   nom: string | null;
   entreprise: string | null;
   email: string | null;
@@ -83,7 +83,9 @@ export function LeadDrawer(props: { open: boolean; onClose: () => void; lead?: L
       }>
       <Form form={form} layout="vertical" requiredMark="optional">
         <Form.Item name="type" label="Nature">
-          <Segmented block options={[{ value: "devis", label: "Demande de devis" }, { value: "question", label: "Question / support" }]} />
+          <Segmented block options={[{ value: "devis", label: "Demande de devis" }, { value: "question", label: "Question / support" },
+            // « Guide » : seulement pour une demande venue d'un téléchargement de guide (lot 16).
+            ...(props.lead?.type === "guide" ? [{ value: "guide", label: "Guide téléchargé" }] : [])]} />
         </Form.Item>
         <Row gutter={12}>
           <Col xs={24} sm={12}><Form.Item name="nom" label="Nom" rules={[{ required: true, message: "Indiquez un nom." }]}><Input /></Form.Item></Col>

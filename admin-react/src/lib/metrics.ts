@@ -107,7 +107,7 @@ export function kpis(d: Donnees) {
   const impayees = d.factures.filter((f) => f.status === "envoyee");
   const enRetard = impayees.filter((f) => f.en_retard);
   const devisAttente = d.devis.filter((x) => x.statut === "envoye" && !x.signed_at);
-  const prospects = (from: Dayjs, to: Dayjs) => d.leads.filter((l) => l.type !== "question" && dans(dayjs(l.created_at), from, to)).length;
+  const prospects = (from: Dayjs, to: Dayjs) => d.leads.filter((l) => l.type === "devis" && dans(dayjs(l.created_at), from, to)).length;
   const p30 = prospects(now.subtract(30, "day"), now.add(1, "day"));
   const p60 = prospects(now.subtract(60, "day"), now.subtract(30, "day"));
   const r = mrr(d.abonnements);
@@ -153,7 +153,7 @@ export function taches(d: Donnees): Tache[] {
   const facturesParDevis = new Set(d.factures.filter((f) => f.devis_id && f.status !== "annulee").map((f) => f.devis_id));
   const plur = (n: number, s: string, p?: string) => (n > 1 ? p ?? `${s}s` : s);
   const list: Tache[] = [];
-  const nouveaux = d.leads.filter((l) => l.type !== "question" && l.status === "nouveau");
+  const nouveaux = d.leads.filter((l) => l.type === "devis" && l.status === "nouveau");
   const questions = d.leads.filter((l) => l.type === "question" && l.status === "nouveau");
   const relLeads = d.leads.filter(leadRelanceDue);
   const relDevis = d.devis.filter(devisARelancer);
@@ -194,7 +194,7 @@ export function blocsTableau(d: Donnees) {
   const an = now.subtract(12, "month");
 
   // Commercial
-  const leadsCom = d.leads.filter((l) => l.type !== "question");
+  const leadsCom = d.leads.filter((l) => l.type === "devis");
   const recus = (from: Dayjs, to: Dayjs) => leadsCom.filter((l) => dans(dayjs(l.created_at), from, to));
   const leads90 = recus(j90, fin);
   const devis90 = d.devis.filter((x) => dans(dayjs(x.date_devis), j90, fin));

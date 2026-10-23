@@ -12,7 +12,7 @@ import {
 import { supabaseClient } from "../../supabaseClient";
 import { cleanSearch, eur } from "../../lib/format";
 import { useDebounced } from "../../lib/hooks";
-import { label } from "../../lib/statuts";
+import { label, natureLead } from "../../lib/statuts";
 import { NAV } from "./nav";
 
 interface Resultat {
@@ -73,7 +73,7 @@ export function GlobalSearch({ open, onClose }: { open: boolean; onClose: () => 
       if (annule) return;
       const out: Resultat[] = [];
       (c.data ?? []).forEach((r: any) => out.push({ groupe: "Clients", titre: r.nom || r.entreprise || "—", sous: [r.entreprise, r.email, r.ville].filter(Boolean).join(" · "), to: `/clients/${r.id}`, icon: <TeamOutlined /> }));
-      (l.data ?? []).forEach((r: any) => out.push({ groupe: "Demandes", titre: r.nom || r.email || "—", sous: `${r.type === "question" ? "Question" : "Demande de devis"} · ${label("lead", r.status)}`, to: `/leads/${r.id}`, icon: <InboxOutlined /> }));
+      (l.data ?? []).forEach((r: any) => out.push({ groupe: "Demandes", titre: r.nom || r.email || "—", sous: `${natureLead(r.type)} · ${label("lead", r.status)}`, to: `/leads/${r.id}`, icon: <InboxOutlined /> }));
       (d.data ?? []).forEach((r: any) => out.push({ groupe: "Devis", titre: r.numero || "Devis", sous: `${r.client_nom ?? ""} · ${eur(r.total_ttc)} · ${label("devis", r.statut)}`, to: `/devis/${r.id}`, icon: <FileTextOutlined /> }));
       (f.data ?? []).forEach((r: any) => out.push({ groupe: "Factures", titre: r.numero || "Facture", sous: `${r.client_nom ?? ""} · ${eur(r.total_ttc)} · ${label("facture", r.status)}`, to: `/factures/${r.id}`, icon: <FileDoneOutlined /> }));
       (t.data ?? []).forEach((r: any) => out.push({ groupe: "Tickets", titre: r.sujet || "Ticket", sous: `${r.client_nom ?? ""} · ${label("ticket", r.status)}`, to: `/tickets/${r.id}`, icon: <CustomerServiceOutlined /> }));

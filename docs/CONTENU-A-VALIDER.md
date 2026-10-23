@@ -59,3 +59,17 @@ forme juridique, hébergeur, présentation, durées de conservation…), plus le
 valeurs `[EXEMPLE]` en tête de `build/base.py`, `build/groupe/build_groupe.py`
 et `build/particuliers/build_particuliers.py` (domaines, téléphone, emails,
 ville de l'adresse). Voir aussi `DOCUMENTATION.md` §10.
+
+## 5. Guides et outils interactifs (lot 16)
+
+- **Guides PDF** (`sites/*/assets/guides/`) : celui d'Assistance porte encore
+  l'ancien nom « DHB Particuliers », et les deux affichent les coordonnées
+  d'exemple (01 23 45 67 89, contact@… / bonjour@…). ➜ À régénérer avec le
+  bon nom et les vraies coordonnées.
+- **Formulaire des guides** : il ne promet plus d'envoi par email (aucun email
+  n'était envoyé) ; le guide se télécharge aussitôt et la demande arrive dans
+  « Demandes » avec l'étiquette « Guide téléchargé ». Un envoi automatique du
+  guide par email est possible (moteur du lot 9) une fois les domaines connus.
+- **Auto-diagnostic sécurité** (Pro, `build/pages_outils.py`) et **« Arnaque ou
+  pas ? »** (Assistance, `build/particuliers/build_particuliers.py`) : textes
+  repris des guides, sans statistique ajoutée. ➜ Relire les formulations.

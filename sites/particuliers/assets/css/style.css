@@ -353,6 +353,26 @@ textarea { resize: vertical; min-height: 110px; }
 .lead-magnet .lm-body { flex: 1; min-width: 240px; }
 .lead-magnet h3 { margin: 0 0 4px; font-size: 1.12rem; }
 .lead-magnet p { margin: 0 0 12px; font-size: 0.95rem; }
+.lead-magnet .lm-rgpd { margin: 8px 0 0; font-size: 0.82rem; color: var(--text-2); }
+
+/* Outils interactifs (lot 16) : auto-diagnostic, « arnaque ou pas ? » */
+.outil-question { margin: 0 0 16px; padding: 20px 22px; border: 1px solid var(--line); }
+.outil-question legend { float: left; width: 100%; padding: 0; margin: 0 0 6px; font-weight: 700; font-size: 1.05rem; color: var(--ink); display: flex; align-items: center; gap: 10px; }
+.outil-question legend + * { clear: both; }
+.outil-question p { margin: 0 0 12px; }
+.outil-num { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: var(--primary); color: #fff; font-size: 0.85rem; flex: none; }
+.outil-choix-liste { display: flex; flex-wrap: wrap; gap: 8px; }
+.outil-choix { display: inline-flex; align-items: center; gap: 8px; padding: 10px 14px; border: 1px solid var(--line-strong); border-radius: 10px; cursor: pointer; background: #fff; }
+.outil-choix:has(input:checked) { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
+.outil-choix:has(input:disabled) { cursor: default; }
+.outil-choix input { margin: 0; accent-color: var(--primary); }
+.outil-retour p { margin: 12px 0 0; }
+.outil-ok strong { color: var(--success); }
+.outil-piege strong { color: var(--danger); }
+.outil-resultat { margin-top: 24px; padding: 24px; border: 2px solid var(--primary); }
+.outil-resultat h2 { margin-top: 0; }
+.outil-liste li { margin-bottom: 10px; }
+.outil-resultat a { text-decoration: underline; text-underline-offset: 2px; }
 .lead-magnet form { display: flex; gap: 8px; flex-wrap: wrap; }
 .lead-magnet input { flex: 1; min-width: 200px; }
 .lead-magnet .form-ok { width: 100%; }

@@ -51,13 +51,13 @@ Deno.serve(async (req) => {
     const to = Deno.env.get("NOTIFY_TO");
     if (!to) return repondre(200, "email_non_configure");
 
-    const typeLabel = lead.type === "question" ? "Question" : "Demande de devis";
+    const typeLabel = lead.type === "question" ? "Question" : lead.type === "guide" ? "Guide téléchargé" : "Demande de devis";
     const site = SITES[lead.entity] ?? "site DHB";
     const adminUrl = Deno.env.get("ADMIN_URL");
     const subject = `${typeLabel} — ${String(lead.nom || lead.email || "un visiteur").slice(0, 80)} (${site})`;
     const html = `
       <div style="font-family:Arial,sans-serif;color:#101828">
-        <h2 style="margin:0 0 12px">${esc(typeLabel)} reçue sur ${esc(site)}</h2>
+        <h2 style="margin:0 0 12px">${esc(typeLabel)} — ${esc(site)}</h2>
         <table style="border-collapse:collapse">
           <tr><td style="padding:3px 12px 3px 0"><b>Nom</b></td><td>${esc(lead.nom) || "—"}</td></tr>
           <tr><td style="padding:3px 12px 3px 0"><b>Entreprise</b></td><td>${esc(lead.entreprise) || "—"}</td></tr>

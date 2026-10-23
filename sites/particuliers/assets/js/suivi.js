@@ -125,7 +125,13 @@
   // API pour main.js (conversion = demande envoyée)
   window.DHBSuivi = {
     attribution: attribution,
-    lead: function (type, service) { evt('generate_lead', { type: type, service: service || '', page: location.pathname }); }
+    // Un guide téléchargé n'est pas une demande de contact : événement distinct (lot 16).
+    lead: function (type, service) {
+      if (type === 'guide') evt('telechargement_guide', { page: location.pathname });
+      else evt('generate_lead', { type: type, service: service || '', page: location.pathname });
+    },
+    // Outil interactif terminé (auto-diagnostic, « arnaque ou pas ? ») : score seulement, rien de personnel.
+    outil: function (nom, score) { evt('outil_termine', { outil: nom, score: score, page: location.pathname }); }
   };
 
   demarrer();

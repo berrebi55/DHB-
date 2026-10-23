@@ -270,6 +270,7 @@ def build():
           <h3>Pour qui ?</h3>
           <p class="mb-0">{c['pour_qui']}</p>
         </div>
+        {f'<p style="margin-top:20px"><a class="btn btn--outline" href="{r}outils/auto-diagnostic-securite/">Faire l’auto-diagnostic sécurité (7 questions)</a></p>' if slug == "cybersecurite" else ""}
       </div>
       <div class="card reveal">
         <h3>Ce qui est inclus</h3>

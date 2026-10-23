@@ -183,13 +183,14 @@ def lead_magnet(topic="votre entreprise", pdf="../../assets/guides/checklist-sec
       <div class="lm-ic">📄</div>
       <div class="lm-body">
         <h3>Guide gratuit : Sécurité informatique en PME</h3>
-        <p><strong>La checklist des 7 points essentiels</strong> pour réduire vos risques, sans jargon. Laissez votre email pour le recevoir — ou téléchargez-le directement.</p>
-        <form data-demo-form data-type="question" novalidate>
+        <p><strong>La checklist des 7 points essentiels</strong> pour réduire vos risques, sans jargon. Laissez votre email pour le télécharger — ou téléchargez-le directement.</p>
+        <form data-demo-form data-type="guide" novalidate>
           <div class="form-ok">✅ Merci ! <a href="{pdf}" target="_blank" rel="noopener"><strong>Cliquez ici pour télécharger le guide (PDF)</strong></a>.</div>
           <input type="hidden" name="message" value="Demande du guide « Sécurité PME » — {topic}">
           <input name="email" type="email" placeholder="Votre email" required aria-label="Votre email">
-          <button class="btn btn--primary" type="submit">Recevoir le guide</button>
+          <button class="btn btn--primary" type="submit">Télécharger le guide</button>
         </form>
+        <p class="lm-rgpd">Votre email sert uniquement à vous recontacter ; il n'est jamais revendu. <a href="{pdf.split('assets/')[0]}politique-confidentialite/">Confidentialité</a></p>
         <p style="margin:10px 0 0;font-size:.85rem"><a href="{pdf}" target="_blank" rel="noopener">📥 Télécharger directement (PDF)</a></p>
       </div>
     </div>"""
@@ -279,6 +280,7 @@ def page(depth, slug_path, title, description, body, extra_head="", og_type="web
         ("Services", [(f"{r}services/{slug}/", name) for slug, name, _ in SERVICES[:6]] + [(f"{r}services/", "Tous les services")]),
         ("Zones", [(f"{r}zones/{slug}/", name) for slug, name in VILLES[2:7]] + [(f"{r}zones/", "Toutes les zones")]),
         ("Entreprise", [(f"{r}a-propos/", "À propos"), (f"{r}pannes-frequentes/", "Pannes fréquentes"), (f"{r}blog/", "Conseils"),
+                        (f"{r}outils/auto-diagnostic-securite/", "Auto-diagnostic sécurité"),
                         (f"{r}contact/", "Contact"), (f"{r}mentions-legales/", "Mentions légales"),
                         (f"{r}politique-confidentialite/", "Confidentialité (RGPD)"), (f"{r}plan-du-site/", "Plan du site")]),
     ]

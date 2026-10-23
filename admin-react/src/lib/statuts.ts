@@ -125,3 +125,7 @@ export type StatutKind = keyof typeof MAPS;
 
 export const options = (list: StatutDef[]) => list.map((s) => ({ value: s.value, label: s.label }));
 export const label = (kind: StatutKind, v?: string | null) => (v ? MAPS[kind][v]?.label ?? v : "—");
+
+/** Nature d'une demande : devis, question, ou guide téléchargé depuis un site (lot 16). */
+export const natureLead = (type?: string | null) =>
+  type === "question" ? "Question" : type === "guide" ? "Guide téléchargé" : "Demande de devis";

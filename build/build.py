@@ -9,7 +9,7 @@ ROOT = os.path.join(REPO, "sites", "infogerance")  # sortie de la filiale Infog√
 sys.path.insert(0, HERE)
 
 import base  # noqa: E402
-import pages_home, pages_services, pages_zones, pages_blog, pages_misc, pages_problems  # noqa: E402
+import pages_home, pages_services, pages_zones, pages_blog, pages_misc, pages_problems, pages_outils  # noqa: E402
 
 
 def write(rel, content):
@@ -21,7 +21,7 @@ def write(rel, content):
 
 def main():
     files = {}
-    for mod in (pages_home, pages_services, pages_zones, pages_blog, pages_misc, pages_problems):
+    for mod in (pages_home, pages_services, pages_zones, pages_blog, pages_misc, pages_problems, pages_outils):
         files.update(mod.build())
 
     def priorite(url_path):

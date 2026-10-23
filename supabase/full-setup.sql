@@ -12,7 +12,7 @@ create table if not exists public.leads (
   id uuid primary key default gen_random_uuid(),
   created_at timestamptz not null default now(),
   entity text not null default 'infogerance',
-  type text not null default 'devis' check (type in ('devis','question')),
+  type text not null default 'devis' check (type in ('devis','question','guide')),
   nom text, entreprise text, email text, telephone text, message text,
   service text, source_url text,
   status text not null default 'nouveau'
@@ -588,7 +588,7 @@ begin
       when 'paiements' then 'paiement_recu' when 'abonnements' then 'abonnement_cree'
       when 'tickets' then 'ticket_cree' when 'notes' then 'note_ajoutee' else tg_table_name || '_cree' end;
     titre := case tg_table_name
-      when 'leads' then (case when r->>'type' = 'question' then 'Question reçue de ' else 'Nouvelle demande de ' end)
+      when 'leads' then (case r->>'type' when 'question' then 'Question reçue de ' when 'guide' then 'Guide téléchargé par ' else 'Nouvelle demande de ' end)
                         || coalesce(nullif(r->>'nom',''), nullif(r->>'email',''), 'un visiteur')
       when 'clients' then 'Client créé : ' || lib
       when 'devis' then 'Devis ' || coalesce(r->>'numero','') || ' créé'
@@ -814,7 +814,7 @@ begin
   new.updated_at := now();
 
   -- Valeurs autorisées.
-  if new.type is null or new.type not in ('devis','question') then new.type := 'devis'; end if;
+  if new.type is null or new.type not in ('devis','question','guide') then new.type := 'devis'; end if;
   if new.entity is null or new.entity not in ('infogerance','particuliers','groupe') then
     raise exception 'Demande refusée : site d''origine inconnu.' using errcode = '22023';
   end if;
@@ -1704,4 +1704,14 @@ do $$ declare t text; begin
     execute format('create policy "%s read" on public.%I for select to authenticated using (public.is_staff())', t, t);
     execute format('revoke insert, update, delete, truncate on public.%I from anon, authenticated', t);
   end loop;
+end $$;
+
+-- =====================================================================
+-- 25) LOT 16 — CONVERSION : DEMANDES DE GUIDE (idempotent)
+-- =====================================================================
+-- Un guide téléchargé depuis les sites (email laissé) devient une demande de
+-- type « guide » : distincte des questions et des demandes de devis.
+do $$ begin
+  alter table public.leads drop constraint if exists leads_type_check;
+  alter table public.leads add constraint leads_type_check check (type in ('devis','question','guide'));
 end $$;

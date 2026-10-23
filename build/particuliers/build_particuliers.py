@@ -68,7 +68,7 @@ def page(depth, slug_path, title, desc, body, extra="", indexable=True):
               f'<a href="{R}aide/">Centre d\'aide</a><a href="{R}a-propos/">Qui sommes-nous</a><a href="{R}contact/">Contact</a>'
               f'<a class="btn btn--primary btn--block" href="{R}contact/">Être aidé(e)</a>')
     colonnes = [
-        ("Vous aider", [(f"{home}#services", "Nos services"), (f"{R}abonnement/", "Abonnement et tarifs"), (f"{R}aide/", "Centre d'aide")]),
+        ("Vous aider", [(f"{home}#services", "Nos services"), (f"{R}abonnement/", "Abonnement et tarifs"), (f"{R}aide/", "Centre d'aide"), (f"{R}outils/arnaque-ou-pas/", "Arnaque ou pas ? (test)")]),
         ("DHB Assistance", [(f"{R}a-propos/", "Qui sommes-nous"), (f"{R}contact/", "Contact")]),
         ("Informations", [(f"{R}mentions-legales/", "Mentions légales"), (f"{R}politique-confidentialite/", "Confidentialité (RGPD)")]),
     ]
@@ -131,13 +131,14 @@ def lead_magnet(depth):
     return f"""
     <div class="lead-magnet"><div class="lm-ic icon-box" style="margin:0">{SV_IC['guide']}</div><div class="lm-body">
       <h3>Guide gratuit : éviter les arnaques informatiques</h3>
-      <p><strong>Les 5 pièges les plus courants</strong> (faux SMS, faux support, hameçonnage…) et comment réagir. Laissez votre email pour le recevoir, ou téléchargez-le directement.</p>
-      <form data-demo-form data-type="question" novalidate>
+      <p><strong>Les 5 pièges les plus courants</strong> (faux SMS, faux support, hameçonnage…) et comment réagir. Laissez votre email pour le télécharger, ou téléchargez-le directement.</p>
+      <form data-demo-form data-type="guide" novalidate>
         <div class="form-ok">Merci ! <a href="{pdf}" target="_blank" rel="noopener"><strong>Télécharger le guide (PDF)</strong></a>.</div>
         <input type="hidden" name="message" value="Demande du guide anti-arnaques">
         <input name="email" type="email" placeholder="Votre email" required aria-label="Votre email">
-        <button class="btn btn--primary" type="submit">Recevoir le guide</button>
+        <button class="btn btn--primary" type="submit">Télécharger le guide</button>
       </form>
+      <p class="lm-rgpd">Votre email sert uniquement à vous recontacter ; il n'est jamais revendu. <a href="{"../" * depth}politique-confidentialite/">Confidentialité</a></p>
       <p style="margin:10px 0 0;font-size:.88rem"><a href="{pdf}" target="_blank" rel="noopener">Télécharger directement (PDF)</a></p>
     </div></div>"""
 
@@ -454,8 +455,109 @@ def legal(slug, title, h1, blocks):
     return page(1, slug, f"{title} | {NAME}", f"{h1} du site DHB Assistance.", body)
 
 
+# --- Outil « Arnaque ou pas ? » (lot 16) ---------------------------------------
+# 4 situations tirées du guide anti-arnaques (assets/guides/guide-anti-arnaques.pdf),
+# avec le bon réflexe et le signal d'alerte du guide. Rien n'est envoyé.
+SITUATIONS = [
+    ("Le SMS « colis bloqué »",
+     "Un SMS vous annonce un colis en attente, avec un lien à cliquer et une petite somme à régler pour le débloquer.",
+     ("Je clique sur le lien et je règle la petite somme, ça ira plus vite.",
+      "Je ne clique pas : je vais directement sur le site officiel du transporteur."), 1,
+     "C'est faux. Ne cliquez pas : allez directement sur le site officiel du transporteur.",
+     "un lien bizarre et une petite somme à régler « en urgence »."),
+    ("Le faux support « Microsoft »",
+     "Un message plein écran affiche une alerte et un numéro à appeler pour « réparer » l'ordinateur.",
+     ("Je n'appelle pas, je ne donne aucun accès à distance et je ferme le navigateur.",
+      "J'appelle le numéro pour qu'on répare mon ordinateur."), 0,
+     "Microsoft ne fait jamais ça. N'appelez pas, ne donnez aucun accès à distance. Fermez le navigateur.",
+     "une page qui vous bloque et vous presse d'appeler."),
+    ("Le mail de « votre banque »",
+     "Un email aux couleurs de votre banque vous demande de « confirmer » vos identifiants en cliquant sur un lien.",
+     ("Je clique sur le lien et je confirme mes identifiants.",
+      "Je ne saisis jamais mes codes depuis un lien reçu : je tape moi-même l'adresse de ma banque."), 1,
+     "Ne saisissez jamais vos codes depuis un lien reçu : connectez-vous en tapant vous-même l'adresse.",
+     "on vous demande vos identifiants ou vos codes bancaires."),
+    ("L'arnaque sentimentale ou « au bon plan »",
+     "Une personne très gentille, rencontrée en ligne mais jamais vue en vrai, vous demande de l'argent, des cartes cadeaux ou un virement.",
+     ("Je refuse : je me méfie des demandes d'argent de personnes jamais rencontrées.",
+      "J'envoie l'argent, elle a l'air sincère et en a vraiment besoin."), 0,
+     "On vous met en confiance avant de demander de l'argent. Méfiez-vous des demandes d'argent de personnes jamais rencontrées.",
+     "une demande d'argent, de cartes cadeaux ou de virement."),
+]
+REFLEXES = ["Ne cliquez pas dans la panique : prenez le temps de vérifier.",
+            "Ne communiquez jamais vos mots de passe ou codes bancaires.",
+            "Activez la double authentification sur vos comptes importants.",
+            "Dans le doute, demandez à un proche ou à un professionnel."]
+
+
+def outil_arnaques():
+    depth, r = 2, "../../"
+    blocs = ""
+    for i, (titre, situation, choix, bon, reflexe, alerte) in enumerate(SITUATIONS, start=1):
+        options = "".join(
+            f'<label class="outil-choix"><input type="radio" name="s{i}" value="{k}" data-bon="{1 if k == bon else 0}"> {c}</label>'
+            for k, c in enumerate(choix))
+        blocs += f"""
+    <fieldset class="outil-question card" data-reflexe="{reflexe}" data-alerte="{alerte}">
+      <legend><span class="outil-num">{i}</span> {titre}</legend>
+      <p>{situation} <strong>Que faites-vous ?</strong></p>
+      <div class="outil-choix-liste">{options}</div>
+      <div class="outil-retour" role="status" aria-live="polite"></div>
+    </fieldset>"""
+    reflexes = "".join(f"<li>{x}</li>" for x in REFLEXES)
+    js = """<script>(function(){
+  var qs = [].slice.call(document.querySelectorAll('#arnaques fieldset')), bons = 0, faits = 0;
+  qs.forEach(function (q) {
+    q.addEventListener('change', function (e) {
+      if (q.dataset.repondu) return;
+      q.dataset.repondu = '1'; faits++;
+      var ok = e.target.getAttribute('data-bon') === '1'; if (ok) bons++;
+      q.querySelectorAll('input').forEach(function (i) { i.disabled = true; });
+      q.querySelector('.outil-retour').innerHTML = '<p class="' + (ok ? 'outil-ok' : 'outil-piege') + '"><strong>' +
+        (ok ? 'Bon réflexe.' : 'Attention : c\u2019est le piège.') + '</strong> ' + q.dataset.reflexe + '</p><p>Signal d\u2019alerte : ' + q.dataset.alerte + '</p>';
+      if (faits === qs.length) {
+        var res = document.getElementById('arnaques-resultat');
+        res.querySelector('h2').textContent = bons + ' bon' + (bons > 1 ? 's' : '') + ' réflexe' + (bons > 1 ? 's' : '') + ' sur ' + qs.length;
+        res.hidden = false; res.querySelector('h2').focus();
+        if (window.DHBSuivi && window.DHBSuivi.outil) window.DHBSuivi.outil('arnaque_ou_pas', bons);
+      }
+    });
+  });
+})();</script>"""
+    body = f"""
+<section class="page-hero"><div class="wrap">
+  {marque.fil_ariane(DOMAIN, depth, [("aide/", "Centre d'aide"), (None, "Arnaque ou pas ?")])}
+  <span class="eyebrow">Testez vos réflexes</span>
+  <h1>Arnaque ou pas ? 4 situations pour tester vos réflexes</h1>
+  <p>Les pièges les plus courants, tirés de notre guide anti-arnaques. Choisissez ce que vous feriez : la bonne attitude s'affiche aussitôt. Rien n'est envoyé.</p>
+</div></section>
+<section class="section"><div class="wrap" style="max-width:820px">
+  <form id="arnaques" class="outil" onsubmit="return false">{blocs}</form>
+  <div id="arnaques-resultat" class="outil-resultat card" hidden>
+    <h2 tabindex="-1"></h2>
+    <p>Les bons réflexes qui protègent :</p>
+    <ul class="check-list">{reflexes}</ul>
+    <p>Pour aller plus loin : <a href="{r}aide/reconnaitre-arnaque-sms-colis/">reconnaître une arnaque par SMS ou email</a>,
+      <a href="{r}aide/faux-virus-arnaque-microsoft/">le faux message « PC infecté »</a>,
+      <a href="{r}aide/compte-facebook-email-pirate/">compte piraté : que faire</a>.</p>
+  </div>
+  <h2 style="margin-top:48px">Pour aller plus loin</h2>
+  {lead_magnet(depth)}
+</div></section>
+<section class="section section--tight"><div class="wrap"><div class="cta-band">
+  <div><h2>Un doute ? On est là pour vous</h2><p>Victime d'une arnaque ou besoin de sécuriser vos appareils : on vous aide à domicile (Île-de-France) ou à distance.</p></div>
+  <div class="hero-cta"><a class="btn btn--primary btn--lg" href="{r}contact/">Être aidé(e)</a><a class="btn btn--ghost btn--lg" href="tel:{PHONE_L}">{IC_PHONE} {PHONE_D}</a></div>
+</div></div></section>
+{js}
+"""
+    return page(depth, "outils/arnaque-ou-pas/", f"Arnaque ou pas ? Testez vos réflexes | {NAME}",
+                "4 situations courantes (faux SMS colis, faux support Microsoft, faux mail de banque, arnaque sentimentale) pour tester vos réflexes et savoir comment réagir.",
+                body)
+
+
 def build():
     pages = {
+        "outils/arnaque-ou-pas/index.html": outil_arnaques(),
         "index.html": home(),
         "abonnement/index.html": abonnement(),
         "aide/index.html": aide_index(),
@@ -502,7 +604,7 @@ def build():
             return "1.0"
         if up in ("abonnement/", "aide/", "contact/"):
             return "0.9"
-        return "0.7" if up.startswith("aide/") else "0.3"
+        return "0.7" if up.startswith(("aide/", "outils/")) else "0.3"
 
     marque.ecrire_site(OUT, DOMAIN, pages, priorite,
                        exclus=("404.html", "paiement-reussi/index.html", "paiement-annule/index.html"))
