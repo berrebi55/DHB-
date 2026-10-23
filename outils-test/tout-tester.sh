@@ -23,7 +23,7 @@ done
 echo "### Fonctions serveur (Deno) et bout en bout"
 ligne "deno check (toutes)" "$(cd "$DEPOT/supabase/functions" && for d in */; do [ -f "$d/index.ts" ] && echo "$d/index.ts"; done | xargs "$DENO" check 2>&1 | grep -c '^error' ) erreur(s)"
 ligne "deno lint" "$("$DENO" lint "$DEPOT/supabase/functions" 2>&1 | tail -1)"
-for t in test-render-pdf test-stripe-webhook test-emails test-worker test-recurrentes test-google test-drive test-seo; do
+for t in test-render-pdf test-stripe-webhook test-emails test-worker test-recurrentes test-google test-drive test-seo test-tickets-email; do
   ligne "$t" "$(timeout 500 node $t.mjs 2>&1 | grep -E 'conformes' | tail -1)"
 done
 

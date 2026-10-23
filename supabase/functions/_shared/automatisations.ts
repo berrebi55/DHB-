@@ -11,11 +11,12 @@
 //  d'envoi unique (historique, redirection de test).
 // =====================================================================
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
-import type { Appelant } from "./securite.ts";
+import { HttpError, type Appelant } from "./securite.ts";
 import { envoyerEtJournaliser } from "./email.ts";
 import { contexte, remplir, texteEnHtml, type TypeCible } from "./modeles.ts";
 import { envoyerConversion, jetonAcces, journal as journalIntegration } from "./google.ts";
 import { assurerDossierClient, copierDocument, ErreurDrive, reglagesDrive, type ReglagesDrive } from "./drive.ts";
+import { traiterEmailRecu } from "./tickets.ts";
 
 export interface Regle { cle: string; nom: string; declencheur: string; actif: boolean; delai_jours: number; modele_cle: string | null }
 type Issue = { statut: "envoye" | "echec" | "ignore"; detail: string; email_id?: string; temporaire?: boolean };
@@ -77,6 +78,29 @@ async function journaliser(sb: SupabaseClient, r: Regle, type: string, id: strin
 }
 
 /** Traite les événements en attente (au plus `maxi`). */
+type Evenement = { id: string; type: string; objet_id: string; tentatives: number | null };
+
+/**
+ * Email reçu (lot 18) : ticket + conversation. Échec temporaire (Resend, stockage)
+ * → nouvel essai plus tard ; email introuvable chez Resend → erreur définitive.
+ */
+export async function traiterEvenementEmail(sb: SupabaseClient, ev: Evenement) {
+  try {
+    const issue = await traiterEmailRecu(sb, ev.objet_id);
+    await sb.from("evenements").update({ statut: issue.statut, traite_le: new Date().toISOString(), erreur: issue.statut === "ignore" ? issue.detail : null }).eq("id", ev.id);
+    return issue;
+  } catch (e) {
+    const code = e instanceof HttpError ? e.code : "erreur_inconnue";
+    const tentatives = (ev.tentatives ?? 0) + 1;
+    const fin = tentatives >= MAX_TENTATIVES || code === "email_introuvable_chez_resend";
+    await sb.from("evenements").update({
+      tentatives, erreur: code, statut: fin ? "erreur" : "en_attente",
+      prochaine_tentative: new Date(Date.now() + ATTENTES_MIN[Math.min(tentatives - 1, ATTENTES_MIN.length - 1)] * 60000).toISOString(),
+    }).eq("id", ev.id);
+    return { statut: fin ? "erreur" : "reessai", detail: code };
+  }
+}
+
 export async function traiterFile(sb: SupabaseClient, maxi = 50) {
   const bilan = { traites: 0, ignores: 0, reportes: 0, erreurs: 0 };
   const toutes = await regles(sb);
@@ -106,14 +130,23 @@ export async function traiterFile(sb: SupabaseClient, maxi = 50) {
     }
   };
   const maintenant = new Date().toISOString();
-  const { data: evs } = await sb.from("evenements").select("*").eq("statut", "en_attente").lte("prochaine_tentative", maintenant)
-    .order("created_at", { ascending: true }).limit(maxi);
-  for (const ev of evs ?? []) {
+  // Les emails reçus passent en premier : un client ne doit pas attendre derrière un arriéré.
+  const { data: emails } = await sb.from("evenements").select("*").eq("statut", "en_attente").eq("type", "email_recu")
+    .lte("prochaine_tentative", maintenant).order("created_at", { ascending: true }).limit(maxi);
+  const { data: autres } = await sb.from("evenements").select("*").eq("statut", "en_attente").neq("type", "email_recu")
+    .lte("prochaine_tentative", maintenant).order("created_at", { ascending: true }).limit(Math.max(maxi - (emails?.length ?? 0), 0));
+  const evs = [...(emails ?? []), ...(autres ?? [])];
+  for (const ev of evs) {
     // Réservation : si un autre traitement l'a pris entre-temps, on passe.
     const { data: pris } = await sb.from("evenements").update({ prochaine_tentative: new Date(Date.now() + 10 * 60000).toISOString() })
       .eq("id", ev.id).eq("statut", "en_attente").lte("prochaine_tentative", maintenant).select("id");
     if (!pris?.length) continue;
 
+    if (ev.type === "email_recu") {
+      const i = await traiterEvenementEmail(sb, ev);
+      if (i.statut === "traite") bilan.traites++; else if (i.statut === "ignore") bilan.ignores++; else bilan.erreurs++;
+      continue;
+    }
     const actives = toutes.filter((r) => r.actif && r.declencheur === ev.type);
     const conversion = ev.type === "lead_gagne";
     const versDrive = ["client_cree", "document_cree", "document_maj"].includes(ev.type) && !!(await driveActif());

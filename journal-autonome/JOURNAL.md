@@ -31,3 +31,14 @@ pas de réécriture de l'historique git.
 - Commit : voir ci-dessous.
 - Suite prévue : `_shared/tickets.ts` (traitement d'un email reçu : récupération Resend, anti-boucle, fil, client, pièces jointes), fonction `email-entrant` (signature Svix), branche `email_recu` dans le robot, tests de bout en bout avec un faux Resend.
 - Points pour le propriétaire : aucun.
+
+## 2026-10-23 — Lot 18 (serveur) : email reçu → ticket
+
+- Fait : `_shared/tickets.ts` (récupération chez Resend, anti-boucle, rafales, fil par `[DHB #n]` ou `In-Reply-To` **seulement si l'expéditeur fait partie de la conversation**, client reconnu sinon « à qualifier », texte lisible depuis le HTML, pièces jointes filtrées et copiées dans l'espace privé), fonction `email-entrant` (signature Svix, anti-rejeu 5 min, mise en file unique puis traitement immédiat), robot : les emails reçus passent avant le reste de la file, réessais 5 min → 12 h, erreur définitive si l'email n'existe plus.
+- Sécurité corrigée en cours de route : adresse d'expéditeur validée strictement (elle sert dans des filtres de requête), « _ » échappé dans la recherche du client, noms de fichiers en liste blanche.
+- Base de test : 1 797 événements en attente laissés par le test de pagination du lot 15 → purgés, et ce test nettoie désormais ses événements.
+- Fichiers : `supabase/functions/_shared/tickets.ts` (nouveau), `supabase/functions/email-entrant/index.ts` (nouveau), `_shared/automatisations.ts`, `outils-test/test-tickets-email.mjs` (nouveau), `outils-test/test-pagination.ts`, `outils-test/tout-tester.sh`.
+- Tests : bout en bout **30/30** (sécurité du webhook, nouveau ticket, doublon, inconnu, fil, tentative d'accès à un ticket d'autrui, anti-boucle, HTML, rafale, adresses de support, pièces jointes, panne + réessai, email disparu) ; non-régression robot 20/20, Drive 21/21, Google 26/26, emails 30/30 ; `deno lint` 29 fichiers OK.
+- Commit : voir ci-dessous.
+- Suite prévue : réponse depuis DHB (extension de `email-send` : objet `[DHB #n]`, réponse-à l'adresse de support, message « sortant »), fonction de téléchargement des pièces jointes, écrans (conversation dans la fiche ticket, « à qualifier », carte Email entrant dans Intégrations).
+- Points pour le propriétaire : aucun.

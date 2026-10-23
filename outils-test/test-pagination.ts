@@ -34,7 +34,7 @@ try {
     ok(`[plafond ${plafond}] Erreur de la base remontée (pas de faux « vide »)`, !!e.error && e.data.length === 0, e.error);
   }
 } finally {
-  await sql("delete from public.clients where email like 'p%@test.invalid' and nom like 'Pagination %'");
+  await sql("delete from public.evenements where objet_type = 'client' and objet_id in (select id from public.clients where email like 'p%@test.invalid' and nom like 'Pagination %'); delete from public.clients where email like 'p%@test.invalid' and nom like 'Pagination %'");
 }
 ok("Base de test remise dans son état initial", Number(await sql("select count(*) from public.clients")) === avant);
 for (const [n, c, d] of res) console.log(c ? "OK   " : "ÉCHEC", n, c ? "" : JSON.stringify(d));
