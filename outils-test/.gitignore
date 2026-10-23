@@ -1,0 +1,12 @@
+# Dépendances et résultats locaux des tests (jamais versionnés)
+node_modules/
+admin-dist*/
+lot*/
+nonreg-*/
+final/
+avant/
+apres/
+pdf/
+*.log
+*.err
+lot4-envois.json
