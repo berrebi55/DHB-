@@ -165,7 +165,7 @@ Ordre adapté à l'audit : la **sécurité critique** (C1, C2) et la **sauvegard
 | **14** ✅ | **SEO local + contenu** : pages utiles et distinctes (intention, mot-clé, FAQ, maillage) | — | sitemap, maillage | validation du contenu par le propriétaire |
 | **15** ✅ | **Performance + dépendances** : mesure, Vite à jour, ESLint, agrégats SQL si nécessaire | A1, A2, A6 | build, tous les écrans | — |
 | **16** ✅ | **Conversion** : lead magnets, outils interactifs | — | formulaires, GA | — |
-| **17** | **Audit global final** | — | tout | — |
+| **17** ✅ | **Audit global final** | — | tout | — |
 
 ---
 
@@ -722,6 +722,36 @@ Ordre adapté à l'audit : la **sécurité critique** (C1, C2) et la **sauvegard
 - Les anciennes demandes de guide (avant ce lot) restent des « questions ».
 
 **À faire plus tard (mise en production)** : `supabase/full-setup.sql` ; redéployer `notify-new-lead` ; publier les sites régénérés ; dans GA4, ne **pas** marquer `telechargement_guide` / `outil_termine` comme événements clés (ou les marquer à part).
+
+### Lot 17 — Audit global final ✅ VALIDÉ (environnement de test)
+
+**Méthode** : rejeu de **toutes** les suites de test des lots 1 à 16 sur l'environnement de test (base PostgreSQL + vrai PostgREST, fonctions exécutées par Deno avec des services extérieurs simulés, back-office et sites dans Chrome), plus des contrôles transversaux : secrets, droits de la base, CI, accessibilité de toutes les vues.
+
+**Modifié**
+- **Durcissement de la base** : retrait du droit `TRUNCATE` aux rôles `anon` / `authenticated` (la sécurité par ligne ne le filtre pas ; non exposé par l'API, retiré par prudence) — `full-setup.sql` section 26.
+- **`docs/MISE-EN-PRODUCTION.md`** (nouveau) : la check-list unique, dans l'ordre, de tout ce qu'il faut faire sur la vraie Supabase et les services extérieurs (regroupe les « À faire en production » des 16 lots) ; lien depuis le `README.md`.
+
+**Contrôles transversaux**
+- **Secrets** : aucun secret versionné (recherche de clés Supabase secrètes, Stripe, Resend, Google, JWT, clés privées) ; seules des clés **publiques** `sb_publishable_…` figurent dans le dépôt.
+- **Base** (`supabase/tests/lot17-durcissement.sql`, **5 / 5**) : les 30 tables ont la RLS ; aucun `TRUNCATE` pour anon / authenticated ; toutes les vues en `security_invoker` ; toutes les fonctions `SECURITY DEFINER` avec `search_path` fixé ; stockage des documents privé.
+- **CI** : job back-office simulé sur une copie vierge du dépôt (`npm ci`, lint, build) : OK ; vérificateur de liens : 0 lien cassé.
+
+**Tests rejoués (résultats)**
+- `full-setup.sql` rejoué 2 fois : **0 erreur**.
+- **SQL** : lot 1 **73/73**, lot 2 **9/9**, lot 4 **30/30**, lot 6 **16/16**, lot 7 **33/33**, lot 8 **15/15**, lot 9 **23/23**, lot 10 **20/20**, lot 11 **14/14**, lot 12 **11/11**, lot 16 **7/7**, lot 17 **5/5**.
+- **Fonctions serveur** : `deno check` 0 erreur, `deno lint` 27 fichiers sans problème ; bout en bout : PDF **23/23**, webhook Stripe **27/27**, emails **30/30**, robot **20/20**, factures récurrentes **2/2**, Google **26/26**, Drive **21/21**, Search Console **12/12**.
+- **Back-office** : TypeScript 0 erreur ; ESLint 0 erreur ; pagination **12/12** (unitaires) et **9/9** (vrai PostgREST plafonné) ; retour après connexion **11/11** ; navigateur : lots 4 **40/40**, 5 **49/49**, 6 **31/31**, 7 **10/10**, 8 **59/59**, 9 **18/18**, 10 **37/37**, 11 **26/26**, 12 **21/21**, 15 **50/50**, 16 **7/7**, polices **3/3**.
+- **Sites** : contrôles SEO **16/16** (175 pages), contenu **12/12**, **15 072 liens internes, 0 cassé**, formulaire **13/13**, navigateur lots 13 **54/54**, 14 **37/37**, 16 **54/54**.
+- **Accessibilité** : axe-core sur toutes les vues du back-office et des sites, bureau et mobile : **0 défaut, 0 débordement, 0 erreur JavaScript**.
+
+**Résultat** : ✅ **VALIDÉ** sur l'environnement de test — tous les tests passent.
+
+**Points restants (connus, aucun bloquant)**
+- **Rien n'est encore appliqué sur la vraie Supabase** : suivre `docs/MISE-EN-PRODUCTION.md`.
+- **Contenus à valider par le propriétaire** : `docs/CONTENU-A-VALIDER.md` (titres proposés, engagements publiés, pages de villes, guides PDF, `[À COMPLÉTER]`).
+- Services extérieurs (Stripe, Resend, Google GA4 / Drive / Search Console) **testés en simulation uniquement** : premier essai réel à faire en mode test (check-list §7).
+- react-router v6 : 3 avis « moderate » sans correctif en v6 (le cas exploitable est neutralisé) ; 29 `any` à typer.
+- Sur ce poste Windows, la régénération des sites échoue parfois sur un verrou de fichier passager (antivirus) : relancer suffit.
 
 ### Problèmes connus restants
 Voir §3 : aucun point ouvert de la cartographie (C1, C2, I1, I2, I3, I4 traités au lot 1 ; C3 au lot 2, actif après configuration ; I6, I7, A4, A5 au lot 3 ; I5, I10 au lot 4 ; I9 au lot 6 ; I8 au lot 7 ; I11, I12, A7 au lot 13 ; A1, A2, A3, A6 au lot 15). Points mineurs du lot 3 (onglets, colonnes « Actions ») corrigés au lot 15. Restent : 3 avis « moderate » de react-router v6 (cas exploitable neutralisé), 29 « any » à typer.

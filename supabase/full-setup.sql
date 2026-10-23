@@ -1715,3 +1715,12 @@ do $$ begin
   alter table public.leads drop constraint if exists leads_type_check;
   alter table public.leads add constraint leads_type_check check (type in ('devis','question','guide'));
 end $$;
+
+-- =====================================================================
+-- 26) LOT 17 — DURCISSEMENT FINAL (idempotent)
+-- =====================================================================
+-- TRUNCATE n'est pas filtré par la sécurité par ligne (RLS) : personne, hors
+-- serveur, ne doit pouvoir vider une table. (Non exposé par l'API, retiré par
+-- prudence ; l'application ne s'en sert jamais.)
+revoke truncate on all tables in schema public from anon, authenticated;
+alter default privileges in schema public revoke truncate on tables from anon, authenticated;

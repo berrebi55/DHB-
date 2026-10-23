@@ -18,7 +18,7 @@ DHB-/
 ├─ build/              ← générateurs Python des 3 sites (build_all.py)
 ├─ admin-react/        ← back-office (React + Refine + Ant Design)
 ├─ supabase/           ← full-setup.sql (base) + Edge Functions
-└─ docs/               ← REFONTE.md, PLAN-REFERENCE.md, PROMPT-COMPLET.md
+└─ docs/               ← plan, mise en production, Google, sauvegarde, contenus à valider
 ```
 
 ## ▶️ Lancer en local
@@ -42,4 +42,7 @@ Voir **`supabase/README-SETUP.md`** : un seul script, `supabase/full-setup.sql`,
 - `docs/PROMPT-COMPLET.md` : description complète du projet.
 - `docs/PLAN-REFERENCE.md` : plan de référence (audit, priorités, lots, avancement).
 - `docs/REFONTE.md` : refonte, design system, mesure d'audience.
+- **`docs/MISE-EN-PRODUCTION.md` : la check-list unique pour activer tout cela sur la vraie Supabase.**
+- `docs/CONTENU-A-VALIDER.md` : textes et engagements publiés à confirmer par le propriétaire.
+- `docs/GOOGLE.md` (Analytics, Drive, Search Console) · `docs/SAUVEGARDE.md` (sauvegarde et restauration).
 - `admin-react/README.md` : back-office, Edge Functions, secrets, déploiement.
