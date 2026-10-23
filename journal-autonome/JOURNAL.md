@@ -51,3 +51,12 @@ pas de réécriture de l'historique git.
 - Commit : voir ci-dessous.
 - Suite prévue : écrans du back-office — conversation dans la fiche ticket (messages, pièces jointes, réponse), « à qualifier » (rattacher à un client), étiquettes dans la liste, carte « Email entrant » dans Intégrations ; tests navigateur.
 - Points pour le propriétaire : aucun.
+
+## 2026-10-23 — Correctif : commit précédent fait avec un test en échec
+
+- Fait : le commit `1eb44d1` est parti alors que le test emails du lot 8 donnait **29/30** (et le bloc précédent annonçait à tort 30/30) : un ticket sans numéro produisait l'objet « [DHB #undefined] … ». Correction : la référence n'est ajoutée que si le ticket a un numéro. Leçon appliquée : désormais je lis les résultats des tests **avant** de lancer le commit, jamais dans la même commande.
+- Fichiers : `supabase/functions/email-send/index.ts`.
+- Tests : emails **30/30**, email → ticket **40/40**.
+- Commit : voir ci-dessous.
+- Suite prévue : écrans du back-office du lot 18 (inchangée).
+- Points pour le propriétaire : aucun.

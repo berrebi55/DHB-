@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
     // et « répondre à » l'adresse de support du site.
     let repondreA: string | null = null;
     if (type === "ticket") {
-      if (!/\[DHB #\d+\]/.test(sujet)) sujet = `[DHB #${ctx.fiche.numero}] ${sujet}`.slice(0, 200);
+      if (ctx.fiche.numero && !/\[DHB #\d+\]/.test(sujet)) sujet = `[DHB #${ctx.fiche.numero}] ${sujet}`.slice(0, 200);
       repondreA = (await adressesSupport(sb))[ctx.entity ?? "infogerance"] ?? null;
     }
     const html = texteEnHtml(c.texte);
