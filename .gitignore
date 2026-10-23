@@ -1,3 +1,6 @@
 __pycache__/
 *.pyc
 .DS_Store
+
+# Verrou des passages autonomes (local)
+journal-autonome/.verrou
