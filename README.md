@@ -40,6 +40,7 @@ Voir **`supabase/README-SETUP.md`** : un seul script, `supabase/full-setup.sql`,
 
 ## 📚 Documentation
 - `docs/PROMPT-COMPLET.md` : description complète du projet.
+- `docs/ETUDE-TICKETING.md` : étude build vs buy du ticketing + email (en attente de validation).
 - **`docs/METHODOLOGIE.md` : règles permanentes de travail sur le projet (à lire avant tout nouveau lot).**
 - `docs/PLAN-REFERENCE.md` : plan de référence (audit, priorités, lots, avancement).
 - `docs/REFONTE.md` : refonte, design system, mesure d'audience.

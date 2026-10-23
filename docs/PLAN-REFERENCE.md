@@ -170,6 +170,9 @@ Ordre adapté à l'audit : la **sécurité critique** (C1, C2) et la **sauvegard
 | **15** ✅ | **Performance + dépendances** : mesure, Vite à jour, ESLint, agrégats SQL si nécessaire | A1, A2, A6 | build, tous les écrans | — |
 | **16** ✅ | **Conversion** : lead magnets, outils interactifs | — | formulaires, GA | — |
 | **17** ✅ | **Audit global final** | — | tout | — |
+| 18 *(proposé)* | **Ticketing : email → ticket** (Resend Inbound + conversation dans DHB) | — | tickets, emails, automatisations | **validation de l'architecture** (`docs/ETUDE-TICKETING.md`) |
+| 19 *(proposé)* | **Portail client** (connexion des clients, rôle « client », RLS) | — | rôles, RLS | validation (changement de rôles / RLS) |
+| 20 *(proposé)* | **Contacts multiples par entreprise** (si besoin) | — | clients | validation |
 
 ---
 
