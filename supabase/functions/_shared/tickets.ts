@@ -79,7 +79,7 @@ export function estAutomatique(h: Record<string, string>): boolean {
     || !!enTete(h, "x-autoreply") || !!enTete(h, "x-autorespond") || !!enTete(h, "list-id");
 }
 
-async function adressesSupport(sb: SupabaseClient): Promise<Record<string, string>> {
+export async function adressesSupport(sb: SupabaseClient): Promise<Record<string, string>> {
   const { data } = await sb.from("integrations").select("details").eq("cle", "email_entrant").maybeSingle();
   const a = ((data?.details ?? {}) as { adresses?: Record<string, string> }).adresses ?? {};
   return Object.fromEntries(Object.entries(a).map(([k, v]) => [k, String(v ?? "").trim().toLowerCase()]).filter(([, v]) => v));

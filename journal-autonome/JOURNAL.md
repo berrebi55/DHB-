@@ -42,3 +42,12 @@ pas de réécriture de l'historique git.
 - Commit : voir ci-dessous.
 - Suite prévue : réponse depuis DHB (extension de `email-send` : objet `[DHB #n]`, réponse-à l'adresse de support, message « sortant »), fonction de téléchargement des pièces jointes, écrans (conversation dans la fiche ticket, « à qualifier », carte Email entrant dans Intégrations).
 - Points pour le propriétaire : aucun.
+
+## 2026-10-23 — Lot 18 (réponses) : répondre depuis DHB, télécharger les pièces jointes
+
+- Fait : `email-send` étendu (pas de nouvelle fonction d'envoi) : pour un ticket, objet préfixé `[DHB #n]` (une seule fois), « répondre à » = adresse de support du site, réponse enregistrée dans la conversation (sortant, lien vers l'historique d'envoi, auteur), ticket « ouvert » → « en cours ». Nouvelle fonction `ticket-piece` : pièce jointe remise à l'équipe seulement, toujours en téléchargement (`attachment`, `octet-stream`, `nosniff`, pas de cache).
+- Fichiers : `supabase/functions/email-send/index.ts`, `_shared/email.ts` (option « répondre à »), `_shared/tickets.ts`, `supabase/functions/ticket-piece/index.ts` (nouveau), `outils-test/test-tickets-email.mjs`.
+- Tests : bout en bout **40/40** (dont réponse, double référence évitée, compte en attente refusé, téléchargement : contenu identique, sans connexion 401, en attente 403, identifiant invalide 400, inconnu 404) ; emails du lot 8 **30/30** ; `deno check` / `deno lint` OK.
+- Commit : voir ci-dessous.
+- Suite prévue : écrans du back-office — conversation dans la fiche ticket (messages, pièces jointes, réponse), « à qualifier » (rattacher à un client), étiquettes dans la liste, carte « Email entrant » dans Intégrations ; tests navigateur.
+- Points pour le propriétaire : aucun.

@@ -22,6 +22,8 @@ export interface Envoi {
   liens?: Liens;
   par?: Appelant | null;
   piece?: PieceJointe | null;
+  /** Adresse « répondre à » (ex. adresse de support d'un ticket). */
+  repondreA?: string | null;
 }
 export interface ResultatEnvoi { ok: boolean; code?: string; id?: string }
 
@@ -53,6 +55,7 @@ export async function envoyerEtJournaliser(sb: SupabaseClient, e: Envoi): Promis
           to: [destinataireReel],
           subject: sujet,
           html: e.html,
+          ...(e.repondreA ? { reply_to: [e.repondreA] } : {}),
           ...(e.piece ? { attachments: [{ filename: e.piece.nom, content: base64(e.piece.octets) }] } : {}),
         }),
       });

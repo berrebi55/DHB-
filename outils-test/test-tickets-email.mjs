@@ -19,11 +19,22 @@ const emails = new Map();          // id → email reçu (format API « receivin
 const fichiers = new Map();        // id pièce → { octets, meta }
 const stockage = new Map();        // chemin → octets
 const etat = { resendEnPanne: false };
+const envoyes = [];                // emails envoyés par DHB (faux Resend)
 const lire = (req) => new Promise((ok) => { const c = []; req.on("data", (d) => c.push(d)); req.on("end", () => ok(Buffer.concat(c))); });
 const envoi = (res, s, o) => { res.writeHead(s, { "Content-Type": "application/json" }); res.end(JSON.stringify(o)); };
 const serveur = http.createServer(async (req, res) => {
   const u = new URL(req.url, "http://x");
   let m;
+  if (u.pathname === "/auth/v1/user") {
+    const a = req.headers.authorization;
+    if (a === "Bearer jeton-admin") return envoi(res, 200, { id: "11111111-1111-1111-1111-111111111111", email: "admin@test.fr" });
+    if (a === "Bearer jeton-attente") return envoi(res, 200, { id: "33333333-3333-3333-3333-333333333333", email: "attente@test.fr" });
+    return envoi(res, 401, {});
+  }
+  if (u.pathname === "/resend/emails" && req.method === "POST") {
+    envoyes.push(JSON.parse((await lire(req)).toString() || "{}"));
+    return envoi(res, 200, { id: "envoi-" + envoyes.length });
+  }
   if ((m = u.pathname.match(/^\/resend\/emails\/receiving\/([^/]+)(\/attachments)?$/))) {
     if (req.headers.authorization !== "Bearer re_test") return envoi(res, 401, {});
     if (etat.resendEnPanne) return envoi(res, 500, { message: "panne" });
@@ -62,10 +73,20 @@ async function lancer(nom, port) {
 }
 const fEntrant = await lancer("email-entrant", 54381);
 const fWorker = await lancer("worker", 54382);
+const fEnvoi = await lancer("email-send", 54383);
+const fPiece = await lancer("ticket-piece", 54384);
+sql("update public.profiles set role = 'en_attente' where id = '33333333-3333-3333-3333-333333333333'");
+const appeler = async (port, corps, jeton = "jeton-admin") => {
+  const r = await fetch(`http://127.0.0.1:${port}/`, { method: "POST", headers: { "Content-Type": "application/json", ...(jeton ? { Authorization: `Bearer ${jeton}` } : {}) }, body: JSON.stringify(corps) });
+  const brut = Buffer.from(await r.arrayBuffer());
+  let j = {}; try { j = JSON.parse(brut.toString()); } catch { /* fichier */ }
+  return { s: r.status, j, brut, h: r.headers };
+};
 
 const nettoyer = () => sql(`delete from public.tickets where client_email like '%@lot18e2e.test' or sujet like 'lot18e2e%';
   delete from public.evenements where type = 'email_recu';
   delete from public.ticket_messages where de_email like '%@lot18e2e.test';
+  delete from public.emails where destinataire ilike '%@lot18e2e.test';
   delete from public.clients where email ilike '%@lot18e2e.test';
   update public.integrations set details = '{"adresses": {"infogerance": "", "particuliers": ""}}' where cle = 'email_entrant';`);
 nettoyer();
@@ -187,7 +208,37 @@ const fantome = uuid();
 r = await webhook({ type: "email.received", data: { email_id: fantome } });
 ok("Email introuvable chez Resend : erreur définitive (pas de réessai sans fin)", sql(`select statut from public.evenements where objet_id = '${fantome}'`) === "erreur", r);
 
-fEntrant.kill(); fWorker.kill(); serveur.close(); nettoyer();
+// ---------- 8. Répondre depuis DHB ----------
+const t1 = sql(`select id from public.tickets where numero = ${num1}`);
+sql(`update public.tickets set status = 'ouvert' where id = '${t1}'`);
+sql(`update public.integrations set details = '{"adresses": {"infogerance": "support@pro.lot18e2e.test", "particuliers": ""}}' where cle = 'email_entrant'`);
+envoyes.length = 0;
+r = await appeler(54383, { cible: { type: "ticket", id: t1 }, sujet: "Votre imprimante", corps: "Bonjour,\nnous passons demain matin." });
+const parti = envoyes[0] ?? {};
+ok("Réponse : objet « [DHB #n] … », destinataire = client, « répondre à » = adresse de support", r.s === 200 && parti.subject === `[DHB #${num1}] Votre imprimante`
+  && parti.to?.[0] === "claire@lot18e2e.test" && parti.reply_to?.[0] === "support@pro.lot18e2e.test", { r: r.j, parti });
+ok("Réponse enregistrée dans la conversation (sortant, lien vers l'historique d'envoi, auteur)",
+  sql(`select sens || '|' || a_email || '|' || (email_id is not null) || '|' || auteur_id from public.ticket_messages where ticket_id = '${t1}' and sens = 'sortant'`)
+  === "sortant|claire@lot18e2e.test|true|11111111-1111-1111-1111-111111111111");
+ok("Ticket « ouvert » passé « en cours » ; journal « Réponse envoyée à … »", sql(`select status from public.tickets where id = '${t1}'`) === "en_cours"
+  && sql(`select count(*) from public.activites where titre = 'Réponse envoyée à claire@lot18e2e.test (ticket #${num1})'`) === "1");
+r = await appeler(54383, { cible: { type: "ticket", id: t1 }, sujet: `RE: [DHB #${num1}] suite`, corps: "x" });
+ok("Objet déjà référencé : pas de double « [DHB #n] »", envoyes[1]?.subject === `RE: [DHB #${num1}] suite`, envoyes[1]?.subject);
+r = await appeler(54383, { cible: { type: "ticket", id: t1 }, sujet: "x", corps: "x" }, "jeton-attente");
+ok("Compte en attente : réponse refusée (403)", r.s === 403 && envoyes.length === 2, r.j);
+sql(`update public.integrations set details = '{"adresses": {"infogerance": "", "particuliers": ""}}' where cle = 'email_entrant'`);
+
+// ---------- 9. Télécharger une pièce jointe ----------
+const piece = sql(`select p.id || '|' || p.chemin from public.ticket_pieces p where p.nom = 'facture.pdf' and p.ticket_id = '${t1}' limit 1`).split("|");
+r = await appeler(54384, { piece_id: piece[0] });
+ok("Équipe : fichier identique, toujours en téléchargement (attachment, octet-stream, nosniff)", r.s === 200 && r.brut.equals(pdf)
+  && /^attachment;/.test(r.h.get("content-disposition")) && r.h.get("content-type") === "application/octet-stream" && r.h.get("x-content-type-options") === "nosniff", r.h.get("content-disposition"));
+r = await appeler(54384, { piece_id: piece[0] }, null); ok("Sans connexion : 401", r.s === 401, r.j);
+r = await appeler(54384, { piece_id: piece[0] }, "jeton-attente"); ok("Compte en attente : 403", r.s === 403, r.j);
+r = await appeler(54384, { piece_id: "../../etc/passwd" }); ok("Identifiant invalide : 400", r.s === 400, r.j);
+r = await appeler(54384, { piece_id: uuid() }); ok("Pièce inconnue : 404", r.s === 404, r.j);
+
 for (const x of res) console.log(x.ok ? "OK   " : "ÉCHEC", x.n, x.ok ? "" : JSON.stringify(x.d)?.slice(0, 400));
+fEntrant.kill(); fWorker.kill(); fEnvoi.kill(); fPiece.kill(); serveur.close(); nettoyer();
 console.log(`${res.filter((x) => x.ok).length} / ${res.length} scénarios email → ticket conformes`);
 process.exit(0);

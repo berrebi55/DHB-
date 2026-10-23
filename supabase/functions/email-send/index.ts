@@ -18,6 +18,7 @@ import { adminClient, cors, erreur, HttpError, json, requireUser } from "../_sha
 import { envoyerEtJournaliser } from "../_shared/email.ts";
 import { contexte, remplir, texteEnHtml, TYPES_CIBLE, type TypeCible } from "../_shared/modeles.ts";
 import { obtenirPdf } from "../_shared/documents.ts";
+import { adressesSupport } from "../_shared/tickets.ts";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -47,7 +48,14 @@ Deno.serve(async (req) => {
     const c = remplir(corpsBrut, ctx.vars);
     const manquantes = [...new Set([...s.manquantes, ...c.manquantes])];
     if (manquantes.length) return json({ error: "variables_manquantes", variables: manquantes }, 422);
-    const sujet = s.texte.replace(/[\r\n]+/g, " ").slice(0, 200);
+    let sujet = s.texte.replace(/[\r\n]+/g, " ").slice(0, 200);
+    // Ticket : référence [DHB #n] dans l'objet (la réponse du client revient dans le même fil)
+    // et « répondre à » l'adresse de support du site.
+    let repondreA: string | null = null;
+    if (type === "ticket") {
+      if (!/\[DHB #\d+\]/.test(sujet)) sujet = `[DHB #${ctx.fiche.numero}] ${sujet}`.slice(0, 200);
+      repondreA = (await adressesSupport(sb))[ctx.entity ?? "infogerance"] ?? null;
+    }
     const html = texteEnHtml(c.texte);
 
     const joindre = !!b.joindre_pdf;
@@ -61,8 +69,15 @@ Deno.serve(async (req) => {
     const pdf = joindre ? await obtenirPdf(sb, type as "devis" | "facture", id, moi.userId ?? null) : null;
     const r = await envoyerEtJournaliser(sb, {
       a: ctx.destinataire, sujet, html, origine: "manuel", modele, liens: ctx.liens, par: moi,
-      piece: pdf ? { nom: pdf.nom, octets: pdf.octets } : null,
+      piece: pdf ? { nom: pdf.nom, octets: pdf.octets } : null, repondreA,
     });
+    if (r.ok && type === "ticket") {
+      await sb.from("ticket_messages").insert({
+        ticket_id: id, sens: "sortant", de_email: repondreA, a_email: ctx.destinataire, sujet, texte: c.texte.slice(0, 50000),
+        email_id: r.id ?? null, auteur_id: moi.userId ?? null,
+      });
+      if (ctx.fiche.status === "ouvert") await sb.from("tickets").update({ status: "en_cours" }).eq("id", id);
+    }
     if (!r.ok) return json({ error: r.code, email_id: r.id }, r.code === "resend_not_configured" ? 503 : 502);
     return json({ ok: true, email_id: r.id, destinataire: ctx.destinataire });
   } catch (e) {
