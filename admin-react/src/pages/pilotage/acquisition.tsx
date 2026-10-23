@@ -29,7 +29,7 @@ export function StatsAcquisition() {
     },
   });
   const { data: d } = useDonnees();
-  const lignes = ga.data ?? [];
+  const lignes = useMemo(() => ga.data ?? [], [ga.data]);
 
   const calcul = useMemo(() => {
     const sessions = lignes.reduce((s, l) => s + l.sessions, 0);

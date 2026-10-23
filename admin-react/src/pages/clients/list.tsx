@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button, Input, Segmented, Select, Tabs, Tooltip } from "antd";
+import { Button, Input, Segmented, Select, Tooltip } from "antd";
 import { PlusOutlined, SearchOutlined, TeamOutlined } from "@ant-design/icons";
 import { useList, type CrudFilter } from "@refinedev/core";
 import { supabaseClient } from "../../supabaseClient";
@@ -10,6 +10,8 @@ import { ClientDrawer, type Client } from "../../components/forms/ClientDrawer";
 import { cleanSearch, eur0, fromNow, initiales } from "../../lib/format";
 import { ENTITES, label, options } from "../../lib/statuts";
 import { useDebounced, useUrlState } from "../../lib/hooks";
+import { Onglets } from "../../components/ui/Onglets";
+import { chargerTout } from "../../lib/chargerTout";
 
 export interface ClientVue extends Client {
   ca_encaisse: number;
@@ -67,7 +69,7 @@ export function ClientsList() {
   const rows = data?.data ?? [];
 
   useEffect(() => {
-    supabaseClient.from("clients").select("statut, archived_at").limit(5000).then(({ data: d }) => {
+    chargerTout((de, a) => supabaseClient.from("clients").select("id, statut, archived_at").order("id").range(de, a)).then(({ data: d }) => {
       const c: Record<string, number> = { "": 0, archives: 0 };
       (d ?? []).forEach((r: { statut: string; archived_at: string | null }) => {
         if (r.archived_at) c.archives++;
@@ -90,7 +92,7 @@ export function ClientsList() {
       />
       <Panel flush>
         <div className="list-tabs">
-          <Tabs activeKey={f.statut || "_"} onChange={(k) => setF({ statut: k === "_" ? null : k })}
+          <Onglets label="Filtrer les clients par statut" activeKey={f.statut || "_"} onChange={(k) => setF({ statut: k === "_" ? null : k })}
             items={ONGLETS.map((o) => ({ key: o.key || "_", label: <span>{o.label}<span className="tab-count">{counts[o.key] ?? 0}</span></span> }))} />
         </div>
         <div className="filterbar">

@@ -22,7 +22,6 @@ export class ErrorBoundary extends Component<
   }
 
   componentDidCatch(erreur: unknown, info: ErrorInfo) {
-    // eslint-disable-next-line no-console
     console.error("[DHB] Erreur d'affichage", erreur, info.componentStack);
   }
 

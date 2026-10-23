@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { App, Button, Dropdown, Modal, Skeleton, Space, Tabs } from "antd";
+import { App, Button, Dropdown, Modal, Skeleton, Space } from "antd";
 import {
   CustomerServiceOutlined,
   DeleteOutlined,
@@ -33,6 +33,7 @@ import { label } from "../../lib/statuts";
 import { useRole, useUrlState } from "../../lib/hooks";
 import { messageErreurBase, estIntrouvable } from "../../lib/functions";
 import type { ClientVue } from "./list";
+import { Onglets } from "../../components/ui/Onglets";
 
 /** Petite liste cliquable utilisée dans les onglets de la fiche. */
 function MiniListe<T extends { id: string }>(props: { rows: T[]; loading?: boolean; to: (r: T) => string; titre: (r: T) => ReactNode; statut: (r: T) => ReactNode; sous: (r: T) => ReactNode; vide: ReactNode }) {
@@ -135,7 +136,7 @@ export function ClientShow() {
       </div>
 
       <div className="panel" style={{ padding: "0 18px" }}>
-        <Tabs
+        <Onglets label="Sections de la fiche client" className="onglets-contenu"
           activeKey={onglet}
           onChange={(k) => setF({ onglet: k === "apercu" ? null : k })}
           items={[

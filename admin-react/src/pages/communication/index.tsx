@@ -179,7 +179,7 @@ export function ModelesEmailPage() {
             { title: "Modèle", dataIndex: "nom", render: (v: string, m) => <div><div className="cell-main">{v}</div><div className="cell-sub">{m.sujet || "Sujet libre"}</div></div> },
             { title: "Pour", dataIndex: "cible", render: (v: string) => CIBLES.find((c) => c.value === v)?.label ?? v },
             { title: "État", dataIndex: "actif", width: 110, render: (v: boolean) => v ? <span className="st tone-success">Actif</span> : <span className="st tone-neutral">Désactivé</span> },
-            ...(isAdmin ? [{ title: "", key: "e", width: 60, render: () => <EditOutlined aria-hidden /> }] : []),
+            ...(isAdmin ? [{ title: <span className="sr-only">Modifier</span>, key: "e", width: 60, render: () => <EditOutlined aria-hidden /> }] : []),
           ]}
           mobileRender={(m) => (<><div className="m-row"><span className="m-title">{m.nom}</span>{m.actif ? <span className="st tone-success">Actif</span> : <span className="st tone-neutral">Désactivé</span>}</div><div className="m-sub">{CIBLES.find((c) => c.value === m.cible)?.label}</div></>)}
           empty={<EmptyState icon={<MailOutlined />} title="Aucun modèle" description="Exécutez supabase/full-setup.sql pour installer les modèles de départ." />}

@@ -10,8 +10,8 @@ contenu du site, utilisateurs et journal d'activité.
 
 ## 1. Prérequis
 
-- **Node.js 18+** installé (https://nodejs.org — prends la version LTS).
-  Vérifie dans un terminal : `node -v`.
+- **Node.js 20.19 ou plus récent** (22 LTS conseillé — https://nodejs.org), exigé
+  par Vite 7. Vérifie dans un terminal : `node -v`.
 
 ## 2. Lancer en local (développement)
 
@@ -19,6 +19,7 @@ contenu du site, utilisateurs et journal d'activité.
 cd admin-react
 npm install        # la 1re fois seulement
 npm run dev        # démarre sur http://localhost:5173
+npm run lint       # vérifie le code (ESLint) — 0 erreur attendu
 ```
 
 Les clés Supabase **publiques** sont déjà dans `.env` (jamais la clé secrète).

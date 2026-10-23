@@ -122,6 +122,7 @@ export function DashboardPage() {
         subtitle={`Situation au ${dayjs().format("dddd D MMMM YYYY")}`}
       />
       {erreur && <Alert type="warning" showIcon message={erreur} action={<Button size="small" onClick={recharger}>Réessayer</Button>} style={{ marginBottom: 16 }} />}
+      {data?.partiel && <Alert type="warning" showIcon style={{ marginBottom: 16 }} message="Chiffres partiels" description="Une table dépasse 50 000 lignes : seules les 50 000 premières sont prises en compte. Prévenez l'administrateur (calculs à déplacer côté base)." />}
 
       <div className="kpi-grid" style={{ marginBottom: 20 }}>
         <Kpi

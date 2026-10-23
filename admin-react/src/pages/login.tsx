@@ -1,11 +1,27 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Alert, Button, Form, Input } from "antd";
 import { CheckOutlined, LockOutlined, MailOutlined } from "@ant-design/icons";
 import { useLogin } from "@refinedev/core";
 import { supabaseClient } from "../supabaseClient";
 
+/** Page de retour après connexion (?to=…) : seulement un chemin interne au back-office.
+ *  « //site.fr » ou « /\site.fr » mèneraient hors du back-office (redirection ouverte,
+ *  avis de sécurité react-router GHSA-wrjc-x8rr-h8h6, sans correctif en v6). */
+export const retourInterne = (to: string) => /^\/(?![/\\])[^\\\s]*$/.test(to);
+
 export const LoginPage = () => {
   const { mutate: login, isLoading } = useLogin<{ email: string; password: string }>();
+  const location = useLocation();
+  const navigate = useNavigate();
+  useEffect(() => {
+    const p = new URLSearchParams(location.search);
+    const to = p.get("to");
+    if (to !== null && !retourInterne(to)) {
+      p.delete("to");
+      navigate({ search: p.toString() ? `?${p}` : "" }, { replace: true });
+    }
+  }, [location.search, navigate]);
   const [erreur, setErreur] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [form] = Form.useForm();

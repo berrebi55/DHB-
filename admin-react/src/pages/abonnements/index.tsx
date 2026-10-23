@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { App, Button, Input, Space, Tabs, Tag, Tooltip } from "antd";
+import { App, Button, Input, Space, Tag, Tooltip } from "antd";
 import { FileDoneOutlined, PlusOutlined, RiseOutlined, SearchOutlined, SyncOutlined } from "@ant-design/icons";
 import { useList } from "@refinedev/core";
 import dayjs from "dayjs";
@@ -12,6 +12,7 @@ import { label } from "../../lib/statuts";
 import { aboFactureADue, aboRenouvellementProche, mrr } from "../../lib/metrics";
 import { useRafraichir, useUrlState } from "../../lib/hooks";
 import { appelerFonction } from "../../lib/functions";
+import { Onglets } from "../../components/ui/Onglets";
 
 const KEYS = ["statut", "alerte", "q", "ouvrir", "creer"] as const;
 
@@ -86,7 +87,7 @@ export function AbonnementsList() {
       </div>
       <Panel flush>
         <div className="list-tabs">
-          <Tabs activeKey={f.statut || "actif"} onChange={(k) => setF({ statut: k === "actif" ? null : k })}
+          <Onglets label="Filtrer les abonnements par statut" activeKey={f.statut || "actif"} onChange={(k) => setF({ statut: k === "actif" ? null : k })}
             items={[
               { key: "actif", label: <span>Actifs<span className="tab-count">{nb("actif")}</span></span> },
               { key: "suspendu", label: <span>Suspendus<span className="tab-count">{nb("suspendu")}</span></span> },
@@ -127,7 +128,7 @@ export function AbonnementsList() {
             { title: "Alertes", key: "alertes", render: (_: unknown, r: Abonnement) => <Space size={4} wrap>{alertes(r).map((a) => <Pill key={a.cle} tone={a.ton} dot>{a.txt}</Pill>)}</Space> },
             { title: "Statut", dataIndex: "statut", render: (v: string) => <StatusTag kind="abo" value={v} /> },
             {
-              title: "", key: "gen", render: (_: unknown, r: Abonnement) => aboFactureADue(r as any) ? (
+              title: <span className="sr-only">Facturer</span>, key: "gen", render: (_: unknown, r: Abonnement) => aboFactureADue(r as any) ? (
                 <Tooltip title="Crée la facture du mois en brouillon"><Button size="small" loading={enCours === r.id} onClick={() => generer(r.id)}>Générer</Button></Tooltip>
               ) : null,
             },

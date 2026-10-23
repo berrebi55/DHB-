@@ -3,6 +3,7 @@ import dayjs, { type Dayjs } from "dayjs";
 import { supabaseClient } from "../supabaseClient";
 import { LEAD_OUVERTS } from "./statuts";
 import { messageErreurBase } from "./functions";
+import { chargerTout } from "./chargerTout";
 
 // ---------------------------------------------------------------------------
 // Données de pilotage : lues telles quelles en base, jamais complétées.
@@ -17,36 +18,38 @@ export interface A { id: string; client_nom: string | null; client_id: string | 
 export interface T { id: string; sujet: string; status: string; priorite: string; created_at: string; client_nom: string | null }
 export interface C { id: string; type: string; statut: string; archived_at: string | null; created_at: string; entity: string }
 
-export interface Donnees { factures: F[]; devis: D[]; leads: L[]; abonnements: A[]; tickets: T[]; clients: C[] }
+export interface Donnees { factures: F[]; devis: D[]; leads: L[]; abonnements: A[]; tickets: T[]; clients: C[]; partiel: boolean }
 
-const MAX = 5000;
 const COLONNES_LEADS = "id, nom, entreprise, status, type, created_at, relance_at, priorite, client_id, entity, type_client";
 
 const COLONNES_ABOS = "id, client_nom, client_id, libelle, montant_mensuel, statut, date_debut, date_renouvellement, derniere_facture_le, jour_facturation, entity";
 
 // Colonnes ajoutées par les lots 4 (« source ») et 7 (« stripe_subscription_id ») :
 // si la base n'est pas encore à jour, on charge les données sans elles.
-type Reponse = { data: unknown[] | null; error: { message: string } | null };
-async function chargerAvecRepli(table: string, colonnes: string, ajout: string): Promise<Reponse> {
-  const r: Reponse = await supabaseClient.from(table).select(`${colonnes}, ${ajout}`).limit(MAX);
-  if (r.error && new RegExp(ajout).test(r.error.message ?? "")) return await supabaseClient.from(table).select(colonnes).limit(MAX);
+// Toutes les lignes, page par page et dans un ordre stable (voir chargerTout.ts).
+const tout = (table: string, colonnes: string) =>
+  chargerTout<unknown>((de, a) => supabaseClient.from(table).select(colonnes).order("id").range(de, a));
+async function chargerAvecRepli(table: string, colonnes: string, ajout: string) {
+  const r = await tout(table, `${colonnes}, ${ajout}`);
+  if (r.error && new RegExp(ajout).test(r.error.message ?? "")) return await tout(table, colonnes);
   return r;
 }
 const chargerLeads = () => chargerAvecRepli("leads", COLONNES_LEADS, "source");
 
 async function chargerDonnees(): Promise<Donnees> {
   const [f, d, l, a, t, c] = await Promise.all([
-    supabaseClient.from("factures_vue").select("id, numero, status, total_ht, total_ttc, date_facture, date_echeance, paid_at, client_id, client_nom, entity, en_retard, reste_a_payer, abonnement_id, devis_id, created_at").limit(MAX),
-    supabaseClient.from("devis").select("id, numero, statut, total_ht, total_ttc, date_devis, created_at, envoye_at, signed_at, client_id, client_nom, lead_id, derniere_relance_le, entity").limit(MAX),
+    tout("factures_vue", "id, numero, status, total_ht, total_ttc, date_facture, date_echeance, paid_at, client_id, client_nom, entity, en_retard, reste_a_payer, abonnement_id, devis_id, created_at"),
+    tout("devis", "id, numero, statut, total_ht, total_ttc, date_devis, created_at, envoye_at, signed_at, client_id, client_nom, lead_id, derniere_relance_le, entity"),
     chargerLeads(),
     chargerAvecRepli("abonnements", COLONNES_ABOS, "stripe_subscription_id"),
-    supabaseClient.from("tickets").select("id, sujet, status, priorite, created_at, client_nom").limit(MAX),
-    supabaseClient.from("clients").select("id, type, statut, archived_at, created_at, entity").limit(MAX),
+    tout("tickets", "id, sujet, status, priorite, created_at, client_nom"),
+    tout("clients", "id, type, statut, archived_at, created_at, entity"),
   ]);
   const err = [f, d, l, a, t, c].find((r) => r.error)?.error;
   if (err) throw err;
   const n = <X,>(rows: X[] | null) => (rows ?? []).map((r: any) => ({ ...r, total_ht: Number(r.total_ht ?? 0), total_ttc: Number(r.total_ttc ?? 0), montant_mensuel: Number(r.montant_mensuel ?? 0), reste_a_payer: Number(r.reste_a_payer ?? 0) })) as X[];
-  return { factures: n<F>(f.data as F[]), devis: n<D>(d.data as D[]), leads: n<L>(l.data as L[]), abonnements: n<A>(a.data as A[]), tickets: (t.data ?? []) as T[], clients: (c.data ?? []) as C[] };
+  return { factures: n<F>(f.data as F[]), devis: n<D>(d.data as D[]), leads: n<L>(l.data as L[]), abonnements: n<A>(a.data as A[]), tickets: (t.data ?? []) as T[], clients: (c.data ?? []) as C[],
+    partiel: [f, d, l, a, t, c].some((r) => r.tronque) };
 }
 
 /**

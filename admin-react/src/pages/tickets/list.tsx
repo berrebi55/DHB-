@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { App, Button, DatePicker, Input, Select, Tabs, Tooltip } from "antd";
+import { App, Button, DatePicker, Input, Select, Tooltip } from "antd";
 import { CustomerServiceOutlined, PlusOutlined, SearchOutlined } from "@ant-design/icons";
 import { useList, useUpdate, type CrudFilter } from "@refinedev/core";
 import dayjs, { type Dayjs } from "dayjs";
@@ -12,6 +12,8 @@ import { cleanSearch, dateFR, fromNow } from "../../lib/format";
 import { PRIORITES, TICKET_STATUTS, label, options } from "../../lib/statuts";
 import { useDebounced, useUrlState } from "../../lib/hooks";
 import { messageErreurBase } from "../../lib/functions";
+import { Onglets } from "../../components/ui/Onglets";
+import { chargerTout } from "../../lib/chargerTout";
 
 const KEYS = ["statut", "priorite", "responsable", "q", "du", "au", "page", "creer"] as const;
 const PAGE = 20;
@@ -65,7 +67,7 @@ export function TicketsList() {
   const rows = data?.data ?? [];
 
   useEffect(() => {
-    supabaseClient.from("tickets").select("status").limit(5000).then(({ data: d }) => {
+    chargerTout((de, a) => supabaseClient.from("tickets").select("id, status").order("id").range(de, a)).then(({ data: d }) => {
       const c: Record<string, number> = { tous: 0 };
       (d ?? []).forEach((r: { status: string }) => { c.tous++; c[r.status] = (c[r.status] ?? 0) + 1; });
       c[""] = (c.ouvert ?? 0) + (c.en_cours ?? 0);
@@ -95,7 +97,7 @@ export function TicketsList() {
       />
       <Panel flush>
         <div className="list-tabs">
-          <Tabs activeKey={onglet.key || "_"} onChange={(k) => setF({ statut: k === "_" ? null : k })}
+          <Onglets label="Filtrer les tickets par statut" activeKey={onglet.key || "_"} onChange={(k) => setF({ statut: k === "_" ? null : k })}
             items={ONGLETS.map((o) => ({ key: o.key || "_", label: <span>{o.label}<span className="tab-count">{counts[o.key] ?? 0}</span></span> }))} />
         </div>
         <div className="filterbar">

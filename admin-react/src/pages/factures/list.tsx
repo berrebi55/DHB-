@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button, Input, Select, Tabs } from "antd";
+import { Button, Input, Select } from "antd";
 import { FileDoneOutlined, PlusOutlined, SearchOutlined } from "@ant-design/icons";
 import { useList, type CrudFilter } from "@refinedev/core";
 import { supabaseClient } from "../../supabaseClient";
@@ -9,6 +9,8 @@ import { EmptyState, PageHeader, Panel, StatusTag } from "../../components/ui";
 import { cleanSearch, dateFR, eur } from "../../lib/format";
 import { ENTITES, label, options } from "../../lib/statuts";
 import { useDebounced, useUrlState } from "../../lib/hooks";
+import { Onglets } from "../../components/ui/Onglets";
+import { chargerTout } from "../../lib/chargerTout";
 
 export interface FactureVue {
   id: string;
@@ -91,7 +93,7 @@ export function FacturesList() {
   const rows = data?.data ?? [];
 
   useEffect(() => {
-    supabaseClient.from("factures_vue").select("status, en_retard").limit(5000).then(({ data: d }) => {
+    chargerTout((de, a) => supabaseClient.from("factures_vue").select("id, status, en_retard").order("id").range(de, a)).then(({ data: d }) => {
       const c: Record<string, number> = { "": 0, en_retard: 0 };
       (d ?? []).forEach((r: { status: string; en_retard: boolean }) => { c[""]++; c[r.status] = (c[r.status] ?? 0) + 1; if (r.en_retard) c.en_retard++; });
       setCounts(c);
@@ -111,7 +113,7 @@ export function FacturesList() {
       />
       <Panel flush>
         <div className="list-tabs">
-          <Tabs activeKey={onglet || "_"} onChange={(k) => setF({ statut: k === "_" || k === "en_retard" ? null : k, etat: k === "en_retard" ? "en_retard" : null })}
+          <Onglets label="Filtrer les factures par statut" activeKey={onglet || "_"} onChange={(k) => setF({ statut: k === "_" || k === "en_retard" ? null : k, etat: k === "en_retard" ? "en_retard" : null })}
             items={ONGLETS.map((o) => ({ key: o.key || "_", label: <span>{o.label}<span className="tab-count" style={o.key === "en_retard" && counts.en_retard ? { color: "var(--danger)" } : undefined}>{counts[o.key] ?? 0}</span></span> }))} />
         </div>
         <div className="filterbar">

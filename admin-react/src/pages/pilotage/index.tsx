@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { Alert, Button, Segmented, Select } from "antd";
 import { BarChartOutlined, EuroOutlined, FileTextOutlined, InboxOutlined, RiseOutlined, TeamOutlined } from "@ant-design/icons";
@@ -31,6 +31,7 @@ function Cadre({ titre, sousTitre, actions, children }: { titre: string; sousTit
     <>
       <PageHeader title={titre} subtitle={sousTitre} crumbs={[{ label: "Pilotage" }, { label: titre }]} actions={actions} />
       {erreur && <Alert type="warning" showIcon message={erreur} action={<Button size="small" onClick={recharger}>Réessayer</Button>} style={{ marginBottom: 16 }} />}
+      {data?.partiel && <Alert type="warning" showIcon style={{ marginBottom: 16 }} message="Chiffres partiels" description="Une table dépasse 50 000 lignes : seules les 50 000 premières sont prises en compte. Prévenez l'administrateur (calculs à déplacer côté base)." />}
       {loading && <div className="kpi-grid">{[0, 1, 2, 3].map((i) => <Kpi key={i} label="…" value="" loading />)}</div>}
       {data && children(data)}
     </>

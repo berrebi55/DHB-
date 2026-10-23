@@ -51,7 +51,7 @@ export function ClientSelect(props: {
     if (t) req = req.or(`nom.ilike.%${t}%,entreprise.ilike.%${t}%,email.ilike.%${t}%`);
     req.then(({ data }) => {
       if (annule) return;
-      let rows = (data ?? []) as Client[];
+      const rows = (data ?? []) as Client[];
       // S'assure que le client sélectionné reste affiché même s'il n'est pas dans la recherche.
       if (props.value && !rows.some((r) => r.id === props.value)) {
         supabaseClient.from("clients").select("*").eq("id", props.value).maybeSingle().then(({ data: c }) => {

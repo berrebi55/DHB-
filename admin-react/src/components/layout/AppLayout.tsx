@@ -32,7 +32,9 @@ const LS_KEY = "dhb-sider-collapsed";
 function useBadges(pathname: string) {
   const [b, setB] = useState<Record<BadgeKey, number> & { urgents: number }>({ leads: 0, questions: 0, tickets: 0, urgents: 0 });
   const charger = useCallback(async () => {
-    const c = (q: any) => q.then((r: any) => r.count ?? 0).catch(() => 0);
+    // -1 = compteur indisponible (erreur) : ne pas afficher « rien en attente » à tort.
+    const c = (q: PromiseLike<{ count: number | null; error: unknown }>) =>
+      Promise.resolve(q).then((r) => (r.error ? -1 : r.count ?? 0), () => -1);
     const [leads, questions, tickets, urgents] = await Promise.all([
       c(supabaseClient.from("leads").select("id", { count: "exact", head: true }).eq("status", "nouveau").neq("type", "question")),
       c(supabaseClient.from("leads").select("id", { count: "exact", head: true }).eq("status", "nouveau").eq("type", "question")),
@@ -68,6 +70,9 @@ function SideMenu({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: 
             <span>{it.label}</span>
             {n > 0 && !collapsed && (
               <span className={`nav-badge${danger ? " danger" : ""}`} aria-label={`${n} en attente`}>{n}</span>
+            )}
+            {n < 0 && !collapsed && (
+              <span className="nav-badge inconnu" title="Compteur indisponible" aria-label="compteur indisponible">?</span>
             )}
           </>
         ),

@@ -81,7 +81,7 @@ export function PrestationsList() {
             { title: "Activité", dataIndex: "entity", render: (v: string) => label("entite", v) },
             { title: "État", dataIndex: "actif", render: (v: boolean) => v ? <StatusTag kind="abo" value="actif" /> : <span className="st tone-neutral">Désactivée</span> },
             ...(isAdmin ? [{
-              title: "", key: "act", width: 90, render: (_: unknown, r: Prestation) => (
+              title: <span className="sr-only">Actions</span>, key: "act", width: 90, render: (_: unknown, r: Prestation) => (
                 <Popconfirm title="Supprimer cette prestation du catalogue ?" description="Les devis existants ne sont pas modifiés." okText="Supprimer" cancelText="Annuler" okButtonProps={{ danger: true }}
                   onConfirm={() => remove({ resource: "prestations", id: r.id, successNotification: false }, { onSuccess: () => message.success("Prestation supprimée"), onError: (e) => message.error(messageErreurBase(e)) })}>
                   <Button type="link" danger size="small">Supprimer</Button>

@@ -6,7 +6,7 @@ import { dateTimeFR, fromNow } from "../../lib/format";
 import { useIdentite, useRole } from "../../lib/hooks";
 import { messageErreurBase } from "../../lib/functions";
 import { TYPES_NOTE, label, options } from "../../lib/statuts";
-import { EmptyState } from "../ui";
+import { EmptyState, ErrorState } from "../ui";
 
 interface Note {
   id: string;
@@ -40,7 +40,7 @@ export function NotesPanel(props: Cible & { placeholder?: string; emptyTitle?: s
     }
   });
 
-  const { data, isLoading } = useList<Note>({
+  const { data, isLoading, isError, error, refetch } = useList<Note>({
     resource: "notes",
     filters,
     sorters: [{ field: "created_at", order: "desc" }],
@@ -87,7 +87,8 @@ export function NotesPanel(props: Cible & { placeholder?: string; emptyTitle?: s
         <span className="faint" style={{ fontSize: 12 }}>Ctrl + Entrée pour enregistrer</span>
         <Button type="primary" onClick={ajouter} loading={saving} disabled={!txt.trim()}>Ajouter</Button>
       </div>
-      {!isLoading && rows.length === 0 && (
+      {isError && <ErrorState compact titre="Notes indisponibles" error={error} onRetry={() => void refetch()} />}
+      {!isLoading && !isError && rows.length === 0 && (
         <EmptyState compact icon={<MessageOutlined />} title={props.emptyTitle ?? "Aucune note"} description={props.vide ?? "Gardez ici la trace de vos échanges."} />
       )}
       {rows.map((n) => (

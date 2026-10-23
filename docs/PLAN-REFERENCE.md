@@ -163,7 +163,7 @@ Ordre adapté à l'audit : la **sécurité critique** (C1, C2) et la **sauvegard
 | **12** ✅ | **Search Console** : synchronisation, Pilotage → SEO | — | — | domaines achetés + propriétés vérifiées |
 | **13** ✅ | **SEO technique** : titres/descriptions, `og:image`, 404, fils d'Ariane, `noindex` paiement, polices auto-hébergées | I11, I12, A7 | 170 pages, sitemap, liens, GA | — |
 | **14** ✅ | **SEO local + contenu** : pages utiles et distinctes (intention, mot-clé, FAQ, maillage) | — | sitemap, maillage | validation du contenu par le propriétaire |
-| **15** | **Performance + dépendances** : mesure, Vite à jour, ESLint, agrégats SQL si nécessaire | A1, A2, A6 | build, tous les écrans | — |
+| **15** ✅ | **Performance + dépendances** : mesure, Vite à jour, ESLint, agrégats SQL si nécessaire | A1, A2, A6 | build, tous les écrans | — |
 | **16** | **Conversion** : lead magnets, outils interactifs | — | formulaires, GA | — |
 | **17** | **Audit global final** | — | tout | — |
 
@@ -665,5 +665,35 @@ Ordre adapté à l'audit : la **sécurité critique** (C1, C2) et la **sauvegard
 
 **À faire plus tard** : relire `docs/CONTENU-A-VALIDER.md` avec le propriétaire, appliquer ses réponses dans `build/`, régénérer (`python3 build/build_all.py`).
 
+### Lot 15 — Performance, dépendances et qualité du code ✅ VALIDÉ (environnement de test)
+
+**Modifié**
+- **Chiffres faux au-delà de 1 000 lignes (corrigé)** : Supabase renvoie au plus 1 000 lignes par réponse, **sans erreur**. Le tableau de bord, le pilotage et les compteurs des onglets (demandes, clients, devis, factures, tickets) demandaient « 5 000 » lignes non triées : au-delà de 1 000 factures, devis ou demandes, CA et compteurs auraient été calculés sur une partie arbitraire des données. Désormais chargement **complet, page par page, dans un ordre stable** (`src/lib/chargerTout.ts`) ; au-delà de 50 000 lignes, un avertissement « chiffres partiels » plutôt qu'un chiffre faux. Agrégats SQL : **pas nécessaires** aux volumes d'une petite entreprise (décision A6 ; l'avertissement signalera le moment de les faire).
+- **Dépendances (A1)** : Vite 5 → **7.3.7** (corrige l'avis « high » et esbuild). react-router v6 garde 3 avis « moderate » sans correctif en v6 ; le seul exploitable ici — **redirection ouverte après connexion** via `?to=/\site-pirate` (Refine redirige vers ce paramètre) — est **neutralisé** : seul un chemin interne est accepté. Node.js **20.19+** désormais requis (documenté).
+- **ESLint (A2)** : configuration (règles JavaScript, TypeScript, hooks React), `npm run lint` : **0 erreur** ; 7 vrais défauts corrigés (imports inutiles, dépendances de `useMemo` instables, directives inutiles) ; 29 `any` hérités signalés en avertissement. `deno lint` des 27 fichiers serveur : aucun problème.
+- **Erreurs affichées comme « vide » (A3)** : notes (« Notes indisponibles » + Réessayer), catalogue (« Catalogue indisponible »), compteurs du menu (« ? » au lieu de rien), historique client (« Historique incomplet : … »).
+- **Accessibilité** : les 9 défauts résiduels corrigés — onglets refaits (`src/components/ui/Onglets.tsx` : la rangée défile au lieu du bouton « … » invalide d'Ant Design, flèches / Début / Fin, panneau relié) sur 7 écrans ; 5 en-têtes de colonnes vides nommés pour les lecteurs d'écran. **Audit global : 0 défaut.**
+- **CI** (`.github/workflows/build.yml`) : régénération par `build_all.py` ; vérificateur de liens corrigé (il aurait échoué sur le `<base href="/">` des pages 404 du lot 13) ; nouveau job **back-office** : `npm ci`, lint, types, build (Node 22).
+- **Mesure des sites** (mobile) : 68 à 123 Ko transférés par page, 7–8 requêtes, une seule ressource bloquante (la feuille de style) : rien à corriger.
+
+**Fichiers**
+`admin-react/src/lib/chargerTout.ts` (nouveau) · `src/lib/metrics.ts` · `src/pages/{clients,devis,factures,leads,tickets}/list.tsx` · `src/pages/abonnements/index.tsx` · `src/pages/clients/show.tsx` · `src/pages/dashboard/index.tsx` · `src/pages/pilotage/index.tsx` · `src/pages/login.tsx` · `src/components/ui/Onglets.tsx` (nouveau) · `src/components/activity/{NotesPanel,ClientTimeline}.tsx` · `src/components/documents/LinesEditor.tsx` · `src/components/layout/AppLayout.tsx` · `src/pages/{paiements,prestations,communication}/index.tsx` · `src/styles.css` · 5 fichiers corrigés par ESLint · `eslint.config.js` (nouveau) · `package.json` / `package-lock.json` · `admin-react/README.md` · `.github/workflows/build.yml`.
+
+**Tests**
+- **Pagination contre un vrai PostgREST** plafonné à 1 000 puis 300 lignes (2 346 clients) : **9 / 9** — l'ancienne méthode ne renvoyait que 1 000 (resp. 300) lignes ; la nouvelle les renvoie toutes, distinctes ; arrêt et « partiel » au maximum ; erreur remontée ; base remise en état.
+- **Unitaires `chargerTout` : 12 / 12** — 0 à 2 346 lignes, plafonds 300 / 500 / 1 000, serveur qui ignore la pagination (pas de boucle), erreur en cours de route, maximum.
+- **Règle de retour après connexion : 11 / 11** cas (`//`, `/\`, URL complète, espaces… refusés ; chemins internes acceptés).
+- **Navigateur : 50 / 50** — 6 listes × bureau / mobile : onglets valides, sans bouton « … », clavier (flèche, Début), sans débordement, axe-core sans défaut ; fiche client : onglet ↔ panneau ; **compteur « Tous » = 2 500 avec un serveur plafonné à 1 000** (625 par statut) ; `?to=` piégé retiré, chemin interne conservé ; notes / historique / catalogue / compteur du menu en panne affichés comme des erreurs ; 0 erreur JS.
+- Non-régression : navigateur lots 4 à 12 (40, 49, 31, 10, 59, 18, 37, 26, 21 : tous conformes), polices 3 / 3, **audit d'accessibilité : 0 défaut** (au lieu de 9), TypeScript 0 erreur, `npm run build` OK, CI : YAML valide et vérificateur de liens rejoué (0 lien cassé sur les sites).
+
+**Résultat** : ✅ **VALIDÉ** sur l'environnement de test.
+
+**Risques / points à surveiller**
+- react-router v6 : 3 avis « moderate » restent (aucun correctif en v6 ; passage à v7 = changement majeur de Refine). Le cas exploitable est neutralisé.
+- Liste des abonnements chargée d'un bloc (`mode: "off"`) : plafonnée à 1 000 abonnements (largement au-delà du besoin actuel).
+- 29 `any` à typer progressivement (avertissements ESLint).
+
+**À faire plus tard (mise en production)** : poste de développement et hébergeur du back-office en **Node.js 20.19+** ; rien côté Supabase.
+
 ### Problèmes connus restants
-Voir §3 : A1–A3, A6 (C1, C2, I1, I2, I3, I4 traités au lot 1 ; C3 au lot 2, actif après configuration ; I6, I7, A4, A5 au lot 3 ; I5, I10 au lot 4 ; I9 au lot 6 ; I8 au lot 7 ; I11, I12, A7 au lot 13). Points mineurs relevés au lot 3 : onglets Ant Design et colonnes « Actions » sans texte.
+Voir §3 : aucun point ouvert de la cartographie (C1, C2, I1, I2, I3, I4 traités au lot 1 ; C3 au lot 2, actif après configuration ; I6, I7, A4, A5 au lot 3 ; I5, I10 au lot 4 ; I9 au lot 6 ; I8 au lot 7 ; I11, I12, A7 au lot 13 ; A1, A2, A3, A6 au lot 15). Points mineurs du lot 3 (onglets, colonnes « Actions ») corrigés au lot 15. Restent : 3 avis « moderate » de react-router v6 (cas exploitable neutralisé), 29 « any » à typer.

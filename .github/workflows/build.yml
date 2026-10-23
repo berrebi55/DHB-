@@ -17,10 +17,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Régénérer les sites
-        run: |
-          python3 build/build.py
-          python3 build/groupe/build_groupe.py
-          python3 build/particuliers/build_particuliers.py
+        run: python3 build/build_all.py
       - name: Vérifier qu'il n'y a pas de dérive (HTML = générateurs)
         run: |
           if [ -n "$(git status --porcelain)" ]; then
@@ -40,7 +37,8 @@ jobs:
               if not f.endswith('.html'): continue
               p=os.path.join(dp,f); base=os.path.dirname(p)
               html=open(p,encoding='utf-8').read()
-              for m in re.findall(r'href="([^"#?]+)"',html):
+              # <base href="/"> des pages 404 n'est pas un lien.
+              for m in re.findall(r'<(?!base\b)[^>]*?href="([^"#?]+)"',html):
                 if m.startswith(('http','mailto:','tel:','//')): continue
                 t=os.path.normpath(os.path.join(base,m))
                 if m.endswith('/'): t=os.path.join(t,'index.html')
@@ -49,3 +47,24 @@ jobs:
           for b in bad[:50]: print(" ",b)
           sys.exit(1 if bad else 0)
           PY
+
+  back-office:
+    # Back-office : règles ESLint, types TypeScript et build de production (lot 15).
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: admin-react
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: admin-react/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - name: Build (vérifie aussi les types)
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: https://exemple.supabase.co
+          VITE_SUPABASE_ANON_KEY: cle-publique-factice-pour-le-build

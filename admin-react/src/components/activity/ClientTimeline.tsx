@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useList } from "@refinedev/core";
-import { Segmented, Tooltip } from "antd";
+import { Alert, Button, Segmented, Tooltip } from "antd";
 import { CalendarOutlined, HistoryOutlined, MailOutlined, MessageOutlined, PhoneOutlined } from "@ant-design/icons";
 import { dateTimeFR, fromNow } from "../../lib/format";
 import { label } from "../../lib/statuts";
@@ -79,8 +79,13 @@ export function ClientTimeline({ clientId }: { clientId: string }) {
   if (acts.isLoading || notes.isLoading) return <ListSkeleton rows={4} />;
   if (acts.isError && notes.isError) return <ErrorState compact error={acts.error} onRetry={() => { void acts.refetch(); void notes.refetch(); }} />;
 
+  const enErreur = [acts.isError && "le journal", notes.isError && "les notes", emails.isError && "les emails"].filter(Boolean);
   return (
     <div>
+      {enErreur.length > 0 && (
+        <Alert type="warning" showIcon style={{ margin: "0 18px 12px" }} message={`Historique incomplet : ${enErreur.join(", ")} n'ont pas pu être chargés.`}
+          action={<Button size="small" onClick={() => { void acts.refetch(); void notes.refetch(); void emails.refetch(); }}>Réessayer</Button>} />
+      )}
       <div style={{ padding: "4px 18px 12px", overflowX: "auto" }}>
         <Segmented size="small" value={filtre} onChange={(v) => setFiltre(String(v))} options={FILTRES} aria-label="Filtrer l'historique" />
       </div>

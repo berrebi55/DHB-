@@ -46,7 +46,7 @@ export function JournalPage() {
     resource: "activites", filters, sorters: [{ field: "created_at", order: "desc" }],
     pagination: { current: page, pageSize: PAGE, mode: "server" }, queryOptions: { retry: false, keepPreviousData: true },
   });
-  const rows = data?.data ?? [];
+  const rows = useMemo(() => data?.data ?? [], [data]);
   const total = data?.total ?? 0;
 
   // Regroupement par jour pour une lecture chronologique.

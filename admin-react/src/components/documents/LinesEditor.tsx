@@ -17,7 +17,7 @@ export const ligneVide = (): Ligne => ({ libelle: "", description: "", qte: 1, p
 
 /** Lignes d'un devis ou d'une facture, avec ajout depuis le catalogue de prestations. */
 export function LinesEditor({ value, onChange, error }: { value: Ligne[]; onChange: (l: Ligne[]) => void; error?: string }) {
-  const { data } = useList<Prestation>({
+  const { data, isError } = useList<Prestation>({
     resource: "prestations",
     filters: [{ field: "actif", operator: "eq", value: true }],
     sorters: [{ field: "libelle", order: "asc" }],
@@ -38,7 +38,7 @@ export function LinesEditor({ value, onChange, error }: { value: Ligne[]; onChan
             <th className="qty">Qté</th>
             <th className="num">Prix unitaire HT</th>
             <th className="num">Total HT</th>
-            <th className="act" aria-label="Actions" />
+            <th className="act"><span className="sr-only">Actions</span></th>
           </tr>
         </thead>
         <tbody>
@@ -81,7 +81,7 @@ export function LinesEditor({ value, onChange, error }: { value: Ligne[]; onChan
       <Space wrap style={{ marginTop: 12 }}>
         <Button icon={<PlusOutlined />} onClick={() => onChange([...value, ligneVide()])}>Ajouter une ligne</Button>
         <Select
-          placeholder={catalogue.length ? "Ajouter depuis le catalogue…" : "Catalogue vide"}
+          placeholder={isError ? "Catalogue indisponible (réessayez plus tard)" : catalogue.length ? "Ajouter depuis le catalogue…" : "Catalogue vide"}
           aria-label="Ajouter une prestation du catalogue"
           disabled={!catalogue.length}
           value={null}

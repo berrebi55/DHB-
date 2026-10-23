@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button, Checkbox, Input, Select, Tabs, Tooltip } from "antd";
+import { Button, Checkbox, Input, Select, Tooltip } from "antd";
 import { CheckCircleFilled, FileTextOutlined, PlusOutlined, SearchOutlined } from "@ant-design/icons";
 import { useList, type CrudFilter } from "@refinedev/core";
 import dayjs from "dayjs";
@@ -10,6 +10,8 @@ import { EmptyState, PageHeader, Panel, StatusTag } from "../../components/ui";
 import { cleanSearch, dateFR, eur } from "../../lib/format";
 import { DEVIS_STATUTS, ENTITES, label, options } from "../../lib/statuts";
 import { useDebounced, useUrlState } from "../../lib/hooks";
+import { Onglets } from "../../components/ui/Onglets";
+import { chargerTout } from "../../lib/chargerTout";
 
 export interface Devis {
   id: string;
@@ -91,7 +93,7 @@ export function DevisList() {
   const rows = data?.data ?? [];
 
   useEffect(() => {
-    supabaseClient.from("devis").select("statut").limit(5000).then(({ data: d }) => {
+    chargerTout((de, a) => supabaseClient.from("devis").select("id, statut").order("id").range(de, a)).then(({ data: d }) => {
       const c: Record<string, number> = { "": 0 };
       (d ?? []).forEach((r: { statut: string }) => { c[""]++; c[r.statut] = (c[r.statut] ?? 0) + 1; });
       setCounts(c);
@@ -111,7 +113,7 @@ export function DevisList() {
       />
       <Panel flush>
         <div className="list-tabs">
-          <Tabs activeKey={f.statut || "_"} onChange={(k) => setF({ statut: k === "_" ? null : k })}
+          <Onglets label="Filtrer les devis par statut" activeKey={f.statut || "_"} onChange={(k) => setF({ statut: k === "_" ? null : k })}
             items={[{ key: "_", label: <span>Tous<span className="tab-count">{counts[""] ?? 0}</span></span> },
               ...DEVIS_STATUTS.map((s) => ({ key: s.value, label: <span>{s.label}<span className="tab-count">{counts[s.value] ?? 0}</span></span> }))]} />
         </div>

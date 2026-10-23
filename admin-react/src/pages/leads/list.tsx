@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { App, Button, Checkbox, Input, Select, Tabs, Tooltip, Typography } from "antd";
+import { App, Button, Checkbox, Input, Select, Tooltip, Typography } from "antd";
 import { InboxOutlined, PlusOutlined, QuestionCircleOutlined, SearchOutlined } from "@ant-design/icons";
 import { useList, useUpdate, type CrudFilter, type CrudSort } from "@refinedev/core";
 import dayjs from "dayjs";
@@ -12,6 +12,8 @@ import { cleanSearch, dateFR, fromNow } from "../../lib/format";
 import { ENTITES, LEAD_OUVERTS, LEAD_STATUTS, PRIORITES, SOURCES_LEAD, TYPES_CLIENT, label, options } from "../../lib/statuts";
 import { useDebounced, useUrlState } from "../../lib/hooks";
 import { messageErreurBase } from "../../lib/functions";
+import { Onglets } from "../../components/ui/Onglets";
+import { chargerTout } from "../../lib/chargerTout";
 
 const KEYS = ["q", "statut", "priorite", "entite", "source", "type_client", "relance", "page", "tri", "ordre", "creer"] as const;
 const PAGE = 20;
@@ -83,9 +85,12 @@ export function LeadsList({ mode }: { mode: "devis" | "question" }) {
 
   // Compteurs par statut pour les onglets.
   useEffect(() => {
-    let req = supabaseClient.from("leads").select("status");
-    req = mode === "question" ? req.eq("type", "question") : req.neq("type", "question");
-    req.limit(5000).then(({ data: d }) => {
+    // Requête recréée à chaque page (les filtres de supabase-js modifient l'objet).
+    const req = () => {
+      const r = supabaseClient.from("leads").select("id, status");
+      return mode === "question" ? r.eq("type", "question") : r.neq("type", "question");
+    };
+    chargerTout((de, a) => req().order("id").range(de, a)).then(({ data: d }) => {
       const c: Record<string, number> = {};
       (d ?? []).forEach((r: { status: string }) => (c[r.status] = (c[r.status] ?? 0) + 1));
       setCounts(c);
@@ -113,7 +118,7 @@ export function LeadsList({ mode }: { mode: "devis" | "question" }) {
       />
       <Panel flush>
         <div className="list-tabs">
-          <Tabs
+          <Onglets label="Filtrer les demandes par statut"
             activeKey={onglet.key || "_"}
             onChange={(k) => setF({ statut: k === "_" ? null : k })}
             items={onglets.map((o) => ({ key: o.key || "_", label: <span>{o.label}<span className="tab-count">{compte(o)}</span></span> }))}

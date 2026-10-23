@@ -129,7 +129,7 @@ export function PaiementsList() {
             { title: "Référence", dataIndex: "reference", render: (v: string) => v || <span className="faint">—</span> },
             { title: "Montant", dataIndex: "montant", align: "right" as const, render: (v: number) => <b className="tabular">{eur(v)}</b> },
             ...(isAdmin ? [{
-              title: "", key: "act", width: 90, render: (_: unknown, r: Paiement) => (
+              title: <span className="sr-only">Actions</span>, key: "act", width: 90, render: (_: unknown, r: Paiement) => (
                 <Popconfirm title="Supprimer ce paiement ?" description="Si la facture n'est plus soldée, elle repasse à « envoyée »." okText="Supprimer" cancelText="Annuler" okButtonProps={{ danger: true }}
                   onConfirm={() => remove({ resource: "paiements", id: r.id, successNotification: false }, { onSuccess: () => { rafraichir("factures", "factures_vue", "clients_vue"); message.success("Paiement supprimé"); }, onError: (e) => message.error(messageErreurBase(e)) })}>
                   <Button type="link" danger size="small">Supprimer</Button>
