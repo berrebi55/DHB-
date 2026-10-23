@@ -16,7 +16,7 @@ for i in 1 2; do
   ligne "full-setup.sql (passage $i)" "$n erreur(s)"
 done
 docker restart dhb-postgrest >/dev/null; sleep 3
-for f in lot1-securite lot2-sauvegardes lot4-crm lot6-documents lot7-stripe lot8-communication lot9-automatisations lot10-integrations lot11-drive lot12-search-console lot16-guides lot17-durcissement; do
+for f in lot1-securite lot2-sauvegardes lot4-crm lot6-documents lot7-stripe lot8-communication lot9-automatisations lot10-integrations lot11-drive lot12-search-console lot16-guides lot17-durcissement lot18-tickets-email; do
   ligne "SQL $f" "$(docker exec -i dhb-test-pg psql -U postgres -d dhb_test -q < "$DEPOT/supabase/tests/$f.sql" 2>&1 | grep -o '[0-9]* / [0-9]* scénarios conformes' | tail -1)"
 done
 

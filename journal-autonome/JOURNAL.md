@@ -22,3 +22,12 @@ pas de réécriture de l'historique git.
 - Commit : ce bloc.
 - Suite prévue : lot 18 (email → ticket), en commençant par l'analyse et la conception.
 - Points pour le propriétaire : laisser l'application Claude ouverte, Docker démarré et l'ordinateur sans mise en veille jusqu'à samedi 23 h.
+
+## 2026-10-23 — Lot 18 (base) : conversation, pièces jointes, adresses de support
+
+- Fait : tables `ticket_messages` et `ticket_pieces` (écriture réservée au serveur), numéro de ticket `#n` pour la référence `[DHB #n]` dans l'objet, canal (manuel / email), « à qualifier », dédoublonnage des emails reçus (Resend et file d'événements), réglage des adresses de support par site (contrôlé), journal « Email reçu de … / Réponse envoyée à … ». Correction au passage : la contrainte des intégrations du lot 11 aurait fait échouer le second passage de `full-setup.sql`.
+- Fichiers : `supabase/full-setup.sql` (section 27), `supabase/tests/lot18-tickets-email.sql`, `outils-test/tout-tester.sh`.
+- Tests : full-setup rejoué 2 fois (0 erreur) ; SQL lot 18 **18/18** ; non-régression lots 1 (73), 9 (23), 10 (20), 11 (14), 12 (11), 17 (5).
+- Commit : voir ci-dessous.
+- Suite prévue : `_shared/tickets.ts` (traitement d'un email reçu : récupération Resend, anti-boucle, fil, client, pièces jointes), fonction `email-entrant` (signature Svix), branche `email_recu` dans le robot, tests de bout en bout avec un faux Resend.
+- Points pour le propriétaire : aucun.
